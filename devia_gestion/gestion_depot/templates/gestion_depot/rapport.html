@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Rapport des ventes{% endblock %}
+
+{% block content %}
+  <h2>Rapport des ventes</h2>
+
+  <!-- Filtres -->
+  <form method="get" class="row mb-4">
+    <div class="col-md-2">
+      <label>Date début</label>
+      <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}">
+    </div>
+    <div class="col-md-2">
+      <label>Date fin</label>
+      <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}">
+    </div>
+    <div class="col-md-2">
+      <label>Période</label>
+      <select name="periode" class="form-select">
+        <option value="">Toutes les périodes</option>
+        <option value="journalier" {% if periode == 'journalier' %}selected{% endif %}>Journalier</option>
+        <option value="hebdomadaire" {% if periode == 'hebdomadaire' %}selected{% endif %}>Hebdomadaire</option>
+        <option value="mensuel" {% if periode == 'mensuel' %}selected{% endif %}>Mensuel</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary mt-4">Filtrer</button>
+      <a href="{% url 'gestion_depot:rapport_ventes' %}" class="btn btn-secondary mt-4">Réinitialiser</a>
+    </div>
+  </form>
+
+  <!-- Résumé -->
+  <div class="alert alert-info">
+    <strong>Total des ventes :</strong> {{ total_revenu }} FCFA
+  </div>
+
+  <!-- Statistiques -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-success text-white">
+          <h5>✅ Produit le plus vendu</h5>
+        </div>
+        <div class="card-body">
+          {% if produit_plus_vendu %}
+            <p><strong>{{ produit_plus_vendu.nom }}</strong></p>
+            <p>Quantité totale : {{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</p>
+            <p>Revenu total : {{ produit_plus_vendu.revenu_total }} FCFA</p>
+          {% else %}
+            <p>Aucune vente trouvée.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-danger text-white">
+          <h5>⚠️ Produit le moins vendu</h5>
+        </div>
+        <div class="card-body">
+          {% if produit_moins_vendu %}
+            <p><strong>{{ produit_moins_vendu.nom }}</strong></p>
+            <p>Quantité totale : {{ produit_moins_vendu.quantite_totale|floatformat:2 }} casiers</p>
+            <p>Revenu total : {{ produit_moins_vendu.revenu_total }} FCFA</p>
+          {% else %}
+            <p>Aucune vente trouvée.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventaire -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h5>📦 Inventaire</h5>
+    </div>
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Stock</th>
+            <th>Seuil d'alerte</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in inventaire %}
+            <tr>
+              <td>{{ item.nom }}</td>
+              <td>{{ item.stock }}</td>
+              <td>{{ item.seuil_alerte }}</td>
+              <td>
+                <span class="badge {% if item.en_alerte %}bg-warning{% else %}bg-success{% endif %}">
+                  {% if item.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
+                </span>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4" class="text-center">Aucun produit trouvé.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Détails des ventes -->
+  <div class="card">
+    <div class="card-header bg-light">
+      <h5>📋 Détails des ventes</h5>
+    </div>
+    <div class="card-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Produit</th>
+            <th>Fraction</th>
+            <th>Quantité</th>
+            <th>Total (FCFA)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ligne in lignes %}
+            <tr>
+              <td>{{ ligne.bon.date_vente|date:"d/m/Y H:i" }}</td>
+              <td>{{ ligne.produit.nom }}</td>
+              <td>{{ ligne.get_fraction_display }}</td>
+              <td>{{ ligne.quantite_casiers }}</td>
+              <td>{{ ligne.prix_total }} FCFA</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center">Aucune vente trouvée.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- Graphique des ventes -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h5>📈 Évolution des ventes</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="ventesChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('ventesChart').getContext('2d');
+    const ventesChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ labels_jours|safe }},
+        datasets: [{
+          label: 'Ventes (FCFA)',
+          data: {{ data_ventes|safe }},
+          borderColor: 'rgba(75, 192, 192, 1)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderWidth: 2,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+
+{% endblock %}

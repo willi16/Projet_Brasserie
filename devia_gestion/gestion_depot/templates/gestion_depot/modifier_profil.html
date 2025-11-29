@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier mon profil{% endblock %}
+
+{% block content %}
+  <h2>Modifier mon profil</h2>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="telephone" class="form-label">Téléphone</label>
+      <input type="text" class="form-control" id="telephone" name="telephone" value="{{ profil.telephone }}">
+    </div>
+    <div class="mb-3">
+      <label for="adresse" class="form-label">Adresse</label>
+      <textarea class="form-control" id="adresse" name="adresse">{{ profil.adresse }}</textarea>
+    </div>
+    <div class="mb-3">
+      <label for="photo" class="form-label">Photo de profil</label>
+      <input type="file" class="form-control" id="photo" name="photo">
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="{% url 'gestion_depot:profil_utilisateur' %}" class="btn btn-secondary">Annuler</a>
+  </form>
+{% endblock %}

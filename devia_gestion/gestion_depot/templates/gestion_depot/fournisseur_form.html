@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} un fournisseur{% endblock %}
+
+{% block content %}
+  <h2>{{ action }} un fournisseur</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="nom" class="form-label">Nom</label>
+      <input type="text" class="form-control" id="nom" name="nom" value="{{ fournisseur.nom|default:'' }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="contact" class="form-label">Contact</label>
+      <input type="text" class="form-control" id="contact" name="contact" value="{{ fournisseur.contact|default:'' }}">
+    </div>
+    <div class="mb-3">
+      <label for="adresse" class="form-label">Adresse</label>
+      <input type="text" class="form-control" id="adresse" name="adresse" value="{{ fournisseur.adresse|default:'' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">{{ action }}</button>
+    <a href="{% url 'gestion_depot:liste_fournisseurs' %}" class="btn btn-secondary">Annuler</a>
+  </form>
+{% endblock %}

@@ -1,0 +1,44 @@
+<h2>Créer un Bon de Vente</h2>
+
+<form method="post">
+  {% csrf_token %}
+  <label>Client (optionnel):</label>
+  <input type="text" name="client_nom" />
+
+  <label>Type de paiement:</label>
+  <select name="type_paiement">
+    <option value="especes">Espèces</option>
+    <option value="credit">Crédit</option>
+  </select>
+
+  <h3>Lignes de vente</h3>
+  <div id="lignes-container">
+    <div class="ligne">
+      <select name="produit" required>
+        <option value="">Sélectionnez un produit</option>
+        {% for produit in produits %}
+          <option value="{{ produit.id }}">{{ produit.nom }}</option>
+        {% endfor %}
+      </select>
+      <select name="fraction" required>
+        <option value="1.00">Casier complet</option>
+        <option value="0.75">3/4 de casier</option>
+        <option value="0.50">Demi-casier</option>
+        <option value="0.25">1/4 de casier</option>
+      </select>
+      <input type="number" name="quantite" placeholder="Quantité (en casiers)" min="0.01" step="0.01" required />
+    </div>
+  </div>
+
+  <button type="button" onclick="ajouterLigne()">Ajouter une ligne</button>
+  <button type="submit">Créer le bon de vente</button>
+</form>
+
+<script>
+  function ajouterLigne() {
+    const container = document.getElementById("lignes-container");
+    const nouvelleLigne = container.firstElementChild.cloneNode(true);
+    nouvelleLigne.querySelectorAll("input, select").forEach(input => input.value = "");
+    container.appendChild(nouvelleLigne);
+  }
+</script>

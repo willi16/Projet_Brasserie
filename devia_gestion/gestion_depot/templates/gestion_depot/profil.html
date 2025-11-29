@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Mon profil{% endblock %}
+
+{% block content %}
+  <h2>Mon profil</h2>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <img src="{% if profil.photo %}{{ profil.photo.url }}{% else %}https://via.placeholder.com/150{% endif %}" class="rounded-circle mb-3" width="150" height="150" alt="Photo">
+      <h4>{{ request.user.username }}</h4>
+      <p><strong>Email :</strong> {{ request.user.email }}</p>
+      <p><strong>Téléphone :</strong> {{ profil.telephone|default:"-" }}</p>
+      <p><strong>Adresse :</strong> {{ profil.adresse|default:"-" }}</p>
+    </div>
+  </div>
+
+  {% if request.user.groups.filter(name__in=['Gérant', 'Admin']).exists or request.user.is_staff %}
+    <a href="{% url 'gestion_depot:modifier_profil' %}" class="btn btn-primary">Modifier mon profil</a>
+  {% endif %}
+{% endblock %}

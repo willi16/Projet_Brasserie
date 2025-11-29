@@ -1,0 +1,46 @@
+{% extends 'gestion_depot/base.html' %}
+{% block content %}
+<h2>➕ Enregistrer une Vente</h2>
+
+<form method="post">
+    {% csrf_token %}
+    
+    <label for="produit">Produit :</label>
+    <select name="produit" id="produit" required>
+        {% for p in produits %}
+        <option value="{{ p.id }}">
+            {{ p.nom }} ({{ p.casier_contenu }} btl) - {{ p.prix_vente_casier }} FCFA
+        </option>
+        {% endfor %}
+    </select><br>
+
+    <label for="quantite_casiers">Quantité (casiers) :</label>
+    <input type="number" 
+           name="quantite_casiers" 
+           id="quantite_casiers" 
+           step="0.25" 
+           min="0.25" 
+           value="1" 
+           required><br>
+
+    <label for="fraction">Fraction de casier :</label>
+    <select name="fraction" id="fraction">
+        <option value="1.00">Casier complet</option>
+        <option value="0.75">3/4 de casier</option>
+        <option value="0.50">Demi-casier</option>
+        <option value="0.25">1/4 de casier</option>
+    </select><br>
+
+    <label for="client">Client (facultatif) :</label>
+    <input type="text" name="client" id="client" placeholder="Nom du client"><br>
+
+    <label>
+        <input type="checkbox" name="est_credit"> 
+        Vente à crédit
+    </label><br>
+
+    <button type="submit">✅ Enregistrer la Vente</button>
+</form>
+
+<p><a href="{% url 'gestion_depot:dashboard' %}">← Retour au tableau de bord</a></p>
+{% endblock %}

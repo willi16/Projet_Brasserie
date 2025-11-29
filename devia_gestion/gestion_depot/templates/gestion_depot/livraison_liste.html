@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des livraisons{% endblock %}
+
+{% block content %}
+  <h2>Liste des livraisons</h2>
+
+  <a href="{% url 'gestion_depot:creer_bon_livraison' %}" class="btn btn-primary mb-3">Enregistrer une livraison</a>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Référence</th>
+        <th>Date</th>
+        <th>Fournisseur</th>
+        <th>Utilisateur</th>
+        <th>Total casiers</th>
+        <th>Total (FCFA)</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for livraison in livraisons %}
+        <tr>
+          <td>{{ livraison.reference }}</td>
+          <td>{{ livraison.date_livraison|date:"d/m/Y H:i" }}</td>
+          <td>{{ livraison.fournisseur.nom }}</td>
+          <td>{{ livraison.utilisateur.username }}</td>
+          <td>{{ livraison.total_quantite }}</td>
+          <td>{{ livraison.total_montant }} FCFA</td>
+          <td>
+            <a href="{% url 'gestion_depot:detail_bon_livraison' livraison.id %}" class="btn btn-info btn-sm">Détail</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">Aucune livraison trouvée.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
