@@ -1,0 +1,77 @@
+{% extends 'base.html' %} <!-- ou le layout que tu utilises -->
+
+{% block title %}Liste des Bons de Vente{% endblock %}
+
+{% block content %}
+<h2>Liste des Bons de Vente</h2>
+
+<form method="get" class="row mb-3">
+  <div class="col-md-2">
+    <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}">
+  </div>
+  <div class="col-md-2">
+    <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}">
+  </div>
+  <div class="col-md-2">
+    <select name="statut" class="form-control">
+      <option value="">Tous les statuts</option>
+      <option value="en_cours" {% if statut_filter == 'en_cours' %}selected{% endif %}>En cours</option>
+      <option value="valide" {% if statut_filter == 'valide' %}selected{% endif %}>Validée</option>
+      <option value="annule" {% if statut_filter == 'annule' %}selected{% endif %}>Annulée</option>
+    </select>
+  </div>
+  <div class="col-md-2">
+    <select name="vendeur" class="form-control">
+      <option value="">Tous les vendeurs</option>
+      {% for u in vendeurs %}
+        <option value="{{ u.id }}" {% if vendeur_filter == u.id|stringformat:"i" %}selected{% endif %}>{{ u.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2">
+    <button type="submit" class="btn btn-primary">Filtrer</button>
+    <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Réinitialiser</a>
+  </div>
+</form>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Référence</th>
+      <th>Date</th>
+      <th>Client</th>
+      <th>Vendeur</th>
+      <th>Total (FCFA)</th>
+      <th>Statut</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for bon in bons %}
+      <tr>
+        <td>{{ bon.reference }}</td>
+        <td>{{ bon.date_vente|date:"d/m/Y H:i" }}</td>
+        <td>{{ bon.client.nom|default:"-" }}</td>
+        <td>{{ bon.vendeur.username }}</td>
+        <td>{{ bon.total }}</td>
+        <td><span class="badge {% if bon.statut == 'valide' %}bg-success{% elif bon.statut == 'annule' %}bg-danger{% else %}bg-warning{% endif %}">{{ bon.get_statut_display }}</span></td>
+        <td>
+          <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn btn-info btn-sm me-1">Détail</a>
+          <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning btn-sm me-1">Facture</a>
+          {% if bon.statut == 'en_cours' %}
+            <a href="{% url 'gestion_depot:valider_bon_vente' bon.id %}" class="btn btn-success btn-sm">Valider</a>
+          {% elif bon.statut == 'valide' %}
+            <a href="{% url 'gestion_depot:annuler_bon_vente' bon.id %}" class="btn btn-danger btn-sm">Annuler</a>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="7">Aucun bon de vente trouvé.</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{% endblock %}

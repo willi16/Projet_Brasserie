@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Détail du bon {{ bon.reference }}{% endblock %}
+
+{% block content %}
+  <h2>Détail du bon de vente {{ bon.reference }}</h2>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <strong>Reference :</strong> {{ bon.reference }}<br>
+      <strong>Date :</strong> {{ bon.date_vente|date:"d/m/Y H:i" }}<br>
+      <strong>Client :</strong> {{ bon.client.nom|default:"-" }}<br>
+      <strong>Vendeur :</strong> {{ bon.vendeur.username }}<br>
+      <strong>Type paiement :</strong> {{ bon.get_type_paiement_display }}<br>
+      <strong>Statut :</strong>
+      <span class="badge bg-{% if bon.statut == 'valide' %}success{% elif bon.statut == 'en_cours' %}warning{% else %}danger{% endif %}">
+        {{ bon.get_statut_display }}
+      </span>
+    </div>
+    <div class="col-md-6">
+      <h4>Total : {{ bon.total }} FCFA</h4>
+    </div>
+  </div>
+
+  <h4>Lignes de vente</h4>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Produit</th>
+        <th>Fraction</th>
+        <th>Quantité</th>
+        <th>Prix unitaire</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ligne in bon.lignes.all %}  <!-- Utilise la relation inverse -->
+        <tr>
+          <td>{{ ligne.produit.nom }}</td>
+          <td>{{ ligne.get_fraction_display }}</td>
+          <td>{{ ligne.quantite_casiers }}</td>
+          <td>{{ ligne.produit.prix_vente_casier|floatformat:0 }} FCFA</td>
+          <td>{{ ligne.prix_total }} FCFA</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Générer la facture</a>
+  <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Retour à la liste</a>
+{% endblock %}

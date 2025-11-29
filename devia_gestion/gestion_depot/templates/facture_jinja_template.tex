@@ -1,0 +1,116 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{float}
+
+% Couleurs personnalisées
+\definecolor{primary}{RGB}{0, 102, 204}   % Bleu
+\definecolor{accent}{RGB}{255, 153, 0}    % Orange
+
+% Marges
+\geometry{a4paper, margin=1in}
+
+% En-tête et pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\footnotesize \textcolor{primary}{Facture \# {{ bon.reference }}}}
+\lhead{\footnotesize \textcolor{primary}{Dépôt Boissons}}
+\rfoot{\footnotesize Page \thepage\ / \pageref{LastPage}}
+\renewcommand{\headrule}{\color{primary}\hrule height 1.5pt}
+
+\begin{document}
+
+% Logo et en-tête
+\begin{minipage}{0.3\textwidth}
+  \includegraphics[width=2.5cm]{/home/williams/Projet_personnel/Django/devia_gestion/static/images/logo.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.6\textwidth}
+  \raggedleft
+  \textbf{\LARGE \textcolor{primary}{FACTURE}} \\
+  \vspace{0.2cm}
+  \textbf{Référence :} {{ bon.reference }} \\
+  \textbf{Date :} {{ bon.date_vente.strftime('%d/%m/%Y %H:%M') }} \\
+\end{minipage}
+
+\vspace{0.5cm}
+
+% Infos client et vendeur
+\noindent
+\begin{tabular}{ll}
+  \textbf{Client :} & {{ bon.client.nom if bon.client else 'Inconnu' }} \\
+  \textbf{Vendeur :} & {{ bon.vendeur.username }} \\
+\end{tabular}
+
+\vspace{1cm}
+
+% Tableau des produits
+
+\begin{longtable}{|p{4cm}|p{2.5cm}|p{2cm}|p{2.5cm}|p{2.5cm}|}
+\hline
+\rowcolor{primary}
+\textcolor{white}{\textbf{Produit}} & 
+\textcolor{white}{\textbf{Fraction}} & 
+\textcolor{white}{\textbf{Quantité}} & 
+\textcolor{white}{\textbf{Prix unitaire}} & 
+\textcolor{white}{\textbf{Total}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{primary}
+\textcolor{white}{\textbf{Produit}} & 
+\textcolor{white}{\textbf{Fraction}} & 
+\textcolor{white}{\textbf{Quantité}} & 
+\textcolor{white}{\textbf{Prix unitaire}} & 
+\textcolor{white}{\textbf{Total}} \\
+\hline
+\endhead
+\hline
+\multicolumn{5}{|r|}{\footnotesize (Suite en page suivante)} \\
+\hline
+\endfoot
+\hline
+\multicolumn{5}{|r|}{\footnotesize (Fin de la facture)} \\
+\hline
+\endlastfoot
+{% for ligne in bon.lignes.all() %}
+\hline
+{{ ligne.produit.nom }} & 
+{{ ligne.get_fraction_display() }} & 
+{{ "%.2f"|format(ligne.quantite_casiers) }} & 
+{{ "%.2f"|format(ligne.produit.prix_vente_casier * ligne.fraction) }} FCFA & 
+{{ "%.2f"|format(ligne.prix_total()) }} FCFA \\
+\hline
+{% endfor %}
+\hline
+
+\end{longtable}
+
+\vspace{1cm}
+
+% Total
+\noindent
+\begin{tabular}{l r}
+  \textbf{TOTAL:} \textcolor{primary}{\textbf{{ "%.2f"|format(bon.total()) }} FCFA} \\
+\end{tabular}
+
+\vspace{1cm}
+
+% Pied de page
+\noindent
+\footnotesize
+\textbf{Dépôt Boissons} \\
+Adresse : Lomé, Togo \\
+Téléphone : +228 12345678 \\
+Email : contact@depot-boissons.tg
+
+\end{document}

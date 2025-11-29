@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des fournisseurs{% endblock %}
+
+{% block content %}
+  <h2>Liste des fournisseurs</h2>
+
+  <a href="{% url 'gestion_depot:ajouter_fournisseur' %}" class="btn btn-primary mb-3">Ajouter un fournisseur</a>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Contact</th>
+        <th>Adresse</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fournisseur in fournisseurs %}
+        <tr>
+          <td>{{ fournisseur.nom }}</td>
+          <td>{{ fournisseur.contact|default:"-" }}</td>
+          <td>{{ fournisseur.adresse|default:"-" }}</td>
+          <td>
+            <a href="{% url 'gestion_depot:modifier_fournisseur' fournisseur.id %}" class="btn btn-sm btn-warning">Modifier</a>
+            <a href="{% url 'gestion_depot:supprimer_fournisseur' fournisseur.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" class="text-center">Aucun fournisseur trouvé.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

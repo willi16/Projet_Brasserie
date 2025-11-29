@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Détail de la livraison {{ bon.reference }}{% endblock %}
+
+{% block content %}
+  <h2>Détail de la livraison {{ bon.reference }}</h2>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <strong>Date :</strong> {{ bon.date_livraison|date:"d/m/Y H:i" }}<br>
+      <strong>Fournisseur :</strong> {{ bon.fournisseur.nom }}<br>
+      <strong>Utilisateur :</strong> {{ bon.utilisateur.username }}<br>
+    </div>
+    <div class="col-md-6">
+      <h4>Total : {{ bon.total_quantite }} casier(s)</h4>
+    </div>
+  </div>
+
+  <h4>Lignes de livraison</h4>
+  <table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Produit</th>
+      <th>Type de casier</th>
+      <th>Prix d'achat (par casier)</th>
+      <th>Quantité</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ligne in bon.lignes.all %}
+      <tr>
+        <td>{{ ligne.produit.nom }}</td>
+        <td>{{ ligne.casier_contenu }} btl</td>
+        <td>{{ ligne.prix_achat_casier }} FCFA</td>
+        <td>{{ ligne.quantite_casiers }}</td>
+        <td>{{ ligne.total }} FCFA</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Retour à la liste</a>
+{% endblock %}

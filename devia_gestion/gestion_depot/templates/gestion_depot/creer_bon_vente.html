@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un bon de vente{% endblock %}
+
+{% block content %}
+  <h2>Créer un bon de vente</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="client_nom" class="form-label">Nom du client</label>
+      <input type="text" class="form-control" id="client_nom" name="client_nom" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="type_paiement" class="form-label">Type de paiement</label>
+      <select class="form-select" id="type_paiement" name="type_paiement" required>
+        <option value="especes">Espèces</option>
+        <option value="credit">Crédit</option>
+      </select>
+    </div>
+
+    <h4>Lignes de vente</h4>
+    <div id="lignes-container">
+      <div class="ligne">
+        <div class="row">
+          <div class="col-md-4">
+            <label>Produit</label>
+            <select name="produit" class="form-select" required>
+              {% for produit in produits %}
+                <option value="{{ produit.id }}">{{ produit.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Fraction</label>
+            <select name="fraction" class="form-select" required>
+              <option value="1.00">Casier complet</option>
+              <option value="0.75">3/4 de casier</option>
+              <option value="0.50">Demi-casier</option>
+              <option value="0.25">1/4 de casier</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label>Quantité</label>
+            <input type="number" name="quantite" class="form-control" min="0.01" step="0.01" required>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="add-ligne" class="btn btn-secondary mt-2">Ajouter une ligne</button>
+    <button type="submit" class="btn btn-primary mt-2">Créer le bon</button>
+  </form>
+
+  <script>
+    document.getElementById('add-ligne').addEventListener('click', function () {
+      const container = document.getElementById('lignes-container');
+      const newLigne = container.querySelector('.ligne').cloneNode(true);
+      newLigne.querySelector('select[name="produit"]').value = '';
+      newLigne.querySelector('select[name="fraction"]').value = '1.00';
+      newLigne.querySelector('input[name="quantite"]').value = '';
+      container.appendChild(newLigne);
+
+      newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
+        newLigne.remove();
+      });
+    });
+
+    document.querySelectorAll('.remove-ligne').forEach(btn => {
+      btn.addEventListener('click', function () {
+        this.closest('.ligne').remove();
+      });
+    });
+  </script>
+{% endblock %}

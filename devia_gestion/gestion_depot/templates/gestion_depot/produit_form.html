@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} un produit{% endblock %}
+
+{% block content %}
+  <h2>{{ action }} un produit</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="nom" class="form-label">Nom</label>
+      <input type="text" class="form-control" id="nom" name="nom" value="{{ produit.nom|default:'' }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="categorie" class="form-label">Catégorie</label>
+      <select class="form-select" id="categorie" name="categorie" required>
+        {% for value, label in categories %}
+          <option value="{{ value }}" {% if produit.categorie == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="casier_contenu" class="form-label">Contenu du casier</label>
+      <select class="form-select" id="casier_contenu" name="casier_contenu" required>
+        {% for c in casiers %}
+          <option value="{{ c }}" {% if produit.casier_contenu == c %}selected{% endif %}>{{ c }} bouteilles</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="prix_achat_casier" class="form-label">Prix d'achat (par casier)</label>
+      <input type="number" class="form-control" id="prix_achat_casier" name="prix_achat_casier" value="{{ produit.prix_achat_casier|default:'' }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="prix_vente_casier" class="form-label">Prix de vente (par casier)</label>
+      <input type="number" class="form-control" id="prix_vente_casier" name="prix_vente_casier" value="{{ produit.prix_vente_casier|default:'' }}" required>
+    </div>
+    <div class="mb-3">
+      <label for="seuil_alerte" class="form-label">Seuil d'alerte</label>
+      <input type="number" class="form-control" id="seuil_alerte" name="seuil_alerte" value="{{ produit.seuil_alerte|default:5 }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">{{ action }}</button>
+    <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>
+  </form>
+{% endblock %}
