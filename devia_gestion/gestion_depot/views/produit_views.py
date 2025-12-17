@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from gestion_depot.models import Produit
 from gestion_depot.decorators import group_required
+from ..decorators import caissier_required  # ← Import du décorateur
 
 from django.db.models import Sum, Case, When, F, Func, DecimalField
 
@@ -11,9 +12,18 @@ from django.db.models import Sum, Case, When, F, Func, DecimalField
 class Round(Func):
     function = 'ROUND'
     template = '%(function)s(%(expressions)s, 2)'
+    
+    
+    
 
 
-@group_required('Gérant', 'Admin')
+@caissier_required
+def liste_produits_avec_stock(request):
+    produits = Produit.objects.all()  # ou avec filtre de stock
+    return render(request, 'gestion_depot/liste_produits.html', {'produits': produits})
+
+
+@group_required('Caissier','Caissiers','Gérant','Gérants','Gerant', 'Admin')
 
 
 
@@ -35,7 +45,8 @@ def liste_produits_avec_stock(request):
    
     return render(request, 'gestion_depot/produit_liste.html', {'produits': produits})
 
-@group_required('Gérant', 'Admin')
+
+@group_required('Gérant','Gérants','Gerant', 'Admin')
 def ajouter_produit(request):
     if request.method == 'POST':
         nom = request.POST.get('nom')
@@ -62,7 +73,7 @@ def ajouter_produit(request):
         'casiers': [6, 12, 20, 24]
     })
 
-@group_required('Gérant', 'Admin')
+@group_required('Gérant','Gérants','Gerant', 'Admin')
 def modifier_produit(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
 
@@ -85,7 +96,7 @@ def modifier_produit(request, pk):
         'casiers': [6, 12, 20, 24]
     })
 
-@group_required('Gérant', 'Admin')
+@group_required('Gérant','Gérants','Gerant', 'Admin')
 def supprimer_produit(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
     nom = produit.nom

@@ -8,7 +8,7 @@ from gestion_depot.decorators import group_required
 
 @login_required
 def profil_utilisateur(request):
-    profil = request.user.profilutilisateur
+    profil = get_object_or_404(ProfilUtilisateur, user=request.user)
     return render(request, 'gestion_depot/profil.html', {'profil': profil})
 
 @group_required('Gérant', 'Admin')

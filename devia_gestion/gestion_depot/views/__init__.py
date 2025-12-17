@@ -8,7 +8,7 @@ from .bonVente_views import (
     valider_bon_vente
 )
 from .rapport_views import rapport_ventes
-from .auth_views import login_view, logout_view 
+from .auth_views import login_view #logout_view 
 from .produit_views import (
     liste_produits_avec_stock,
     ajouter_produit,

@@ -1,49 +1,61 @@
 {% extends "base.html" %}
+{% load custom_tags %}  <!-- ✅ Toujours chargé -->
 
 {% block title %}Liste des produits{% endblock %}
 
 {% block content %}
-  <h2>Liste des produits</h2>
+<h2>Liste des produits</h2>
 
+<!-- Bouton "Ajouter un produit" : uniquement pour gérants/admins -->
+{% user_can_edit request.user as can_edit %}
+{% if can_edit %}
   <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary mb-3">Ajouter un produit</a>
+{% endif %}
 
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>Catégorie</th>
-        <th>Contenu</th>
-        <th>Prix vente</th>
-        <th>Stock</th>
-        <th>Seuil d'alerte</th>
-        <th>Statut</th>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Catégorie</th>
+      <th>Contenu</th>
+      <th>Prix vente</th>
+      <th>Stock</th>
+      <th>Seuil d'alerte</th>
+      <th>Statut</th>
+      {% user_can_edit request.user as can_edit %}
+      {% if can_edit %}
         <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for produit in produits %}
-        <tr>
-          <td>{{ produit.nom }}</td>
-          <td>{{ produit.get_categorie_display }}</td>
-          <td>{{ produit.casier_contenu }} btl</td>
-          <td>{{ produit.prix_vente_casier }} FCFA</td>
-          <td>{{ produit.stock_actuel|floatformat:2 |default:0 }}</td>
-          <td>{{ produit.seuil_alerte }}</td>
-          <td>
-            <span class="badge bg-{% if produit.en_alerte %}warning{% else %}success{% endif %}">
-              {% if produit.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
-            </span>
-          </td>
-          <td>
-            <a href="{% url 'gestion_depot:modifier_produit' produit.id %}" class="btn btn-sm btn-warning">Modifier</a>
-            <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger">Supprimer</a>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="8" class="text-center">Aucun produit trouvé.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for produit in produits %}
+    <tr>
+      <td>{{ produit.nom }}</td>
+      <td>{{ produit.get_categorie_display }}</td>
+      <td>{{ produit.casier_contenu }} btl</td>
+      <td>{{ produit.prix_vente_casier }} FCFA</td>
+      <td>{{ produit.stock_actuel|floatformat:2|default:0 }}</td>
+      <td>{{ produit.seuil_alerte }}</td>
+      <td>
+        <span class="badge bg-{% if produit.en_alerte %}warning{% else %}success{% endif %}">
+          {% if produit.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
+        </span>
+      </td>
+      {% user_can_edit request.user as can_edit %}
+      {% if can_edit %}
+        <td>
+          <a href="{% url 'gestion_depot:modifier_produit' produit.id %}" class="btn btn-sm btn-warning">Modifier</a>
+          <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+        </td>
+      {% endif %}
+    </tr>
+    {% empty %}
+    <tr>
+      {% user_can_edit request.user as can_edit %}
+      <td colspan="{% if can_edit %}8{% else %}7{% endif %}" class="text-center">Aucun produit trouvé.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endblock %}

@@ -1,16 +1,17 @@
 # gestion_depot/urls.py
 from django.urls import path
 from gestion_depot.views import(
-    dashboard,
+    dashboard_views,
     rapport_ventes,
     login_view,
-    logout_view,
     produit_views,
     fournisseur_views,
     bonVente_views,
     livraison_views,
     profil_views,
-    facture_views
+    facture_views,
+    compte_views,
+    employe_views,
     
     
     
@@ -20,14 +21,14 @@ from gestion_depot.views import(
 app_name = 'gestion_depot'
 
 urlpatterns = [
-    path('', dashboard, name='dashboard'),
+    path('', dashboard_views.dashboard, name='dashboard'),
     
    
     
     path('rapport/', rapport_ventes, name='rapport_ventes'),
     
     path('login/', login_view, name='login'),
-    path('logout/', logout_view, name='logout'),
+  
     
     
     # Produits
@@ -61,6 +62,12 @@ urlpatterns = [
     path('profil/', profil_views.profil_utilisateur, name='profil_utilisateur'),
     path('profil/modifier/', profil_views.modifier_profil, name='modifier_profil'),
     
+    
+    path('comptes/creer/', compte_views.creer_compte_employe, name='creer_compte_employe'),
+    
     path('facture/<int:id>/', facture_views.generer_facture, name='generer_facture'),
+    
+    
+    path('documents/<path:path>', employe_views.serve_protected_document, name='serve_protected_document'),
 ]
 

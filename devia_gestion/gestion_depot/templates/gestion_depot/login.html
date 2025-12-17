@@ -1,37 +1,251 @@
-<!-- gestion_depot/templates/gestion_depot/login.html -->
-<!DOCTYPE html>
+{% comment %} <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Connexion - Deiva</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
-<body>
-    <div class="container" style="max-width: 400px; text-align: center;">
-        <h2>🔐 Connexion au Dépôt Deiva</h2>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connexion</title>
+    <!-- Bootstrap5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-        {% if error %}
-        <p style="color: red;">{{ error }}</p>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+      }
+      
+      .login-container {
+        height: 100vh;
+        display: flex;
+        box-shadow: 0020px rgba(0, 0, 0, 0.1);
+      }
+      
+      /* Colonne de gauche : image */
+      .image-side {
+        flex: 1;
+        background-image: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        text-align: center;
+        padding: 2rem;
+      }
+      
+      /* Overlay noir semi-transparent */
+      .image-side::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+      }
+      
+      .image-side-content {
+        z-index: 2;
+        text-shadow: 1px1px4px rgba(0, 0, 0, 0.8);
+      }
+      
+      .image-side h3 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      
+      .image-side p {
+        font-size: 1.1rem;
+        max-width: 80%;
+      }
+      
+      /* Colonne de droite : formulaire */
+      .form-side {
+        flex: 1;
+        background: #ffffff;
+        padding: 4rem2rem; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center;
+      overflow-y: auto;
+      max-width:500px; 
+      margin:0 auto; 
+      }
+      
+      /* Titre du formulaire */
+      .form-side h2 {
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 1.8rem;
+        text-align: center;
+        letter-spacing: 0.5px;
+      }
+      
+      /* Labels des champs */
+      .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+        text-align: left;
+        width: 100%;
+      }
+      
+      /* Champs de saisie */
+      .form-control {
+        width: 100%;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        padding: 12px15px;
+        font-size: 1rem;
+        transition: border-color0.3s ease, box-shadow0.3s ease;
+        box-sizing: border-box;
+        margin-bottom: 16px;
+      }
+      
+      /* Effet au focus (quand on clique dans le champ) */
+      .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0003px rgba(0, 123, 255, 0.15);
+        outline: none;
+      }
+      
+      .btn-primary {
+        background-color: #007bff;
+        border: none;
+        border-radius: 8px;
+        padding: 14px24px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin-top: 10px;
+        width: 100%;
+        cursor: pointer;
+        transition: background-color0.3s ease, transform0.1s ease;
+        box-shadow: 02px6px rgba(0, 123, 255, 0.2);
+      }
+      
+      .btn-primary:hover {
+        background-color: #0069d9;
+        transform: translateY(-1px);
+        box-shadow: 04px10px rgba(0, 123, 255, 0.3);
+      }
+      
+      /* Effet press (au clic) */
+      .btn-primary:active {
+        transform: translateY(0);
+        box-shadow: 01px4px rgba(0, 123, 255, 0.2);
+      }
+      
+      /* Message d'erreur */
+      .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.9rem;
+        text-align: center;
+        margin-bottom: 16px;
+        border: 1px solid #f5c6cb;
+        width: 100%;
+      }
+      
+      /* Lien "Mot de passeoublié" */
+      .text-muted a {
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+      
+      .text-muted a:hover {
+        color: #007bff;
+        text-decoration: underline;
+      }
+      
+      /* Conteneur du formulaire (pour limiter la largeur) */
+      .form-container {
+        width: 100%;
+        max-width: 380px;
+        padding: 015px;
+      }
+      
+      .alert-danger {
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 8px;
+        border-radius: 6px;
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .login-container {
+          flex-direction: column;
+        }
+        .image-side,
+        .form-side {
+          width: 100%;
+        }
+        .image-side {
+          height: 200px;
+        }
+        .image-side p {
+          max-width: 90%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <!-- Image à gauche -->
+      <div class="image-side">
+        <div class="image-side-content">
+          <h3>Bienvenue !</h3>
+          <p>Connectez-vous pour accéder à votre espace sécurisé.</p>
+        </div>
+      </div>
+
+      <!-- Formulaire à droite -->
+      <div class="form-side">
+        <h2>Connexion</h2>
+
+        {% if form.errors %}
+          <div class="alert alert-danger">Nom d'utilisateur ou mot de passe incorrect.</div>
         {% endif %}
 
         <form method="post">
-            {% csrf_token %}
-            <label for="username">Utilisateur :</label>
-            <input type="text" name="username" id="username" required autofocus><br>
+          {% csrf_token %}
 
-            <label for="password">Mot de passe :</label>
-            <input type="password" name="password" id="password" required><br>
+          <div class="mb-3">
+            <label for="{{ form.username.id_for_label }}" class="form-label">Nom d'utilisateur</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+          </div>
 
-            <button type="submit">Se connecter</button>
+          <div class="mb-3">
+            <label for="{{ form.password.id_for_label }}" class="form-label">Mot de passe</label>
+            {{ form.password }}
+            {{ form.password.errors }}
+          </div>
+
+          <button type="submit" class="btn btn-primary">Se connecter</button>
         </form>
 
-        <p style="margin-top: 20px;">
-            <small>
-                Exemples :<br>
-                Caissier : user=caissier, mdp=123<br>
-                Gérant : user=gerant, mdp=123
-            </small>
-        </p>
+        <div class="text-center mt-3">
+          <small><a href="#" class="text-muted">Mot de passeoublié ?</a></small>
+        </div>
+      </div>
     </div>
-</body>
-</html>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html> {% endcomment %}

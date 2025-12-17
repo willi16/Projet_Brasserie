@@ -1,0 +1,38 @@
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from django.conf import settings
+import os
+from datetime import timedelta
+from gestion_depot.models import BonVente
+
+class Command(BaseCommand):
+    help = 'Génère un rapport quotidien des ventes et archive les factures du jour'
+
+    def handle(self, *args, **options):
+        from ...views import generer_facture  # ⚠️ On ne peut pas importer directement la vue
+
+        # Mieux : utiliser une fonction utilitaire pour générer un rapport récap
+        today = timezone.now().date()
+        rapports_dir = os.path.join(settings.MEDIA_ROOT, 'rapports', 'quotidiens')
+        os.makedirs(rapports_dir, exist_ok=True)
+
+        # Récupérer toutes les ventes du jour
+        ventes_du_jour = BonVente.objects.filter(
+            date_vente__date=today,
+            facture_pdf__isnull=False
+        )
+
+        # Générer un rapport simple en texte (ou PDF avec reportlab)
+        rapport_path = os.path.join(rapports_dir, f"rapport_{today}.pdf")
+        with open(rapport_path, 'w') as f:
+            f.write(f"Rapport des ventes du {today}\n")
+            f.write("=" * 40 + "\n")
+            total = 0
+            for vente in ventes_du_jour:
+                f.write(f"- {vente.reference} | {vente.client_nom} | {vente.get_total()} FCFA\n")
+                total += vente.get_total()
+            f.write(f"\nTotal du jour : {total} FCFA\n")
+
+        self.stdout.write(
+            self.style.SUCCESS(f'Rapport généré : {rapport_path} ({ventes_du_jour.count()} ventes)')
+        )

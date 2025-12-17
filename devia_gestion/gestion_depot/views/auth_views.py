@@ -19,7 +19,7 @@ def login_view(request):
     
     return render(request, 'gestion_depot/login.html')
 
-def logout_view(request):
-    logout(request)
-    messages.info(request, "Vous avez été déconnecté.")
-    return redirect('gestion_depot:login')
+# def logout_view(request):
+#     logout(request)
+#     messages.info(request, "Vous avez été déconnecté.")
+#     return redirect('gestion_depot:login')

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Rapport des ventes{% endblock %}
 
@@ -9,11 +10,11 @@
   <form method="get" class="row mb-4">
     <div class="col-md-2">
       <label>Date début</label>
-      <input type="date" name="date_debut" class="form-control" value="{{ date_debut }}">
+      <input type="date" name="date_debut" class="form-control" value="{{ date_debut|date:'Y-m-d' }}">
     </div>
     <div class="col-md-2">
       <label>Date fin</label>
-      <input type="date" name="date_fin" class="form-control" value="{{ date_fin }}">
+      <input type="date" name="date_fin" class="form-control" value="{{ date_fin|date:'Y-m-d' }}">
     </div>
     <div class="col-md-2">
       <label>Période</label>
@@ -28,11 +29,15 @@
       <button type="submit" class="btn btn-primary mt-4">Filtrer</button>
       <a href="{% url 'gestion_depot:rapport_ventes' %}" class="btn btn-secondary mt-4">Réinitialiser</a>
     </div>
+    <div class="col-md-2 mt-4">
+      <a href="?export=excel&date_debut={{ date_debut|date:'Y-m-d' }}&date_fin={{ date_fin|date:'Y-m-d' }}&periode={{ periode }}"
+         class="btn btn-success">📥 Exporter Excel</a>
+    </div>
   </form>
 
   <!-- Résumé -->
   <div class="alert alert-info">
-    <strong>Total des ventes :</strong> {{ total_revenu }} FCFA
+    <strong>Total des ventes :</strong> {{ total_revenu|floatformat:0 }} FCFA
   </div>
 
   <!-- Statistiques -->
@@ -44,9 +49,9 @@
         </div>
         <div class="card-body">
           {% if produit_plus_vendu %}
-            <p><strong>{{ produit_plus_vendu.nom }}</strong></p>
+            <p><strong>{{ produit_plus_vendu.produit__nom }}</strong></p>
             <p>Quantité totale : {{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</p>
-            <p>Revenu total : {{ produit_plus_vendu.revenu_total }} FCFA</p>
+            <p>Revenu total : {{ produit_plus_vendu.revenu_total|floatformat:0 }} FCFA</p>
           {% else %}
             <p>Aucune vente trouvée.</p>
           {% endif %}
@@ -60,9 +65,9 @@
         </div>
         <div class="card-body">
           {% if produit_moins_vendu %}
-            <p><strong>{{ produit_moins_vendu.nom }}</strong></p>
+            <p><strong>{{ produit_moins_vendu.produit__nom }}</strong></p>
             <p>Quantité totale : {{ produit_moins_vendu.quantite_totale|floatformat:2 }} casiers</p>
-            <p>Revenu total : {{ produit_moins_vendu.revenu_total }} FCFA</p>
+            <p>Revenu total : {{ produit_moins_vendu.revenu_total|floatformat:0 }} FCFA</p>
           {% else %}
             <p>Aucune vente trouvée.</p>
           {% endif %}
@@ -93,7 +98,7 @@
               <td>{{ item.stock }}</td>
               <td>{{ item.seuil_alerte }}</td>
               <td>
-                <span class="badge {% if item.en_alerte %}bg-warning{% else %}bg-success{% endif %}">
+                <span class="badge {% if item.en_alerte %}bg-warning text-dark{% else %}bg-success{% endif %}">
                   {% if item.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
                 </span>
               </td>
@@ -108,42 +113,6 @@
     </div>
   </div>
 
-  <!-- Détails des ventes -->
-  <div class="card">
-    <div class="card-header bg-light">
-      <h5>📋 Détails des ventes</h5>
-    </div>
-    <div class="card-body">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Produit</th>
-            <th>Fraction</th>
-            <th>Quantité</th>
-            <th>Total (FCFA)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for ligne in lignes %}
-            <tr>
-              <td>{{ ligne.bon.date_vente|date:"d/m/Y H:i" }}</td>
-              <td>{{ ligne.produit.nom }}</td>
-              <td>{{ ligne.get_fraction_display }}</td>
-              <td>{{ ligne.quantite_casiers }}</td>
-              <td>{{ ligne.prix_total }} FCFA</td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="5" class="text-center">Aucune vente trouvée.</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-
   <!-- Graphique des ventes -->
   <div class="card mb-4">
     <div class="card-header bg-light">
@@ -154,15 +123,20 @@
     </div>
   </div>
 
+  <!-- ✅ Chart.js en local (pas de CDN) -->
+  <script src="{% static 'js/chart.umd.min.js' %}"></script>
   <script>
     const ctx = document.getElementById('ventesChart').getContext('2d');
-    const ventesChart = new Chart(ctx, {
+    const labels = JSON.parse('{{ labels_jours|safe }}');
+    const data = JSON.parse('{{ data_ventes|safe }}');
+
+    new Chart(ctx, {
       type: 'line',
       data: {
-        labels: {{ labels_jours|safe }},
+        labels: labels,
         datasets: [{
           label: 'Ventes (FCFA)',
-          data: {{ data_ventes|safe }},
+          data: data,
           borderColor: 'rgba(75, 192, 192, 1)',
           backgroundColor: 'rgba(75, 192, 192, 0.2)',
           borderWidth: 2,
@@ -171,9 +145,19 @@
       },
       options: {
         responsive: true,
+        plugins: {
+          legend: {
+            position: 'top',
+          }
+        },
         scales: {
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString() + ' FCFA';
+              }
+            }
           }
         }
       }

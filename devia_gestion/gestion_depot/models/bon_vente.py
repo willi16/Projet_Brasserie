@@ -16,21 +16,17 @@ class BonVente(models.Model):
     client = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
     type_paiement = models.CharField(max_length=20, choices=[('especes', 'Espèces'), ('credit', 'Crédit')])
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='valide')
-
+    facture_pdf = models.FileField(upload_to='factures/', blank=True, null=True)
+    date_facture_generee = models.DateTimeField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        # Sauvegarde initiale pour obtenir un ID si c'est un nouvel objet
+        if not self.pk:
+            super().save(*args, **kwargs)
+
         if not self.reference:
-            # Génère une référence automatique
-            last_bon = BonVente.objects.order_by('-id').first()
-            if last_bon and last_bon.reference:
-                try:
-                    ref_num = int(last_bon.reference.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    ref_num = 1
-            else:
-                ref_num = 1
-            self.reference = f"VENTE-{ref_num:04d}"
-        super().save(*args, **kwargs)
+            self.reference = f"VENTE-{self.pk:04d}"
+            super().save(update_fields=['reference'])
 
     
     def total(self):
