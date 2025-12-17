@@ -1,0 +1,194 @@
+<!-- templates/gestion_depot/creer_compte_employe.html -->
+{% extends "base.html" %}
+
+{% block title %}Créer un compte employé{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white d-flex align-items-center">
+          <i class="fas fa-user-plus me-2"></i>
+          <h4 class="mb-0">Créer un compte employé</h4>
+        </div>
+
+        <div class="card-body p-4">
+          <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            <!-- Nom complet -->
+            <div class="mb-3">
+              <label for="{{ form.nom_complet.id_for_label }}" class="form-label">
+                <i class="fas fa-user me-2 text-primary"></i> Nom complet
+              </label>
+              {{ form.nom_complet }}
+              {% if form.nom_complet.errors %}
+                <div class="invalid-feedback d-block">{{ form.nom_complet.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Nom d'utilisateur -->
+            <div class="mb-3">
+              <label for="{{ form.username.id_for_label }}" class="form-label">
+                <i class="fas fa-at me-2 text-primary"></i> Nom d'utilisateur
+              </label>
+              {{ form.username }}
+              {% if form.username.errors %}
+                <div class="invalid-feedback d-block">{{ form.username.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="{{ form.email.id_for_label }}" class="form-label">
+                <i class="fas fa-envelope me-2 text-primary"></i> Email
+              </label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="invalid-feedback d-block">{{ form.email.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="mb-3">
+              <label for="{{ form.password1.id_for_label }}" class="form-label">
+                <i class="fas fa-lock me-2 text-primary"></i> Mot de passe
+              </label>
+              {{ form.password1 }}
+              {% if form.password1.errors %}
+                <div class="invalid-feedback d-block">{{ form.password1.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Confirmation mot de passe -->
+            <div class="mb-3">
+              <label for="{{ form.password2.id_for_label }}" class="form-label">
+                <i class="fas fa-lock me-2 text-primary"></i> Confirmer le mot de passe
+              </label>
+              {{ form.password2 }}
+              {% if form.password2.errors %}
+                <div class="invalid-feedback d-block">{{ form.password2.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Rôle -->
+            <div class="mb-3">
+              <label for="{{ form.role.id_for_label }}" class="form-label">
+                <i class="fas fa-briefcase me-2 text-primary"></i> Rôle
+              </label>
+              {{ form.role }}
+              {% if form.role.errors %}
+                <div class="invalid-feedback d-block">{{ form.role.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Téléphone -->
+            <div class="mb-3">
+              <label for="{{ form.telephone.id_for_label }}" class="form-label">
+                <i class="fas fa-phone me-2 text-primary"></i> Téléphone
+              </label>
+              {{ form.telephone }}
+              {% if form.telephone.errors %}
+                <div class="invalid-feedback d-block">{{ form.telephone.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Adresse -->
+            <div class="mb-3">
+              <label for="{{ form.adresse.id_for_label }}" class="form-label">
+                <i class="fas fa-map-marker-alt me-2 text-primary"></i> Adresse
+              </label>
+              {{ form.adresse }}
+              {% if form.adresse.errors %}
+                <div class="invalid-feedback d-block">{{ form.adresse.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Date de naissance -->
+            <div class="mb-3">
+              <label for="{{ form.date_naissance.id_for_label }}" class="form-label">
+                <i class="fas fa-cake-candles me-2 text-primary"></i> Date de naissance
+              </label>
+              {{ form.date_naissance }}
+              {% if form.date_naissance.errors %}
+                <div class="invalid-feedback d-block">{{ form.date_naissance.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Statut marital -->
+            <div class="mb-3">
+              <label for="{{ form.statut_marital.id_for_label }}" class="form-label">
+                <i class="fas fa-heart me-2 text-primary"></i> Statut marital
+              </label>
+              {{ form.statut_marital }}
+              {% if form.statut_marital.errors %}
+                <div class="invalid-feedback d-block">{{ form.statut_marital.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Photo de profil -->
+            <div class="mb-3">
+              <label for="{{ form.photo.id_for_label }}" class="form-label">
+                <i class="fas fa-image me-2 text-primary"></i> Photo de profil
+              </label>
+              {{ form.photo }}
+              {% if form.photo.errors %}
+                <div class="invalid-feedback d-block">{{ form.photo.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Carte ID Recto -->
+            <div class="mb-3">
+              <label for="{{ form.carte_id_recto.id_for_label }}" class="form-label">
+                <i class="fas fa-id-card me-2 text-primary"></i> Carte d'identité - Recto
+              </label>
+              {{ form.carte_id_recto }}
+              {% if form.carte_id_recto.errors %}
+                <div class="invalid-feedback d-block">{{ form.carte_id_recto.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Carte ID Verso -->
+            <div class="mb-3">
+              <label for="{{ form.carte_id_verso.id_for_label }}" class="form-label">
+                <i class="fas fa-id-card me-2 text-primary"></i> Carte d'identité - Verso
+              </label>
+              {{ form.carte_id_verso }}
+              {% if form.carte_id_verso.errors %}
+                <div class="invalid-feedback d-block">{{ form.carte_id_verso.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Boutons -->
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-success flex-grow-1">
+                <i class="fas fa-check me-2"></i> Créer le compte
+              </button>
+              <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary flex-grow-1">
+                <i class="fas fa-times me-2"></i> Annuler
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script pour validation Bootstrap -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const forms = document.querySelectorAll('.needs-validation');
+  Array.prototype.slice.call(forms).forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+});
+</script>
+{% endblock %}

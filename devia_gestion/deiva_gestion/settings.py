@@ -9,8 +9,9 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +38,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_crontab',
     'gestion_depot',
+]
+
+
+# Planifier le rapport à 23h59 chaque jour
+CRONJOBS = [
+    ('59 23 * * *', 'gestion_depot.management.commands.generer_rapport_quotidien.Command'),
 ]
 
 MIDDLEWARE = [
@@ -54,7 +62,10 @@ ROOT_URLCONF = 'deiva_gestion.urls'
 
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'  
-LOGOUT_REDIRECT_URL = '/'
+
+# settings.py
+LOGOUT_URL = '/logout/'
+LOGOUT_REDIRECT_URL = 'login'
 
 TEMPLATES = [
     {
@@ -66,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'gestion_depot.context_processors.user_role',
             ],
         },
     },
@@ -125,7 +137,7 @@ STATICFILES_DIRS = [
 
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -135,4 +147,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # À la fin de settings.py
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+#MEDIA_ROOT = BASE_DIR / 'media'
+
+
+
+# settings.py
+
+# === Configuration SMTP (Gmail) ===
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')

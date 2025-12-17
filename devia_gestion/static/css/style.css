@@ -1,40 +1,191 @@
-/* Sidebar */
+/* === VARIABLES === */
+:root {
+  --sidebar-bg: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  --sidebar-active-bg: #007bff;
+  --sidebar-active-color: #ffffff;
+  --sidebar-hover-bg: rgba(0, 123, 255, 0.1);
+  --topbar-bg: #007bff;
+  --light-bg: #f8f9fa;
+  --dark-bg: #121212;
+  --dark-text: #e0e0e0;
+  --dark-sidebar: #1e1e1e;
+  --sidebar-border: rgba(0,0,0,0.1);
+}
+
+/* === Dark Mode === */
+html.dark-mode {
+  --sidebar-bg: linear-gradient(135deg, #1e1e1e 0%, #121212 100%);
+  --sidebar-active-bg: #1a73e8;
+  --sidebar-active-color: #ffffff;
+  --sidebar-hover-bg: rgba(26, 115, 232, 0.2);
+  --topbar-bg: #1a73e8;
+  --light-bg: #121212;
+  --dark-bg: #1e1e1e;
+  --dark-text: #bbbbbb;
+  --dark-sidebar: #121212;
+  --sidebar-border: rgba(255,255,255,0.1);
+}
+
+/* === Body & Layout === */
+body {
+  background-color: var(--light-bg);
+  transition: background-color 0.3s ease;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+html.dark-mode body {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+/* === Sidebar === */
 .sidebar {
-  padding-top: 70px;
-  box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+  position: fixed;
+  top: 56px; /* Hauteur de la topbar */
+  left: 0;
+  bottom: 0;
+  width: 16.666666%;
+  z-index: 1000;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.sidebar.collapsed {
+  width: 0 !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .sidebar .nav-link {
-  color: #333;
-  border-radius: 5px;
-  padding: 10px 15px;
-  transition: all 0.3s;
+  color: #495057;
+  border-radius: 8px;
+  margin: 0.25rem 0.75rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  font-size: 0.95rem;
 }
 
-.sidebar .nav-link:hover,
+html.dark-mode .sidebar .nav-link {
+  color: var(--dark-text);
+}
+
+.sidebar .nav-link:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: #007bff;
+}
+
+html.dark-mode .sidebar .nav-link:hover {
+  color: #90caf9;
+}
+
 .sidebar .nav-link.active {
-  background-color: #0d6efd;
-  color: white;
-  transform: translateX(3px);
+  background-color: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color) !important;
 }
 
 .sidebar .nav-link i {
-  width: 20px;
+  min-width: 24px;
   text-align: center;
+  color: inherit;
 }
 
-/* Main content */
+/* === Main Content === */
 .main-content {
-  margin-left: 250px;
-  padding: 20px;
+  margin-left: 16.666666%;
+  padding-top: 24px;
+  padding-bottom: 24px;
+  transition: margin-left 0.3s ease;
+  overflow-y: auto;
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 991.98px) {
   .sidebar {
-    display: none;
+    display: none !important;
   }
   .main-content {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
+}
+
+/* === Topbar === */
+.navbar {
+  background-color: var(--topbar-bg) !important;
+}
+
+/* === Cards & Tables === */
+.card, .table {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark-mode .card {
+  background-color: #1e1e1e;
+  color: var(--dark-text);
+  border-color: #333;
+}
+
+html.dark-mode .table {
+  color: var(--dark-text);
+}
+
+html.dark-mode .table thead {
+  background-color: #2d2d2d;
+}
+
+html.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* === Form === */
+.form-control, .form-select {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark-mode .form-control,
+html.dark-mode .form-select {
+  background-color: #2d2d2d;
+  color: var(--dark-text);
+  border-color: #444;
+}
+
+html.dark-mode .form-control:focus,
+html.dark-mode .form-select:focus {
+  background-color: #2d2d2d;
+  color: var(--dark-text);
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 0.25rem rgba(26, 115, 232, 0.25);
+}
+
+/* === Offcanvas (Mobile) === */
+.offcanvas {
+  background: var(--sidebar-bg);
+}
+
+html.dark-mode .offcanvas {
+  background: var(--dark-sidebar);
+  color: var(--dark-text);
+}
+
+html.dark-mode .offcanvas .nav-link {
+  color: var(--dark-text);
+}
+
+/* === Footer === */
+footer {
+  background-color: var(--light-bg);
+  color: #495057;
+  border-top: 1px solid #dee2e6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark-mode footer {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  border-top-color: #333;
 }

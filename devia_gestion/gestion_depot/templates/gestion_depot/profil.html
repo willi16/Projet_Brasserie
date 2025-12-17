@@ -1,21 +1,58 @@
+<!-- templates/gestion_depot/profil_utilisateur.html -->
 {% extends "base.html" %}
 
 {% block title %}Mon profil{% endblock %}
 
 {% block content %}
-  <h2>Mon profil</h2>
-
-  <div class="card mb-4">
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header bg-info text-white">
+      <h4><i class="fas fa-user me-2"></i> Mon profil</h4>
+    </div>
     <div class="card-body">
-      <img src="{% if profil.photo %}{{ profil.photo.url }}{% else %}https://via.placeholder.com/150{% endif %}" class="rounded-circle mb-3" width="150" height="150" alt="Photo">
-      <h4>{{ request.user.username }}</h4>
-      <p><strong>Email :</strong> {{ request.user.email }}</p>
-      <p><strong>Téléphone :</strong> {{ profil.telephone|default:"-" }}</p>
-      <p><strong>Adresse :</strong> {{ profil.adresse|default:"-" }}</p>
+      {% if profil %}
+        <div class="row">
+          <div class="col-md-4 text-center">
+            {% if profil.photo %}
+              <img src="{{ profil.photo.url }}" class="rounded-circle img-fluid border" alt="Photo">
+            {% else %}
+              <i class="fas fa-user-circle text-secondary" style="font-size: 6rem;"></i>
+            {% endif %}
+            <h5 class="mt-2">{{ profil.user.get_full_name|default:profil.user.username }}</h5>
+            <p class="text-muted">{{ profil.user.email }}</p>
+          </div>
+
+          <div class="col-md-8">
+            <ul class="list-group">
+              <li class="list-group-item"><strong>Téléphone :</strong> {{ profil.telephone|default:"Non renseigné" }}</li>
+              <li class="list-group-item"><strong>Adresse :</strong> {{ profil.adresse|linebreaksbr|default:"Non renseignée" }}</li>
+              <li class="list-group-item"><strong>Date de naissance :</strong> {{ profil.date_naissance|default:"Non renseignée" }}</li>
+              <li class="list-group-item"><strong>Statut marital :</strong> {{ profil.get_statut_marital_display|default:"Non renseigné" }}</li>
+            </ul>
+
+            {% if profil.carte_id_recto or profil.carte_id_verso %}
+              <h5 class="mt-4">Documents d'identité</h5>
+              <div class="d-flex gap-3">
+                {% if profil.carte_id_recto %}
+                  <a href="{{ profil.carte_id_recto.url }}" target="_blank" class="btn btn-outline-primary">
+                    <i class="fas fa-id-card me-1"></i> Voir recto
+                  </a>
+                {% endif %}
+                {% if profil.carte_id_verso %}
+                  <a href="{{ profil.carte_id_verso.url }}" target="_blank" class="btn btn-outline-secondary">
+                    <i class="fas fa-id-card me-1"></i> Voir verso
+                  </a>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-warning">
+          Aucun profil trouvé pour votre compte. Veuillez contacter l'administrateur.
+        </div>
+      {% endif %}
     </div>
   </div>
-
-  {% if request.user.groups.filter(name__in=['Gérant', 'Admin']).exists or request.user.is_staff %}
-    <a href="{% url 'gestion_depot:modifier_profil' %}" class="btn btn-primary">Modifier mon profil</a>
-  {% endif %}
+</div>
 {% endblock %}
