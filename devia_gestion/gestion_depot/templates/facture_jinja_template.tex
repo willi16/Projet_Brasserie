@@ -6,7 +6,7 @@
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{graphicx}
-
+\usepackage{pifont} 
 \usepackage{xcolor}
 \usepackage{colortbl}
 \usepackage{fancyhdr}
@@ -14,8 +14,9 @@
 \usepackage{eso-pic} 
 \usepackage{ragged2e}
 \usepackage{tabularx}
-\usepackage{lmodern}
-\usepackage{datetime}
+
+
+
 
 % Couleurs personnalisées
 \definecolor{primary}{RGB}{0,0,0}
@@ -29,8 +30,6 @@
 \renewcommand{\familydefault}{\sfdefault}
 \rhead{\footnotesize \textcolor{primary}{Facture \# {{ bon.reference }}}}
 \lhead{\footnotesize \textcolor{primary}{Dépôt Boissons}}
-
-
 
 \begin{document}
 
@@ -49,7 +48,7 @@
 \hfill
 \begin{minipage}[t]{0.28\linewidth}
  \raggedleft 
- \includegraphics[width=2.0cm]{/home/williams/Projet_personnel/Django/devia_gestion/static/images/logo.png}
+ \includegraphics[width=2.0cm]{logo.png}
 \end{minipage}
 
 \vspace{0.1cm}
@@ -57,7 +56,7 @@
 % Date et référence
 \noindent
 \begin{minipage}[t]{0.5\linewidth}
- \textbf{Lomé, le :} \today
+ \textbf{Lomé, le :} {{ date_str }}
 \end{minipage}
 \hfill
 \begin{minipage}[t]{0.45\linewidth}
@@ -107,14 +106,17 @@
  \hline
  \endlastfoot
 
- {% for ligne in bon.lignes.all() %}
+
+
+{% for ligne in lignes %}
  {{ "%.2f"|format(ligne.quantite_casiers) }} &
  {{ ligne.produit.nom }} &
  {{ ligne.get_fraction_display() }} &
  {{ "%.2f"|format(ligne.produit.prix_vente_casier * ligne.fraction) }} FCFA &
  {{ "%.2f"|format(ligne.prix_total()) }} FCFA \\
  \hline 
- {% endfor %}
+ {% endfor %}  
+
 
 \end{longtable}
 
@@ -122,14 +124,14 @@
 
 % Total
 \begin{flushright}
- \textbf{TOTAL :} \textcolor{primary}{\textbf{{ "%.2f"|format(bon.total()) }} FCFA}
+ \textbf{TOTAL :} \textcolor{primary}{\textbf{{ "%.2f"|format(total_facture) }} FCFA}
 \end{flushright}
 
 \vspace{0.6cm}
 
 % Mention légale — avec points décoratifs
 \noindent
-\textbf{●●●} \textit{Les marchandises vendues ne sont ni reprises ni échangées.} \textbf{●●●}
+\textbf{\ding{108}\ding{108}\ding{108}} \textit{Les marchandises vendues ne sont ni reprises ni échangées.} \textbf{\ding{108}\ding{108}\ding{108}}
 
 \vspace{0.4cm}
 
@@ -137,11 +139,9 @@
 \noindent
 \hfill
 \begin{minipage}[t]{0.35\linewidth}
- \centering \rule{5cm}{0.4pt} \\
- \\
- \\
- \\
- \\
+ \centering 
+    \rule{5cm}{0.4pt} 
+    \vspace{3em}        
  \textbf{La direction}
 \end{minipage}
 

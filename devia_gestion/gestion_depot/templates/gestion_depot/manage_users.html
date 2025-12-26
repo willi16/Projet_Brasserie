@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Gérer les comptes utilisateurs</h2>
+        <a href="{% url 'gestion_depot:user_logs_full' %}" class="btn btn-outline-secondary btn-sm">Voir tout l’historique</a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Filtre par rôle -->
+    <form method="get" class="mb-3">
+        <label for="group">Filtrer par rôle :</label>
+        <select name="group" id="group" onchange="this.form.submit()" class="form-select w-auto d-inline-block ms-2">
+            <option value="all" {% if not selected_group or selected_group == "all" %}selected{% endif %}>Tous les rôles</option>
+            {% for group in all_groups %}
+                <option value="{{ group.name }}" {% if selected_group == group.name %}selected{% endif %}>{{ group.name }}</option>
+            {% endfor %}
+        </select>
+        <!-- Conserver la page actuelle lors du filtre -->
+        {% if page_obj.number != 1 %}
+            <input type="hidden" name="page" value="{{ page_obj.number }}">
+        {% endif %}
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nom d'utilisateur</th>
+                <th>Email</th>
+                <th>Statut</th>
+                <th>Rôle</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in page_obj %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.is_active %}
+                        <span class="badge bg-success">Actif</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactif</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_superuser %}
+                        <span class="badge bg-dark">Superadmin</span>
+                    {% else %}
+                        {% for group in user.groups.all %}
+                            <span class="badge bg-info">{{ group.name }}</span>
+                        {% empty %}
+                            <span class="badge bg-secondary">Aucun</span>
+                        {% endfor %}
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="post" style="display:inline;" class="me-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        {% if user.is_active %}
+                            <button type="submit" name="action" value="deactivate" class="btn btn-sm btn-warning">Désactiver</button>
+                        {% else %}
+                            <button type="submit" name="action" value="activate" class="btn btn-sm btn-success">Activer</button>
+                        {% endif %}
+                    </form>
+                    <a href="{% url 'gestion_depot:edit_user_roles' user.id %}" class="btn btn-sm btn-info">Modifier les rôles</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Aucun utilisateur trouvé.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if selected_group %}&group={{ selected_group }}{% endif %}">Première</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Précédente</a>
+                </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Suivante</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Dernière</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
