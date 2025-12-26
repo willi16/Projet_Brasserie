@@ -1,6 +1,3 @@
-
-
-
 from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 
@@ -9,13 +6,13 @@ def caissier_ou_superieur(user):
     """
     Retourne True si l'utilisateur est :
     - Superutilisateur, OU
-    - Membre du groupe 'Caissiers', 'Gérants' ou 'Admin'
+    - Membre du groupe 'Caissier', 'Gérant' ou 'Admin'
     """
     if not user.is_authenticated:
         return False
     if user.is_superuser:
         return True
-    groupes_autorises = ['Caissiers', 'Gérants', 'Admin']
+    groupes_autorises = ['Caissier', 'Gérant', 'Admin']
     return user.groups.filter(name__in=groupes_autorises).exists()
 
 def caissier_required(view_func):

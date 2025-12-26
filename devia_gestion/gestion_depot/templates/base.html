@@ -43,37 +43,6 @@
           </li>
 
           <!-- Utilisateur connecté -->
-          {% comment %} {% if user.is_authenticated %}
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-              {% if user.profilutilisateur and user.profilutilisateur.photo %}
-                <img src="{% url 'gestion_depot:serve_protected_document' user.profilutilisateur.photo.name %}" 
-                     class="rounded-circle me-2" width="30" height="30" alt="Photo">
-              {% else %}
-                <i class="fas fa-user-circle me-2"></i>
-              {% endif %}
-              {{ user.username }}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                <a class="dropdown-item" href="{% url 'gestion_depot:profil_utilisateur' %}">
-                  <i class="fas fa-user me-2"></i> Mon profil
-                </a>
-              </li>
-              <li><hr class="dropdown-divider" /></li>
-              <li>
-                <form method="post" action="{% url 'logout' %}" class="d-inline">
-                  {% csrf_token %}
-                  <button type="submit" class="dropdown-item text-danger">
-                    <i class="fas fa-sign-out-alt me-2"></i> Déconnexion
-                  </button>
-                </form>
-              </li>
-            </ul>
-          </li>
-          {% endif %} {% endcomment %}
-
-          <!-- Utilisateur connecté -->
           {% if user.is_authenticated %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
@@ -160,6 +129,7 @@
               </li>
             {% endif %}
 
+
             <!-- Créer un compte : réservé aux admins uniquement -->
             {% if is_admin %}
               <li class="nav-item mb-2">
@@ -167,6 +137,13 @@
                   <i class="fas fa-user-plus me-2"></i> Créer un compte
                 </a>
               </li>
+            {% endif %}
+
+
+            {% if is_admin %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'gestion_depot:manage_users' %}">Gérer les comptes</a>
+                </li>
             {% endif %}
           </ul>
         </div>

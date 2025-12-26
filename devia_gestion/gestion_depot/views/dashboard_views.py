@@ -12,7 +12,7 @@ def dashboard(request):
     produits_disponibles = [p for p in Produit.objects.all() if p.stock_disponible() > 0]
 
     ventes_recentes = BonVente.objects.filter(statut='valide').order_by('-date_vente')[:10] \
-        if user.groups.filter(name__in=['Gérant','Gérants','Gerant','Caissiers','Caissier', 'Admin']).exists() or user.is_staff else None
+        if user.groups.filter(name__in=['Gérant','Caissier','Admin']).exists() or user.is_staff else None
 
     produits_en_alerte = [p for p in Produit.objects.all() if p.en_alerte()] \
         if user.groups.filter(name__in=['Gérant', 'Admin']).exists() or user.is_staff else None

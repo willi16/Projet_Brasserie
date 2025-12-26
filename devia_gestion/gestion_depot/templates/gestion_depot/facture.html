@@ -1,0 +1,105 @@
+<!-- templates/gestion_depot/facture.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: "DejaVu Sans", sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 10px;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .table th, .table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        .table th {
+            background-color: #f2f2f2;
+        }
+        .total {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 0.9em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if logo_url %}
+            <img src="{{ logo_url }}" class="logo">
+        {% endif %}
+        <h1>FACTURE N°{{ bon.reference }}</h1>
+        <p>Date : {{ date }}</p>
+    </div>
+
+    <div class="info">
+        <div>
+            <strong>Client :</strong><br>
+            {{ bon.client.nom }}
+        </div>
+        <div>
+            <strong>Vendeur :</strong><br>
+            {{ bon.vendeur.username }}
+        </div>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>P.U.</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in lignes %}
+            <tr>
+                <td>{{ ligne.produit.nom }}</td>
+                <td>{{ ligne.quantite_casiers|floatformat:2 }}</td>
+                <td>{{ ligne.prix_unitaire|floatformat:2 }} €</td>
+                <td>{{ ligne.total|floatformat:2 }} €</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align:right;">TOTAL HT</td>
+                <td>{{ total_facture|floatformat:2 }} €</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="total">
+        Total TTC : {{ total_facture|floatformat:2 }} €
+    </div>
+
+    <div class="footer">
+        Merci pour votre confiance.
+    </div>
+</body>
+</html>

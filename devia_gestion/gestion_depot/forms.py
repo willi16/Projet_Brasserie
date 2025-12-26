@@ -100,7 +100,7 @@ class CreerCompteEmployeForm(UserCreationForm):
                 profil.save()
             # Optionnel : assigner un rôle via un groupe ou un champ
             if self.cleaned_data['role'] == 'caissier':
-                user.groups.add(Group.objects.get(name='Caissiers'))
+                user.groups.add(Group.objects.get(name='Caissier'))
             elif self.cleaned_data['role'] == 'gerant':
-                user.groups.add(Group.objects.get(name='Gérants'))
+                user.groups.add(Group.objects.get(name='Gérant'))
         return user

@@ -12,6 +12,7 @@ from gestion_depot.views import(
     facture_views,
     compte_views,
     employe_views,
+    auth_views,
     
     
     
@@ -69,5 +70,12 @@ urlpatterns = [
     
     
     path('documents/<path:path>', employe_views.serve_protected_document, name='serve_protected_document'),
+
+    path('manage-users/', auth_views.manage_users, name='manage_users'),
+
+    path('manage-users/edit/<int:user_id>/', auth_views.edit_user_roles, name='edit_user_roles'),
+    
+    path('manage-users/logs/', auth_views.user_logs_full, name='user_logs_full'),
+
 ]
 

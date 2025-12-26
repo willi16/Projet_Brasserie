@@ -28,7 +28,7 @@ def creer_compte_employe(request):
             - Nom d'utilisateur : {user.username}
             - Rôle : {form.cleaned_data['role']}
 
-            Veuillez vous connecter dès maintenant : http://localhost:8000/gestion/
+            Veuillez vous connecter dès maintenant : http://devia
 
             L'équipe DEIVA
             """,
