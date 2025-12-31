@@ -1,0 +1,44 @@
+# Fichiers système
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/factures/
+media/photos/
+media/cartes_id/
+
+# Environnement
+.env
+.env.local
+.env.docker
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.dockerignore
