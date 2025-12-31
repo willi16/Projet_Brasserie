@@ -3,77 +3,234 @@
 {% block title %}Créer un bon de vente{% endblock %}
 
 {% block content %}
-  <h2>Créer un bon de vente</h2>
+<h2>Créer un bon de vente</h2>
 
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label for="client_nom" class="form-label">Nom du client</label>
-      <input type="text" class="form-control" id="client_nom" name="client_nom" required>
-    </div>
+<form method="post" id="bon-vente-form">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="client_nom" class="form-label">Nom du client</label>
+    <input type="text" class="form-control" id="client_nom" name="client_nom" required>
+  </div>
 
-    <div class="mb-3">
-      <label for="type_paiement" class="form-label">Type de paiement</label>
-      <select class="form-select" id="type_paiement" name="type_paiement" required>
-        <option value="especes">Espèces</option>
-        <option value="credit">Crédit</option>
-      </select>
-    </div>
+  <div class="mb-3">
+    <label for="type_paiement" class="form-label">Type de paiement</label>
+    <select class="form-select" id="type_paiement" name="type_paiement" required>
+      <option value="especes">Espèces</option>
+      <option value="credit">Crédit</option>
+    </select>
+  </div>
 
-    <h4>Lignes de vente</h4>
-    <div id="lignes-container">
-      <div class="ligne">
-        <div class="row">
-          <div class="col-md-4">
-            <label>Produit</label>
-            <select name="produit" class="form-select" required>
-              {% for produit in produits %}
-                <option value="{{ produit.id }}">{{ produit.nom }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label>Fraction</label>
-            <select name="fraction" class="form-select" required>
-              <option value="1.00">Casier complet</option>
-              <option value="0.75">3/4 de casier</option>
-              <option value="0.50">Demi-casier</option>
-              <option value="0.25">1/4 de casier</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label>Quantité</label>
-            <input type="number" name="quantite" class="form-control" min="0.01" step="0.01" required>
-          </div>
-          <div class="col-md-2">
-            <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
-          </div>
+  <h4>Lignes de vente</h4>
+  <div id="lignes-container">
+    <div class="ligne product-row">
+      <div class="row g-2">
+        <div class="col-md-4">
+          <label>Produit</label>
+          <select name="produit" class="form-select produit-select" required>
+            <option value="">-- Sélectionner --</option>
+            {% for produit in produits %}
+              <option 
+                value="{{ produit.id }}" 
+                data-price="{{ produit.prix_vente_casier }}"
+                data-stock="{{ produit.stock_disponible }}"
+                data-nom="{{ produit.nom }}">
+                {{ produit.nom }} ({{ produit.prix_vente_casier }} FCFA)
+              </option>
+            {% endfor %}
+          </select>
+          <small class="stock-info text-muted mt-1">Stock: <span class="stock-value">0</span> casiers</small>
+          <small class="error-stock text-danger d-none mt-1">⚠️ Stock insuffisant</small>
+        </div>
+        <div class="col-md-3">
+          <label>Fraction</label>
+          <select name="fraction" class="form-select" required>
+            <option value="1.00">Casier complet</option>
+            <option value="0.75">3/4 de casier</option>
+            <option value="0.50">Demi-casier</option>
+            <option value="0.25">1/4 de casier</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label>Quantité</label>
+          <input type="number" name="quantite" class="form-control" min="0.01" step="0.01" required>
+        </div>
+        <div class="col-md-2 d-flex align-items-center justify-content-end">
+          <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <button type="button" id="add-ligne" class="btn btn-secondary mt-2">Ajouter une ligne</button>
-    <button type="submit" class="btn btn-primary mt-2">Créer le bon</button>
-  </form>
+  <button type="button" id="add-ligne" class="btn btn-secondary mt-2">Ajouter une ligne</button>
+  <button type="submit" class="btn btn-primary mt-2" id="submit-btn">Créer le bon</button>
+</form>
 
-  <script>
-    document.getElementById('add-ligne').addEventListener('click', function () {
-      const container = document.getElementById('lignes-container');
-      const newLigne = container.querySelector('.ligne').cloneNode(true);
-      newLigne.querySelector('select[name="produit"]').value = '';
-      newLigne.querySelector('select[name="fraction"]').value = '1.00';
-      newLigne.querySelector('input[name="quantite"]').value = '';
-      container.appendChild(newLigne);
+<!-- Aperçu du total -->
+<div id="preview-total" class="alert alert-info mt-3" style="display:none;">
+  <strong>Total estimé :</strong> <span id="total-amount">0</span> FCFA
+</div>
 
-      newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
-        newLigne.remove();
+<script>
+  // Stocker les données des produits
+  const produitsData = {};
+  document.querySelectorAll('.produit-select option[value]').forEach(opt => {
+    const id = opt.value;
+    produitsData[id] = {
+      nom: opt.dataset.nom,
+      prix: parseFloat(opt.dataset.price),
+      stock: parseFloat(opt.dataset.stock)
+    };
+  });
+
+  // Mettre à jour le stock affiché
+  function updateStockDisplay(row) {
+    const select = row.querySelector('.produit-select');
+    const stockInfo = row.querySelector('.stock-value');
+    const errorInfo = row.querySelector('.error-stock');
+    const quantiteInput = row.querySelector('input[name="quantite"]');
+    const fractionSelect = row.querySelector('select[name="fraction"]');
+
+    const produitId = select.value;
+    if (!produitId) {
+      stockInfo.textContent = '0';
+      errorInfo.classList.add('d-none');
+      return;
+    }
+
+    const stock = produitsData[produitId]?.stock || 0;
+    const quantite = parseFloat(quantiteInput.value) || 0;
+    const fraction = parseFloat(fractionSelect.value) || 0;
+    const quantiteTotale = quantite * fraction;
+
+    stockInfo.textContent = stock;
+
+    if (quantiteTotale > stock) {
+      errorInfo.classList.remove('d-none');
+      quantiteInput.classList.add('is-invalid');
+    } else {
+      errorInfo.classList.add('d-none');
+      quantiteInput.classList.remove('is-invalid');
+    }
+  }
+
+  // Calcul du total en temps réel
+  function updatePreview() {
+    let total = 0;
+    let stockInsuffisant = false;
+
+    document.querySelectorAll('.product-row').forEach(row => {
+      const select = row.querySelector('.produit-select');
+      const fractionSelect = row.querySelector('select[name="fraction"]');
+      const quantiteInput = row.querySelector('input[name="quantite"]');
+
+      if (!select || !fractionSelect || !quantiteInput) return;
+
+      const produitId = select.value;
+      const fraction = parseFloat(fractionSelect.value) || 0;
+      const quantite = parseFloat(quantiteInput.value) || 0;
+
+      if (!produitId || quantite <= 0) return;
+
+      const prixVente = produitsData[produitId]?.prix || 0;
+      const ligneTotal = prixVente * fraction * quantite;
+      total += ligneTotal;
+
+      // Vérifier le stock
+      const stock = produitsData[produitId]?.stock || 0;
+      if (quantite * fraction > stock) {
+        stockInsuffisant = true;
+      }
+    });
+
+    document.getElementById('total-amount').textContent = Math.round(total);
+    document.getElementById('preview-total').style.display = total > 0 ? 'block' : 'none';
+
+    return !stockInsuffisant;
+  }
+
+  // Gestion des lignes dynamiques
+  document.getElementById('add-ligne').addEventListener('click', function () {
+    const container = document.getElementById('lignes-container');
+    const newLigne = container.querySelector('.ligne').cloneNode(true);
+
+    // Réinitialiser
+    newLigne.querySelector('.produit-select').value = '';
+    newLigne.querySelector('select[name="fraction"]').value = '1.00';
+    newLigne.querySelector('input[name="quantite"]').value = '';
+
+    // Attacher suppression
+    newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
+      newLigne.remove();
+      updatePreview();
+    });
+
+    // Attacher événements
+    newLigne.querySelectorAll('select, input').forEach(el => {
+      el.addEventListener('change', () => {
+        updateStockDisplay(newLigne);
+        updatePreview();
+      });
+      el.addEventListener('input', () => {
+        updateStockDisplay(newLigne);
+        updatePreview();
       });
     });
 
-    document.querySelectorAll('.remove-ligne').forEach(btn => {
-      btn.addEventListener('click', function () {
-        this.closest('.ligne').remove();
-      });
+    container.appendChild(newLigne);
+  });
+
+  // Suppression des lignes existantes
+  document.querySelectorAll('.remove-ligne').forEach(btn => {
+    btn.addEventListener('click', function () {
+      this.closest('.ligne').remove();
+      updatePreview();
     });
-  </script>
+  });
+
+  // Mise à jour du stock quand produit change
+  document.querySelectorAll('.produit-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const row = this.closest('.product-row');
+      updateStockDisplay(row);
+      updatePreview();
+    });
+  });
+
+  // Mise à jour quand quantité ou fraction change
+  document.querySelectorAll('input[name="quantite"], select[name="fraction"]').forEach(el => {
+    el.addEventListener('change', updatePreview);
+    el.addEventListener('input', updatePreview);
+  });
+
+  // Confirmation avant soumission
+  document.getElementById('bon-vente-form').addEventListener('submit', function (e) {
+    const total = parseFloat(document.getElementById('total-amount').textContent) || 0;
+    const stockOK = updatePreview(); // Vérifie aussi le stock
+
+    if (total <= 0) {
+      alert("Veuillez ajouter au moins un produit valide.");
+      e.preventDefault();
+      return;
+    }
+
+    if (!stockOK) {
+      alert("⚠️ Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.");
+      e.preventDefault();
+      return;
+    }
+
+    const confirmed = confirm(`⚠️ Confirmer la création du bon de vente ?\nTotal : ${total} FCFA\n\nCliquez sur "OK" pour confirmer.`);
+    if (!confirmed) {
+      e.preventDefault();
+    }
+  });
+
+  // Initialisation
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.product-row').forEach(row => {
+      updateStockDisplay(row);
+    });
+    updatePreview();
+  });
+</script>
 {% endblock %}

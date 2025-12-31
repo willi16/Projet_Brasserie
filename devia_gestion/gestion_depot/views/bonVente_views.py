@@ -39,7 +39,7 @@ def creer_bon_vente(request):
 
         # Vérifier les droits de l'utilisateur (admin ou gérant ?)
         is_admin_or_gestionnaire = request.user.is_superuser or request.user.groups.filter(
-            name__in=['Admin', 'Gérants', 'Gerants', 'Gerant']
+            name__in=['Admin', 'Gérant']
         ).exists()
 
         # Vérification du stock ET du seuil
@@ -50,6 +50,14 @@ def creer_bon_vente(request):
                 return redirect('gestion_depot:creer_bon_vente')
 
             quantite_totale = f * q
+            
+            if quantite_totale <= 0:
+                messages.error(
+                    request,
+                    f"La quantité saisie pour {prod.nom} est invalide (fraction : {f}, casiers : {q})."
+                )
+                return redirect('gestion_depot:creer_bon_vente')
+            
             stock = prod.stock_disponible()
 
             # ❌ Stock insuffisant → bloquer pour tous
@@ -61,10 +69,10 @@ def creer_bon_vente(request):
                 return redirect('gestion_depot:creer_bon_vente')
 
             # ⚠️ Quantité ≥ seuil → autorisé uniquement à admin/gérant
-            if quantite_totale >= prod.seuil and not is_admin_or_gestionnaire:
+            if quantite_totale >= prod.seuil_alerte and not is_admin_or_gestionnaire:
                 messages.warning(
                     request,
-                    f"La quantité demandée pour {prod.nom} ({quantite_totale:.2f}) atteint ou dépasse le seuil ({prod.seuil}). "
+                    f"La quantité demandée pour {prod.nom} ({quantite_totale:.2f}) atteint ou dépasse le seuil ({prod.seuil_alerte}). "
                     "Seul un admin ou un gérant peut effectuer cette vente."
                 )
                 return redirect('gestion_depot:creer_bon_vente')
@@ -105,9 +113,9 @@ def user_can_manage_bon(user, bon):
     """Vérifie si l'utilisateur peut gérer ce bon de vente."""
     if user.is_superuser:
         return True
-    if user.groups.filter(name__in=['Gérants','Gerants','Gerant', 'Admin']).exists():
+    if user.groups.filter(name__in=['Gérant', 'Admin']).exists():
         return True
-    if user.groups.filter(name='Caissiers').exists() and bon.vendeur == user:
+    if user.groups.filter(name='Caissier').exists() and bon.vendeur == user:
         return True
     return False
 
@@ -176,7 +184,7 @@ def annuler_bon_vente(request, id):
 @login_required
 def liste_bons_vente(request):
     # Vérifie si l'utilisateur est caissier
-    is_caissier = request.user.groups.filter(name='Caissiers').exists() or request.user.groups.filter(name='Caissier').exists()
+    is_caissier = request.user.groups.filter(name='Caissier').exists()
     
     if is_caissier:
         bons = bon_vente.BonVente.objects.filter(vendeur=request.user)
