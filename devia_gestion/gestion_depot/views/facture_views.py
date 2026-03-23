@@ -95,6 +95,13 @@ def generer_facture(request, id):
         logo_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png')
         logo_dst = os.path.join(tmp_dir, "logo.png")
 
+
+        # Copier le cachet
+        cachet_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'cachet.jpeg')
+        cachet_dst = os.path.join(tmp_dir, "cachet.jpeg")
+        
+        
+
         # Écrire le .tex
         with open(tex_path, 'w', encoding='utf-8') as f:
             f.write(latex_content)
@@ -103,6 +110,11 @@ def generer_facture(request, id):
         if not os.path.exists(logo_src):
             return HttpResponse(f"Logo non trouvé : {logo_src}", status=500)
         shutil.copy(logo_src, logo_dst)
+        
+        
+        if not os.path.exists(cachet_src):
+            return HttpResponse(f"Cachet non trouvé : {cachet_src}", status=500)
+        shutil.copy(cachet_src, cachet_dst)
 
         # Compiler LaTeX
         result = os.system(f'cd "{tmp_dir}" && pdflatex -interaction=nonstopmode "facture_{bon.id}.tex"')
