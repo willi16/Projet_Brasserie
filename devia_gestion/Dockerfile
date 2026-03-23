@@ -1,33 +1,3 @@
-# # Dockerfile
-# FROM python:3.12-slim
-
-# WORKDIR /app
-
-# # Dépendances système
-# RUN apt-get update && apt-get install -y \
-#     gcc \
-#     postgresql-client \
-#     && rm -rf /var/lib/apt/lists/*
-
-# # Installer dépendances Python
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir -r requirements.txt
-
-# # Créer utilisateur non-root
-# RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
-# USER appuser
-
-# # Copier le code
-# COPY --chown=appuser:appuser start.sh .
-
-# # Lancer avec Gunicorn (production sécurisée)
-# #CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "deiva_gestion.wsgi:application"]
-# CMD ["./start.sh"]
-
-
-
-
-
 # Dockerfile
 FROM python:3.12-slim
 

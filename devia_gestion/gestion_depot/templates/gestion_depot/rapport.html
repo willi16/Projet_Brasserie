@@ -42,6 +42,30 @@
 
   <!-- Statistiques -->
   <div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5>Chiffre d'affaires</h5>
+                <h3>{{ total_revenu|floatformat:0 }} FCFA</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5>Coût d'achat total</h5>
+                <h3>{{ total_cout|floatformat:0 }} FCFA</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5>Bénéfice net</h5>
+                <h3>{{ total_benefice|floatformat:0 }} FCFA</h3>
+            </div>
+        </div>
+    </div>
     <div class="col-md-6">
       <div class="card">
         <div class="card-header bg-success text-white">
@@ -75,6 +99,77 @@
       </div>
     </div>
   </div>
+
+
+  <div>
+    <!-- Dans le tableau des lignes -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>CA</th>
+                <th>Bénéfice</th>
+                <th>Vendeur</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in lignes %}
+            <tr>
+                <td>{{ ligne.bon.date_vente|date:"d/m/Y" }}</td>
+                <td>{{ ligne.produit.nom }}</td>
+                <td>{{ ligne.quantite_totale|floatformat:2 }}</td>
+                <td>{{ ligne.ca|floatformat:0 }} FCFA</td>
+                <td>{{ ligne.benefice|floatformat:0 }} FCFA</td>
+                <td>{{ ligne.bon.vendeur.username }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">Aucune vente.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+  </div>
+
+
+
+
+  <div>
+    <h4>Performance par produit</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>CA</th>
+                <th>Coût</th>
+                <th>Bénéfice</th>
+                <th>Ventes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in stats_produits %}
+            <tr>
+                <td>{{ stat.produit__nom }}</td>
+                <td>{{ stat.quantite_totale|floatformat:2 }}</td>
+                <td>{{ stat.revenu_total|floatformat:0 }} FCFA</td>
+                <td>{{ stat.cout_total|floatformat:0 }} FCFA</td>
+                <td>{{ stat.benefice_total|floatformat:0 }} FCFA</td>
+                <td>{{ stat.nombre_ventes }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="table-success">
+                <th>TOTAL</th>
+                <th></th>
+                <th>{{ total_revenu|floatformat:0 }} FCFA</th>
+                <th>{{ total_cout|floatformat:0 }} FCFA</th>
+                <th>{{ total_benefice|floatformat:0 }} FCFA</th>
+                <th></th>
+            </tr>
+        </tbody>
+    </table>
+  </div>
+
 
   <!-- Inventaire -->
   <div class="card mb-4">

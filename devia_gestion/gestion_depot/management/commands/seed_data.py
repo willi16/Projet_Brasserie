@@ -15,36 +15,36 @@ class Command(BaseCommand):
     help = 'Supprime toutes les données et génère des données de test réalistes'
 
     def handle(self, *args, **options):
-        self.stdout.write('⚠️  Suppression de toutes les données...', ending='')
+        self.stdout.write(' Suppression de toutes les données...', ending='')
         self.clear_all_data()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('🔧 Création des rôles...', ending='')
+        self.stdout.write(' Création des rôles...', ending='')
         self.create_groups()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('👥 Création des utilisateurs...', ending='')
+        self.stdout.write(' Création des utilisateurs...', ending='')
         self.create_users()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('🛍️  Création des produits...', ending='')
+        self.stdout.write(' Création des produits...', ending='')
         self.create_products()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('💼 Création des clients et fournisseurs...', ending='')
+        self.stdout.write(' Création des clients et fournisseurs...', ending='')
         self.create_clients_fournisseurs()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('📥 Création des livraisons (entrées en stock)...', ending='')
+        self.stdout.write(' Création des livraisons (entrées en stock)...', ending='')
         self.create_deliveries()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
-        self.stdout.write('💰 Création des ventes (sorties de stock)...', ending='')
+        self.stdout.write(' Création des ventes (sorties de stock)...', ending='')
         self.create_sales()
-        self.stdout.write(' ✅ OK', style_func=self.style.SUCCESS)
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
         self.stdout.write(
-            self.style.SUCCESS('\n🎉 Données de test générées avec succès !')
+            self.style.SUCCESS('\n Données de test générées avec succès !')
         )
         self.stdout.write('   - Admin: admin / admin123')
         self.stdout.write('   - Gérant: gerant1 / gerant123')
