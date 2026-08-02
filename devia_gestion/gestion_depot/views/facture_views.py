@@ -120,6 +120,7 @@ def generer_facture(request, id):
             cwd=tmp_dir,
             capture_output=True,
             text=True,
+            errors='replace',
         )
 
         if result.returncode != 0:
