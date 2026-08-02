@@ -3,120 +3,100 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-  <div class="card shadow-sm mb-4">
-    {% if is_caissier or is_gerant %}
-  <div class="card mt-4">
-    <div class="card-header bg-info text-white">
-      <h5>Actions rapides</h5>
-    </div>
-    <div class="card-body">
+  {% if is_caissier or is_gerant %}
+  <div class="card mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <h5 class="font-semibold text-lg">Actions rapides</h5>
+    <div class="flex gap-2">
       <a href="{% url 'gestion_depot:creer_bon_vente' %}" class="btn btn-primary">Créer une vente</a>
       <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Voir les produits</a>
     </div>
   </div>
-{% endif %}
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-      <h3 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i> Tableau de bord</h3>
-      <span class="badge bg-primary">Bienvenue, {{ request.user.username }}</span>
+  {% endif %}
+
+  <div class="card mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      <h3 class="text-xl font-semibold">Tableau de bord</h3>
+      <span class="badge bg-brand-600 text-white">Bienvenue, {{ request.user.username }}</span>
     </div>
-    <div class="card-body">
-      <div class="row g-4">
-        <!-- Statistiques rapides -->
-        <div class="col-md-3">
-          <div class="card bg-success text-white h-100">
-            <div class="card-body">
-              <h5><i class="fas fa-box me-2"></i> Produits</h5>
-              <h2>{{ produits_disponibles|length }}</h2>
-              <small>disponibles</small>
-            </div>
-          </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Statistiques rapides -->
+      <div class="card bg-green-600 text-white p-5">
+        <h5 class="font-semibold flex items-center gap-2">Produits</h5>
+        <h2 class="text-3xl font-bold my-1">{{ produits_disponibles|length }}</h2>
+        <small>disponibles</small>
+      </div>
+      <div class="card bg-sky-600 text-white p-5">
+        <h5 class="font-semibold flex items-center gap-2">Ventes</h5>
+        <h2 class="text-3xl font-bold my-1">{{ ventes_recentes|length }}</h2>
+        <small>dernières</small>
+      </div>
+      <div class="card bg-yellow-500 text-white p-5">
+        <h5 class="font-semibold flex items-center gap-2">Alertes</h5>
+        <h2 class="text-3xl font-bold my-1">{{ produits_en_alerte|length }}</h2>
+        <small>produits en stock bas</small>
+      </div>
+      <div class="card bg-red-600 text-white p-5">
+        <h5 class="font-semibold flex items-center gap-2">Utilisateur</h5>
+        <h2 class="text-3xl font-bold my-1 truncate">{{ request.user.username }}</h2>
+        <small class="truncate block">{{ request.user.email }}</small>
+      </div>
+    </div>
+
+    <!-- Produits disponibles -->
+    <div class="mt-6">
+      <div class="card p-0">
+        <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h5 class="font-semibold">Produits disponibles</h5>
         </div>
-        <div class="col-md-3">
-          <div class="card bg-info text-white h-100">
-            <div class="card-body">
-              <h5><i class="fas fa-receipt me-2"></i> Ventes</h5>
-              <h2>{{ ventes_recentes|length }}</h2>
-              <small>dernières</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-dark h-100">
-            <div class="card-body">
-              <h5><i class="fas fa-exclamation-triangle me-2"></i> Alertes</h5>
-              <h2>{{ produits_en_alerte|length }}</h2>
-              <small>produits en stock bas</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-danger text-white h-100">
-            <div class="card-body">
-              <h5><i class="fas fa-user me-2"></i> Utilisateur</h5>
-              <h2>{{ request.user.username }}</h2>
-              <small>{{ request.user.email }}</small>
-            </div>
-          </div>
+        <div class="p-5">
+          <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+            {% for produit in produits_disponibles %}
+              <li class="py-2 flex items-center justify-between gap-3">
+                <span>{{ produit.nom }}</span>
+                <span class="badge badge-info">{{ produit.stock_actuel|floatformat:0 }}</span>
+              </li>
+            {% empty %}
+              <li class="py-2 text-gray-500 dark:text-gray-400">Aucun produit disponible.</li>
+            {% endfor %}
+          </ul>
         </div>
       </div>
+    </div>
 
-      <!-- Produits disponibles -->
-      <div class="mt-4">
-        <div class="card">
-          <div class="card-header bg-light">
-            <h5><i class="fas fa-cube me-2"></i> Produits disponibles</h5>
+    <!-- Dernières ventes (si gérant) -->
+    {% if is_gerant %}
+      <div class="mt-6">
+        <div class="card p-0 overflow-x-auto">
+          <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700">
+            <h5 class="font-semibold">Dernières ventes</h5>
           </div>
-          <div class="card-body">
-            <ul class="list-group">
-              {% for produit in produits_disponibles %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  {{ produit.nom }}
-                  <span class="badge bg-primary rounded-pill">{{ produit.stock_actuel|floatformat:0 }}</span>
-                </li>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Référence</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for vente in ventes_recentes %}
+                <tr>
+                  <td>{{ vente.reference }}</td>
+                  <td>{{ vente.date_vente|date:"d/m/Y H:i" }}</td>
+                  <td>{{ vente.client.nom|default:"-" }}</td>
+                  <td>{{ vente.total }} FCFA</td>
+                </tr>
               {% empty %}
-                <li class="list-group-item text-muted">Aucun produit disponible.</li>
+                <tr>
+                  <td colspan="4" class="text-center py-6">Aucune vente récente.</td>
+                </tr>
               {% endfor %}
-            </ul>
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
-
-      <!-- Dernières ventes (si admin ou gérant) -->
-      {% if is_gerant %}
-        <div class="mt-4">
-          <div class="card">
-            <div class="card-header bg-light">
-              <h5><i class="fas fa-chart-bar me-2"></i> Dernières ventes</h5>
-            </div>
-            <div class="card-body">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Référence</th>
-                    <th>Date</th>
-                    <th>Client</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for vente in ventes_recentes %}
-                    <tr>
-                      <td>{{ vente.reference }}</td>
-                      <td>{{ vente.date_vente|date:"d/m/Y H:i" }}</td>
-                      <td>{{ vente.client.nom|default:"-" }}</td>
-                      <td>{{ vente.total }} FCFA</td>
-                    </tr>
-                  {% empty %}
-                    <tr>
-                      <td colspan="4" class="text-center">Aucune vente récente.</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      {% endif %}
-    </div>
+    {% endif %}
   </div>
 {% endblock %}

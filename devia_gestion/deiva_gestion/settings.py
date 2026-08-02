@@ -39,8 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_crontab',
+    'crispy_forms',
+    'crispy_tailwind',
     'gestion_depot',
 ]
+
+CRISPY_TEMPLATE_PACK = 'tailwind'
+CRISPY_ALLOWED_TEMPLATE_PACKS = ('tailwind',)
 
 
 # Planifier le rapport à 23h59 chaque jour.

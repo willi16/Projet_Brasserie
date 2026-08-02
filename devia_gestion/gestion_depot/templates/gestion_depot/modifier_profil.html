@@ -1,25 +1,21 @@
 {% extends "base.html" %}
+{% load crispy_forms_tags %}
 
 {% block title %}Modifier mon profil{% endblock %}
 
 {% block content %}
-  <h2>Modifier mon profil</h2>
+  <div class="max-w-2xl">
+    <h2 class="text-2xl font-semibold mb-4">Modifier mon profil</h2>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label for="telephone" class="form-label">Téléphone</label>
-      <input type="text" class="form-control" id="telephone" name="telephone" value="{{ profil.telephone }}">
+    <div class="card">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% crispy form %}
+        <div class="flex gap-2 mt-4">
+          <button type="submit" class="btn btn-primary">Enregistrer</button>
+          <a href="{% url 'gestion_depot:profil_utilisateur' %}" class="btn btn-secondary">Annuler</a>
+        </div>
+      </form>
     </div>
-    <div class="mb-3">
-      <label for="adresse" class="form-label">Adresse</label>
-      <textarea class="form-control" id="adresse" name="adresse">{{ profil.adresse }}</textarea>
-    </div>
-    <div class="mb-3">
-      <label for="photo" class="form-label">Photo de profil</label>
-      <input type="file" class="form-control" id="photo" name="photo">
-    </div>
-    <button type="submit" class="btn btn-primary">Enregistrer</button>
-    <a href="{% url 'gestion_depot:profil_utilisateur' %}" class="btn btn-secondary">Annuler</a>
-  </form>
+  </div>
 {% endblock %}

@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-100 text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1;
+  }
+  .btn-primary {
+    @apply bg-brand-600 hover:bg-brand-700 text-white focus:ring-brand-400;
+  }
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 focus:ring-gray-400;
+  }
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white focus:ring-green-400;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white focus:ring-red-400;
+  }
+  .btn-warning {
+    @apply bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400;
+  }
+  .btn-info {
+    @apply bg-sky-600 hover:bg-sky-700 text-white focus:ring-sky-400;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1 text-xs rounded-md;
+  }
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5;
+  }
+  .card-title {
+    @apply text-lg font-semibold mb-4;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  .badge-success {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  }
+  .badge-danger {
+    @apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+  .badge-info {
+    @apply bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200;
+  }
+  .badge-secondary {
+    @apply bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200;
+  }
+  .table {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
+  }
+  .table thead {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
+  .table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider;
+  }
+  .table td {
+    @apply px-4 py-3 text-sm text-gray-700 dark:text-gray-300;
+  }
+  .table tbody tr {
+    @apply bg-white even:bg-gray-50 dark:bg-gray-900 dark:even:bg-gray-800;
+  }
+  .form-input,
+  .form-select,
+  .form-textarea {
+    @apply block w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-500 outline-none;
+  }
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1;
+  }
+  .form-help {
+    @apply mt-1 text-xs text-gray-500 dark:text-gray-400;
+  }
+  .form-error {
+    @apply mt-1 text-xs text-red-600 dark:text-red-400;
+  }
+}
+
+/* Dark mode : champs rendus par crispy-tailwind (classes statiques claires) */
+.dark input,
+.dark select,
+.dark textarea {
+  @apply bg-gray-800 text-gray-100 border-gray-600;
+}
+.dark label {
+  @apply text-gray-300;
+}

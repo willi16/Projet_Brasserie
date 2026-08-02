@@ -42,5 +42,8 @@ staticfiles/
 *.swp
 *.swo
 
+# Node / Tailwind
+node_modules/
+
 # Docker
 .dockerignore
