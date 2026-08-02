@@ -40,7 +40,7 @@
         {% for ligne in bon.lignes.all %}
           <tr>
             <td>{{ ligne.produit.nom }}</td>
-            <td>{{ ligne.get_fraction_display }}</td>
+            <td>{{ ligne.fraction }}</td>
             <td>{{ ligne.quantite_casiers }}</td>
             <td>{{ ligne.produit.prix_vente_casier|floatformat:0 }} FCFA</td>
             <td>{{ ligne.prix_total }} FCFA</td>

@@ -201,7 +201,7 @@ def rapport_ventes(request):
             'quantite_totale': quantite_totale,
             'ca': ca,
             'benefice': benefice,
-            'fraction_display': ligne.get_fraction_display(),
+            'fraction_display': str(ligne.fraction),
         })
 
     # === 8. Contexte final ===

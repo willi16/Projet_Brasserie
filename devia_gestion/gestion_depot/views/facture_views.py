@@ -68,7 +68,7 @@ def generer_facture(request, id):
         lignes.append({
             'quantite_casiers': format_decimal(ligne.quantite_casiers),
             'produit_nom': latex_escape(ligne.produit.nom),
-            'fraction_display': latex_escape(ligne.get_fraction_display()),
+            'fraction_display': format_decimal(ligne.fraction),
             'prix_unitaire': format_decimal(prix_unitaire),
             'montant': format_decimal(montant),
         })

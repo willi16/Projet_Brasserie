@@ -78,6 +78,36 @@ class BonVenteTests(BaseTest):
         response = self.http_client.get(reverse('gestion_depot:valider_bon_vente', args=[bon.id]))
         self.assertEqual(response.status_code, 405)
 
+    def test_creer_bon_vente_fraction_libre(self):
+        Mouvement.objects.create(
+            produit=self.produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+            'client_nom': 'Client Libre',
+            'type_paiement': 'especes',
+            'produit': [str(self.produit.id)],
+            'fraction': ['0.33'],
+            'quantite': ['2'],
+        })
+        self.assertRedirects(response, reverse('gestion_depot:liste_bons_vente'))
+        ligne = LigneVente.objects.latest('id')
+        self.assertEqual(ligne.fraction, Decimal('0.33'))
+        self.assertEqual(ligne.quantite_casiers, Decimal('2'))
+
+    def test_creer_bon_vente_fraction_hors_bornes_rejetee(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+            'client_nom': 'Client',
+            'type_paiement': 'especes',
+            'produit': [str(self.produit.id)],
+            'fraction': ['10.00'],
+            'quantite': ['1'],
+        })
+        self.assertRedirects(response, reverse('gestion_depot:creer_bon_vente'))
+        self.assertEqual(LigneVente.objects.count(), 0)
+
     def test_caissier_ne_voit_que_ses_ventes(self):
         BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
         BonVente.objects.create(vendeur=self.gerant, client=self.client_test, type_paiement='especes')

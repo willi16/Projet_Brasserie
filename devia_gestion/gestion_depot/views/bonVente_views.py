@@ -11,7 +11,8 @@ from datetime import datetime
 from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
 
 
-FRACTIONS_VALIDES = {Decimal('1.00'), Decimal('0.75'), Decimal('0.50'), Decimal('0.25')}
+FRACTION_MIN = Decimal('0.25')
+FRACTION_MAX = Decimal('9.99')
 TYPES_PAIEMENT_VALIDES = {'especes', 'credit'}
 
 
@@ -65,8 +66,8 @@ def creer_bon_vente(request):
             return redirect('gestion_depot:creer_bon_vente')
 
         for f in fractions_dec:
-            if f not in FRACTIONS_VALIDES:
-                messages.error(request, "Fraction invalide.")
+            if not (FRACTION_MIN <= f <= FRACTION_MAX):
+                messages.error(request, f"Fraction invalide. Valeur comprise entre {FRACTION_MIN} et {FRACTION_MAX}.")
                 return redirect('gestion_depot:creer_bon_vente')
 
         # Récupérer les produits en une seule requête

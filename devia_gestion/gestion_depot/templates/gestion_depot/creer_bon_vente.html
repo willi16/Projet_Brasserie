@@ -43,12 +43,8 @@
         </div>
         <div class="md:col-span-3">
           <label class="form-label">Fraction</label>
-          <select name="fraction" class="form-select" required>
-            <option value="1.00">Casier complet</option>
-            <option value="0.75">3/4 de casier</option>
-            <option value="0.50">Demi-casier</option>
-            <option value="0.25">1/4 de casier</option>
-          </select>
+          <input type="number" name="fraction" class="form-input" min="0.25" step="0.25" max="9.99" value="1.00" required>
+          <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">Ex. 1.00 = casier complet, 0.50 = demi-casier</small>
         </div>
         <div class="md:col-span-3">
           <label class="form-label">Quantité</label>
@@ -90,7 +86,7 @@
     const stockInfo = row.querySelector('.stock-value');
     const errorInfo = row.querySelector('.error-stock');
     const quantiteInput = row.querySelector('input[name="quantite"]');
-    const fractionSelect = row.querySelector('select[name="fraction"]');
+    const fractionSelect = row.querySelector('input[name="fraction"]');
 
     const produitId = select.value;
     if (!produitId) {
@@ -122,7 +118,7 @@
 
     document.querySelectorAll('.product-row').forEach(row => {
       const select = row.querySelector('.produit-select');
-      const fractionSelect = row.querySelector('select[name="fraction"]');
+      const fractionSelect = row.querySelector('input[name="fraction"]');
       const quantiteInput = row.querySelector('input[name="quantite"]');
 
       if (!select || !fractionSelect || !quantiteInput) return;
@@ -157,7 +153,7 @@
 
     // Réinitialiser
     newLigne.querySelector('.produit-select').value = '';
-    newLigne.querySelector('select[name="fraction"]').value = '1.00';
+    newLigne.querySelector('input[name="fraction"]').value = '1.00';
     newLigne.querySelector('input[name="quantite"]').value = '';
     newLigne.querySelector('input[name="quantite"]').classList.remove('border-red-500');
     newLigne.querySelector('.error-stock').classList.add('hidden');
@@ -201,7 +197,7 @@
   });
 
   // Mise à jour quand quantité ou fraction change
-  document.querySelectorAll('input[name="quantite"], select[name="fraction"]').forEach(el => {
+  document.querySelectorAll('input[name="quantite"], input[name="fraction"]').forEach(el => {
     el.addEventListener('change', updatePreview);
     el.addEventListener('input', updatePreview);
   });
