@@ -203,25 +203,41 @@
   });
 
   // Confirmation avant soumission
-  document.getElementById('bon-vente-form').addEventListener('submit', function (e) {
+  document.getElementById('bon-vente-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.target;
     const total = parseFloat(document.getElementById('total-amount').textContent) || 0;
     const stockOK = updatePreview(); // Vérifie aussi le stock
 
     if (total <= 0) {
-      alert("Veuillez ajouter au moins un produit valide.");
-      e.preventDefault();
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Aucun produit',
+        text: 'Veuillez ajouter au moins un produit valide.'
+      });
       return;
     }
 
     if (!stockOK) {
-      alert("Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.");
-      e.preventDefault();
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Stock insuffisant',
+        text: 'Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.'
+      });
       return;
     }
 
-    const confirmed = confirm(`Confirmer la création du bon de vente ?\nTotal : ${total} FCFA\n\nCliquez sur "OK" pour confirmer.`);
-    if (!confirmed) {
-      e.preventDefault();
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'Confirmer la création du bon de vente ?',
+      text: 'Total : ' + total + ' FCFA',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmer',
+      cancelButtonText: 'Annuler'
+    });
+
+    if (result.isConfirmed) {
+      form.submit();
     }
   });
 

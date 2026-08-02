@@ -59,12 +59,18 @@
           <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn btn-info btn-sm me-1">Détail</a>
           <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning btn-sm me-1">Facture</a>
           {% if bon.statut == 'en_cours' %}
-            <form method="post" action="{% url 'gestion_depot:valider_bon_vente' bon.id %}" style="display:inline;">
+            <form method="post" action="{% url 'gestion_depot:valider_bon_vente' bon.id %}" style="display:inline;"
+                  class="confirm-form" data-title="Valider le bon de vente"
+                  data-text="Confirmer la validation du bon {{ bon.reference }} ? Le stock sera déduit."
+                  data-confirm-text="Valider">
               {% csrf_token %}
               <button type="submit" class="btn btn-success btn-sm">Valider</button>
             </form>
           {% elif bon.statut == 'valide' %}
-            <form method="post" action="{% url 'gestion_depot:annuler_bon_vente' bon.id %}" style="display:inline;">
+            <form method="post" action="{% url 'gestion_depot:annuler_bon_vente' bon.id %}" style="display:inline;"
+                  class="confirm-form" data-title="Annuler le bon de vente"
+                  data-text="Confirmer l'annulation du bon {{ bon.reference }} ? Le stock sera restitué."
+                  data-confirm-text="Oui, annuler">
               {% csrf_token %}
               <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
             </form>

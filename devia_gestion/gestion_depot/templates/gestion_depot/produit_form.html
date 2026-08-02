@@ -5,7 +5,7 @@
 {% block content %}
   <h2>{{ action }} un produit</h2>
 
-  <form method="post">
+  <form method="post" {% if action == 'Modifier' %}class="confirm-form" data-title="Modifier le produit" data-text="Confirmer l'enregistrement des modifications ?" data-confirm-text="Enregistrer"{% endif %}>
     {% csrf_token %}
     {% if form.non_field_errors %}
       <div class="alert alert-danger">

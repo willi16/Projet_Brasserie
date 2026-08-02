@@ -5,7 +5,9 @@
 {% block content %}
   <h2>Créer un bon de livraison</h2>
 
-  <form method="post">
+  <form method="post" class="confirm-form" data-title="Confirmer la livraison"
+        data-text="Confirmer l'enregistrement de ce bon de livraison ?"
+        data-confirm-text="Enregistrer">
     {% csrf_token %}
     <div class="mb-3">
       <label for="fournisseur" class="form-label">Fournisseur</label>

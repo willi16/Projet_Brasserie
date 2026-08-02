@@ -12,6 +12,9 @@
   <!-- Font Awesome local -->
   <link rel="stylesheet" href="{% static 'css/fontawesome.min.css' %}">
   
+  <!-- SweetAlert2 local -->
+  <link rel="stylesheet" href="{% static 'css/sweetalert2.min.css' %}">
+  
   <!-- Votre CSS personnalisé -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
@@ -153,12 +156,14 @@
       <!-- Main Content -->
       <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4 main-content">
         {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-          {% endfor %}
+          <div id="django-messages">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
 
         {% block content %}
@@ -174,6 +179,79 @@
 
   <!-- Bootstrap JS local -->
   <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+  <!-- SweetAlert2 local -->
+  <script src="{% static 'js/sweetalert2.min.js' %}"></script>
+
+  <!-- SweetAlert2 : toasts de messages + confirmations d'actions -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Afficher les messages Django en toasts SweetAlert
+      const messagesEl = document.getElementById('django-messages');
+      if (messagesEl) {
+        messagesEl.querySelectorAll('.alert').forEach(function (alertEl) {
+          const cls = alertEl.className;
+          const tag = cls.includes('alert-success') ? 'success'
+            : (cls.includes('alert-error') || cls.includes('alert-danger')) ? 'error'
+            : cls.includes('alert-warning') ? 'warning' : 'info';
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: tag,
+            title: alertEl.textContent.trim(),
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            didOpen: function () {
+              alertEl.remove();
+            }
+          });
+        });
+        messagesEl.remove();
+      }
+    });
+
+    // Confirmation SweetAlert pour les liens de suppression (a.confirm-delete)
+    document.addEventListener('click', function (e) {
+      const link = e.target.closest('a.confirm-delete');
+      if (!link) return;
+      e.preventDefault();
+      Swal.fire({
+        title: link.dataset.title || 'Confirmer la suppression',
+        text: link.dataset.text || 'Voulez-vous vraiment supprimer cet élément ?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Oui, supprimer',
+        cancelButtonText: 'Annuler'
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          window.location.href = link.href;
+        }
+      });
+    });
+
+    // Confirmation SweetAlert pour les formulaires (valider, annuler, modifier)
+    document.addEventListener('submit', function (e) {
+      const form = e.target.closest('form.confirm-form');
+      if (!form || form.dataset.confirmed === 'true') return;
+      e.preventDefault();
+      Swal.fire({
+        title: form.dataset.title || 'Confirmer l\'action',
+        text: form.dataset.text || 'Voulez-vous vraiment continuer ?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: form.dataset.confirmText || 'Confirmer',
+        cancelButtonText: 'Annuler'
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          form.dataset.confirmed = 'true';
+          form.submit();
+        }
+      });
+    });
+  </script>
 
   <!-- Votre JavaScript personnalisé -->
   <script>

@@ -46,7 +46,9 @@
       {% if can_edit %}
         <td>
           <a href="{% url 'gestion_depot:modifier_produit' produit.id %}" class="btn btn-sm btn-warning">Modifier</a>
-          <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger">Supprimer</a>
+          <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger confirm-delete"
+             data-title="Supprimer le produit"
+             data-text="Voulez-vous vraiment supprimer « {{ produit.nom }} » ? Cette action est irréversible.">Supprimer</a>
         </td>
       {% endif %}
     </tr>
