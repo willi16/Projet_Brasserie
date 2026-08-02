@@ -1,182 +1,184 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Aperçu facture {{ bon.reference }}</title>
-  <style>
+{% extends "base.html" %}
+
+{% block title %}Aperçu facture {{ bon.reference }}{% endblock %}
+
+{% block content %}
+<style>
+  .facture-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .facture-toolbar .title {
+    font-weight: 600;
+    margin-right: auto;
+    font-size: 15px;
+  }
+  .facture-toolbar a,
+  .facture-toolbar button {
+    display: inline-block;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    color: #fff;
+    background: #2563eb;
+  }
+  .facture-toolbar .btn-gris { background: #4b5563; }
+  .facture-toolbar .btn-bordure { background: transparent; border: 1px solid #9ca3af; color: #111; }
+  * { box-sizing: border-box; }
+  .sheet {
+    width: 100%;
+    max-width: 132mm;
+    min-height: 185mm;
+    margin: 0 auto;
+    background: #fff;
+    padding: 8mm 9mm;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #111;
+    font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
+    font-size: 11px;
+  }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand .name { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+  .brand .subtitle { font-weight: 700; font-size: 12px; margin-top: 2px; }
+  .brand .details { margin-top: 6px; font-size: 9.5px; line-height: 1.4; }
+  .doc-info { text-align: right; }
+  .doc-info .facture { font-size: 16px; font-weight: 800; letter-spacing: 2px; }
+  .doc-info .ref { font-weight: 700; margin-top: 6px; }
+  hr.sep { border: none; border-top: 1.2px solid #111; margin: 7px 0; }
+  .meta { display: flex; justify-content: space-between; margin-top: 8px; }
+  .meta strong { font-weight: 700; }
+  table.items {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 10.5px;
+  }
+  table.items thead th {
+    background: #111;
+    color: #fff;
+    font-weight: 700;
+    padding: 5px 6px;
+    text-align: center;
+    border: 0.5px solid #111;
+  }
+  table.items thead th.left, table.items tbody td.left { text-align: left; }
+  table.items tbody td {
+    padding: 5px 6px;
+    text-align: center;
+    border: 0.5px solid #9ca3af;
+  }
+  table.items tbody td.right, table.items thead th.right { text-align: right; }
+  .total {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .signature {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .signature .block { text-align: center; }
+  .signature .line { width: 44mm; border-top: 0.6px solid #111; margin-bottom: 4px; }
+
+  @media print {
     @page { size: A5 portrait; margin: 8mm; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #e5e7eb;
-      font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-      color: #111;
-      font-size: 11px;
-    }
-    .toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      padding: 12px 16px;
-      background: #1f2937;
-      color: #f9fafb;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
-    .toolbar .title { font-weight: 600; margin-right: auto; }
-    .toolbar a, .toolbar button {
-      display: inline-block;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      color: #fff;
-      background: #2563eb;
-    }
-    .toolbar .btn-secondary { background: #4b5563; }
-    .toolbar .btn-outline { background: transparent; border: 1px solid #9ca3af; color: #f9fafb; }
+    nav, aside, footer, #mobile-backdrop { display: none !important; }
+    main { padding: 0 !important; }
+    body { background: #fff !important; }
+    .facture-toolbar { display: none !important; }
     .sheet {
-      width: 132mm;
-      min-height: 185mm;
-      margin: 10mm auto;
-      background: #fff;
-      padding: 8mm 9mm;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      width: auto;
+      max-width: none;
+      min-height: auto;
+      margin: 0;
+      padding: 0;
+      box-shadow: none;
     }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; }
-    .brand .name { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
-    .brand .subtitle { font-weight: 700; font-size: 12px; margin-top: 2px; }
-    .brand .details { margin-top: 6px; font-size: 9.5px; line-height: 1.4; }
-    .doc-info { text-align: right; }
-    .doc-info .facture { font-size: 16px; font-weight: 800; letter-spacing: 2px; }
-    .doc-info .ref { font-weight: 700; margin-top: 6px; }
-    hr.sep { border: none; border-top: 1.2px solid #111; margin: 7px 0; }
-    .meta { display: flex; justify-content: space-between; margin-top: 8px; }
-    .meta strong { font-weight: 700; }
-    table.items {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 10.5px;
-    }
-    table.items thead th {
-      background: #111;
-      color: #fff;
-      font-weight: 700;
-      padding: 5px 6px;
-      text-align: center;
-      border: 0.5px solid #111;
-    }
-    table.items thead th.left, table.items tbody td.left { text-align: left; }
-    table.items tbody td {
-      padding: 5px 6px;
-      text-align: center;
-      border: 0.5px solid #9ca3af;
-    }
-    table.items tbody td.right, table.items thead th.right { text-align: right; }
-    .total {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-    .signature {
-      margin-top: 22px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .signature .block { text-align: center; }
-    .signature .line { width: 44mm; border-top: 0.6px solid #111; margin-bottom: 4px; }
-    @media print {
-      body { background: none; }
-      .toolbar { display: none !important; }
-      .sheet { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
-    }
-  </style>
-</head>
-<body>
-  <div class="toolbar">
-    <span class="title">Aperçu de la facture {{ bon.reference }}</span>
-    <button onclick="window.print()">Imprimer</button>
-    <a href="{% url 'gestion_depot:generer_facture' bon.id %}" target="_blank">Télécharger le PDF</a>
-    <button class="btn-outline" onclick="window.history.back()">Retour</button>
+  }
+</style>
+
+<div class="facture-toolbar">
+  <span class="title">Aperçu de la facture {{ bon.reference }}</span>
+  <button onclick="window.print()">Imprimer</button>
+  <a href="{% url 'gestion_depot:generer_facture' bon.id %}" target="_blank">Télécharger le PDF</a>
+  <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn-gris">Retour au bon</a>
+</div>
+
+<div class="sheet">
+  <div class="header">
+    <div class="brand">
+      <div class="name">DEIVA</div>
+      <div class="subtitle">Commerce Général</div>
+      <div class="details">
+        Vente en Gros et en Détails de Boissons,<br>
+        Eaux Minérales et Divers<br>
+        Tél: +228 90 69 53 91 / 98 88 86 42<br>
+        etsdeivtg@gmail.com<br>
+        Lomé - TOGO
+      </div>
+    </div>
+    <div class="doc-info">
+      <div class="facture">FACTURE</div>
+      <div class="ref">Réf : {{ bon.reference }}</div>
+      <div>Lomé, le {{ date_str }}</div>
+    </div>
   </div>
 
-  <div class="sheet">
-    <div class="header">
-      <div class="brand">
-        <div class="name">DEIVA</div>
-        <div class="subtitle">Commerce Général</div>
-        <div class="details">
-          Vente en Gros et en Détails de Boissons,<br>
-          Eaux Minérales et Divers<br>
-          Tél: +228 90 69 53 91 / 98 88 86 42<br>
-          etsdeivtg@gmail.com<br>
-          Lomé - TOGO
-        </div>
-      </div>
-      <div class="doc-info">
-        <div class="facture">FACTURE</div>
-        <div class="ref">Réf : {{ bon.reference }}</div>
-        <div>Lomé, le {{ date_str }}</div>
-      </div>
+  <hr class="sep">
+
+  <div class="meta">
+    <div>
+      <strong>Client :</strong> {{ bon.client.nom|default:"-" }}
     </div>
-
-    <hr class="sep">
-
-    <div class="meta">
-      <div>
-        <strong>Client :</strong> {{ bon.client.nom|default:"-" }}
-      </div>
-      <div>
-        <strong>Vendeur :</strong> {{ bon.vendeur.username }}
-      </div>
+    <div>
+      <strong>Vendeur :</strong> {{ bon.vendeur.username }}
     </div>
+  </div>
 
-    <table class="items">
-      <thead>
+  <table class="items">
+    <thead>
+      <tr>
+        <th class="left">Quantité</th>
+        <th class="left">Désignation</th>
+        <th>Fraction</th>
+        <th class="right">P. Unitaire</th>
+        <th class="right">Montant</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ligne in lignes %}
         <tr>
-          <th class="left">Quantité</th>
-          <th class="left">Désignation</th>
-          <th>Fraction</th>
-          <th class="right">P. Unitaire</th>
-          <th class="right">Montant</th>
+          <td class="left">{{ ligne.quantite_casiers|floatformat:2 }}</td>
+          <td class="left">{{ ligne.produit_nom }}</td>
+          <td>{{ ligne.fraction|floatformat:2 }}</td>
+          <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} FCFA</td>
+          <td class="right">{{ ligne.montant|floatformat:2 }} FCFA</td>
         </tr>
-      </thead>
-      <tbody>
-        {% for ligne in lignes %}
-          <tr>
-            <td class="left">{{ ligne.quantite_casiers|floatformat:2 }}</td>
-            <td class="left">{{ ligne.produit_nom }}</td>
-            <td>{{ ligne.fraction|floatformat:2 }}</td>
-            <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} FCFA</td>
-            <td class="right">{{ ligne.montant|floatformat:2 }} FCFA</td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="5">Aucune ligne</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% empty %}
+        <tr>
+          <td colspan="5">Aucune ligne</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
-    <div class="total">TOTAL : {{ total_facture|floatformat:2 }} FCFA</div>
+  <div class="total">TOTAL : {{ total_facture|floatformat:2 }} FCFA</div>
 
-    <div class="signature">
-      <div class="block">
-        <div class="line"></div>
-        <strong>La direction</strong>
-      </div>
+  <div class="signature">
+    <div class="block">
+      <div class="line"></div>
+      <strong>La direction</strong>
     </div>
   </div>
-</body>
-</html>
+</div>
+{% endblock %}
