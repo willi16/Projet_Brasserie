@@ -50,6 +50,7 @@ urlpatterns = [
 
     path('comptes/creer/', compte_views.creer_compte_employe, name='creer_compte_employe'),
 
+    path('facture/<int:id>/apercu/', facture_views.apercu_facture, name='apercu_facture'),
     path('facture/<int:id>/', facture_views.generer_facture, name='generer_facture'),
 
     path('documents/<path:path>', employe_views.serve_protected_document, name='serve_protected_document'),

@@ -96,17 +96,22 @@ WSGI_APPLICATION = 'deiva_gestion.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+#
+# Sélection du moteur via la variable d'environnement DB_ENGINE :
+#   - 'sqlite'   (défaut en développement local, aucune variable requise)
+#   - 'postgres' (production / Docker)
+# Rétrocompatibilité : si DOCKER_ENV est défini, on retombe sur postgres.
+DB_ENGINE = config('DB_ENGINE', default='postgres' if os.getenv('DOCKER_ENV') else 'sqlite')
 
-
-if os.getenv("DOCKER_ENV"):
+if DB_ENGINE == 'postgres':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME'),
-            'USER': os.getenv('DB_USER'),
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': 'db',
-            'PORT': '5432',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='db'),
+            'PORT': config('DB_PORT', default='5432'),
         }
     }
 else:

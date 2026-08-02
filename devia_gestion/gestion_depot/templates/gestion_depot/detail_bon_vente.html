@@ -50,8 +50,9 @@
     </table>
   </div>
 
-  <div class="flex gap-2">
-    <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Générer la facture</a>
+  <div class="flex gap-2 flex-wrap">
+    <a href="{% url 'gestion_depot:apercu_facture' bon.id %}" target="_blank" class="btn btn-primary">Aperçu de la facture</a>
+    <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Télécharger le PDF</a>
     <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Retour à la liste</a>
   </div>
 {% endblock %}

@@ -2,8 +2,9 @@ import os
 import tempfile
 import shutil
 import subprocess
+from decimal import Decimal
 from pathlib import Path
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden
@@ -49,6 +50,24 @@ def format_decimal(value):
     return "%.2f" % float(value)
 
 
+def _lignes_facture(bon):
+    """Calcule les lignes (valeurs brutes) et le total d'une facture."""
+    total = Decimal('0')
+    lignes = []
+    for ligne in bon.lignes.all():
+        prix_unitaire = ligne.produit.prix_vente_casier * ligne.fraction
+        montant = prix_unitaire * ligne.quantite_casiers
+        total += montant
+        lignes.append({
+            'quantite_casiers': ligne.quantite_casiers,
+            'produit_nom': ligne.produit.nom,
+            'fraction': ligne.fraction,
+            'prix_unitaire': prix_unitaire,
+            'montant': montant,
+        })
+    return lignes, total
+
+
 @login_required
 def generer_facture(request, id):
     bon = get_object_or_404(
@@ -59,19 +78,17 @@ def generer_facture(request, id):
     if not user_can_view_facture(request.user, bon):
         return HttpResponseForbidden("Vous n'êtes pas autorisé à générer cette facture.")
 
-    total_facture = 0
-    lignes = []
-    for ligne in bon.lignes.all():
-        prix_unitaire = float(ligne.produit.prix_vente_casier) * float(ligne.fraction)
-        montant = prix_unitaire * float(ligne.quantite_casiers)
-        total_facture += montant
-        lignes.append({
-            'quantite_casiers': format_decimal(ligne.quantite_casiers),
-            'produit_nom': latex_escape(ligne.produit.nom),
-            'fraction_display': format_decimal(ligne.fraction),
-            'prix_unitaire': format_decimal(prix_unitaire),
-            'montant': format_decimal(montant),
-        })
+    lignes, total_facture = _lignes_facture(bon)
+    lignes_tex = [
+        {
+            'quantite_casiers': format_decimal(l['quantite_casiers']),
+            'produit_nom': latex_escape(l['produit_nom']),
+            'fraction_display': format_decimal(l['fraction']),
+            'prix_unitaire': format_decimal(l['prix_unitaire']),
+            'montant': format_decimal(l['montant']),
+        }
+        for l in lignes
+    ]
 
     date_str = timezone.localtime().strftime("%d/%m/%Y à %Hh%M")
 
@@ -87,7 +104,7 @@ def generer_facture(request, id):
 
     latex_content = template.render(
         bon=safe_bon,
-        lignes=lignes,
+        lignes=lignes_tex,
         total_facture=format_decimal(total_facture),
         date_str=date_str,
     )
@@ -168,3 +185,24 @@ def generer_facture(request, id):
         bon.save(update_fields=['facture_pdf', 'date_facture_generee'])
 
         return response
+
+
+@login_required
+def apercu_facture(request, id):
+    """Aperçu HTML de la facture avant impression."""
+    bon = get_object_or_404(
+        BonVente.objects.select_related('client', 'vendeur').prefetch_related('lignes__produit'),
+        id=id,
+    )
+
+    if not user_can_view_facture(request.user, bon):
+        return HttpResponseForbidden("Vous n'êtes pas autorisé à consulter cette facture.")
+
+    lignes, total = _lignes_facture(bon)
+
+    return render(request, 'gestion_depot/apercu_facture.html', {
+        'bon': bon,
+        'lignes': lignes,
+        'total_facture': total,
+        'date_str': timezone.localtime().strftime("%d/%m/%Y"),
+    })

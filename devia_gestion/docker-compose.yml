@@ -9,6 +9,9 @@ services:
       - .env
     environment:
       - ALLOWED_HOSTS=0.0.0.0,localhost,127.0.0.1,devia,192.168.43.25
+      - DB_ENGINE=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
     depends_on:
       - db
     volumes:
@@ -28,6 +31,9 @@ services:
       - .env
     environment:
       - ALLOWED_HOSTS=0.0.0.0,localhost,127.0.0.1,devia,192.168.43.25
+      - DB_ENGINE=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
     depends_on:
       db:
         condition: service_started
