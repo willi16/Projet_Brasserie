@@ -13,10 +13,12 @@ from .ligne_livraison import LigneLivraison
 
 from .profil import ProfilUtilisateur
 from .userActionLog import UserActionLog
+from .parametre import Parametre
+from .casier_emporte import CasierEmporte
 
 
 __all__ = [
     'Produit', 'Client', 'Fournisseur', 'Mouvement', 'LigneVente',
     'BonVente', 'BonLivraison', 'LigneLivraison', 'ProfilUtilisateur',
-    'UserActionLog',
+    'UserActionLog', 'Parametre', 'CasierEmporte',
 ]

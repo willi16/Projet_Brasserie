@@ -3,10 +3,14 @@ from django.test import TestCase
 from django.test import Client as DjangoClient
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
+from django.utils import timezone
+from datetime import timedelta
 from gestion_depot.models import (
     Produit, Fournisseur, Client, BonVente, BonLivraison,
     LigneVente, LigneLivraison, Mouvement, ProfilUtilisateur,
+    CasierEmporte, Parametre,
 )
+from gestion_depot.models.parametre import SANCTION_CASIER
 
 
 class BaseTest(TestCase):
@@ -139,3 +143,125 @@ class LoginTests(BaseTest):
         self.http_client.login(username='caissier1', password='pass12345')
         response = self.http_client.get(reverse('gestion_depot:dashboard'))
         self.assertEqual(response.status_code, 200)
+
+
+class CasierEmporteTests(BaseTest):
+    def setUp(self):
+        super().setUp()
+        Mouvement.objects.create(
+            produit=self.produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+
+    def _creer_bon(self, casiers=0):
+        return self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+            'client_nom': 'Client Casiers',
+            'type_paiement': 'especes',
+            'produit': [str(self.produit.id)],
+            'fraction': ['1.00'],
+            'quantite': ['2'],
+            'casiers_emportes': str(casiers),
+        })
+
+    def test_creation_avec_casiers_emportes(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self._creer_bon(casiers=3)
+        self.assertRedirects(response, reverse('gestion_depot:liste_bons_vente'))
+        casier = CasierEmporte.objects.latest('id')
+        self.assertEqual(casier.nombre_casiers, 3)
+        self.assertEqual(casier.restant, 3)
+        self.assertFalse(casier.en_retard)
+
+    def test_sans_casiers_emportes_pas_d_enregistrement(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        self._creer_bon(casiers=0)
+        self.assertEqual(CasierEmporte.objects.count(), 0)
+
+    def test_casiers_negatifs_rejetes(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self._creer_bon(casiers=-1)
+        self.assertRedirects(response, reverse('gestion_depot:creer_bon_vente'))
+        self.assertEqual(CasierEmporte.objects.count(), 0)
+
+    def test_retour_partiel(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=5)
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '2'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:liste_casiers_emportes'))
+        casier.refresh_from_db()
+        self.assertEqual(casier.nombre_rendus, 2)
+        self.assertEqual(casier.restant, 3)
+        self.assertIsNone(casier.date_retour_complet)
+
+    def test_retour_complet(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=5)
+        self.http_client.login(username='caissier1', password='pass12345')
+        self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '5'},
+        )
+        casier.refresh_from_db()
+        self.assertEqual(casier.restant, 0)
+        self.assertIsNotNone(casier.date_retour_complet)
+
+    def test_retour_superieur_au_restant_rejete(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=3)
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '4'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:liste_casiers_emportes'))
+        casier.refresh_from_db()
+        self.assertEqual(casier.nombre_rendus, 0)
+
+    def test_en_retard_et_sanction(self):
+        Parametre.objects.create(nom=SANCTION_CASIER, valeur=Decimal('500'))
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(
+            bon=bon, client=self.client_test, nombre_casiers=4, nombre_rendus=1,
+        )
+        CasierEmporte.objects.filter(id=casier.id).update(
+            date_emport=timezone.now() - timedelta(days=4),
+        )
+        casier.refresh_from_db()
+        self.assertTrue(casier.en_retard)
+        self.assertEqual(casier.montant_sanction, Decimal('1500'))
+
+    def test_acces_interdit_sans_role(self):
+        User.objects.create_user(username='simple', password='pass12345')
+        self.http_client.login(username='simple', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes'))
+        self.assertRedirects(response, reverse('gestion_depot:dashboard'))
+
+    def test_pages_suivi_et_parametres_rendues(self):
+        Parametre.objects.create(nom=SANCTION_CASIER, valeur=Decimal('500'))
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=4, nombre_rendus=1)
+
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes'))
+        self.assertEqual(response.status_code, 200)
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes') + '?statut=en_retard')
+        self.assertEqual(response.status_code, 200)
+        response = self.http_client.get(reverse('gestion_depot:configurer_sanction'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_configurer_sanction_reserve_gerant_admin(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:configurer_sanction'))
+        self.assertRedirects(response, reverse('gestion_depot:dashboard'))
+
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:configurer_sanction'),
+            {'montant': '750'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:configurer_sanction'))
+        self.assertEqual(Parametre.get(SANCTION_CASIER), Decimal('750'))

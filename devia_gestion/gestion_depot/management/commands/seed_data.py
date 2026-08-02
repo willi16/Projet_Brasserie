@@ -6,10 +6,13 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group
 from django.db import transaction
 from django.conf import settings
+from django.utils import timezone
 from gestion_depot.models import (
     Produit, BonVente, LigneVente, Client, Fournisseur,
-    bon_livraison, ligne_livraison, Mouvement, ProfilUtilisateur, userActionLog
+    bon_livraison, ligne_livraison, Mouvement, ProfilUtilisateur, userActionLog,
+    Parametre, CasierEmporte,
 )
+from gestion_depot.models.parametre import SANCTION_CASIER
 
 class Command(BaseCommand):
     help = 'Supprime toutes les données et génère des données de test réalistes'
@@ -43,6 +46,10 @@ class Command(BaseCommand):
         self.create_sales()
         self.stdout.write(' OK', style_func=self.style.SUCCESS)
 
+        self.stdout.write(' Création des paramètres et casiers emportés...', ending='')
+        self.create_parametres_casiers()
+        self.stdout.write(' OK', style_func=self.style.SUCCESS)
+
         self.stdout.write(
             self.style.SUCCESS('\n Données de test générées avec succès !')
         )
@@ -57,9 +64,9 @@ class Command(BaseCommand):
         """Supprime toutes les données existantes."""
         from django.apps import apps
         models_to_clear = [
-            'UserActionLog', 'Mouvement', 'LigneVente', 'BonVente',
+            'UserActionLog', 'Mouvement', 'LigneVente', 'CasierEmporte', 'BonVente',
             'LigneLivraison', 'BonLivraison', 'Produit', 'Client',
-            'Fournisseur', 'ProfilUtilisateur'
+            'Fournisseur', 'ProfilUtilisateur', 'Parametre'
         ]
         for model_name in models_to_clear:
             model = apps.get_model('gestion_depot', model_name)
@@ -240,3 +247,27 @@ class Command(BaseCommand):
                     utilisateur=vendeur,
                     ligne_vente=ligne
                 )
+
+    def create_parametres_casiers(self):
+        """Crée le paramètre de sanction et quelques casiers emportés."""
+        Parametre.objects.get_or_create(
+            nom=SANCTION_CASIER,
+            defaults={'valeur': 500},
+        )
+
+        bons = list(BonVente.objects.filter(statut='valide')[:8])
+        for i, bon in enumerate(bons):
+            nombre = random.randint(1, 5)
+            if i < 4:
+                nombre_rendus = random.choice([0, nombre // 2])
+                date_retour = None
+            else:
+                nombre_rendus = nombre
+                date_retour = timezone.now()
+            CasierEmporte.objects.create(
+                bon=bon,
+                client=bon.client,
+                nombre_casiers=nombre,
+                nombre_rendus=nombre_rendus,
+                date_retour_complet=date_retour,
+            )

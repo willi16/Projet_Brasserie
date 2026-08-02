@@ -8,7 +8,7 @@ from django.db.models import Sum, Case, When, F, FloatField
 from django.contrib.auth.models import User
 from datetime import datetime
 
-from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
+from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement, CasierEmporte
 
 
 FRACTION_MIN = Decimal('0.25')
@@ -55,6 +55,22 @@ def creer_bon_vente(request):
         if type_paiement not in TYPES_PAIEMENT_VALIDES:
             messages.error(request, "Type de paiement invalide.")
             return redirect('gestion_depot:creer_bon_vente')
+
+        # Casiers emportés (saisie séparée, facultative)
+        casiers_emportes_raw = (request.POST.get('casiers_emportes') or '').strip()
+        casiers_emportes = 0
+        if casiers_emportes_raw:
+            try:
+                casiers_emportes = int(casiers_emportes_raw)
+            except (ValueError, TypeError):
+                messages.error(request, "Le nombre de casiers emportés est invalide.")
+                return redirect('gestion_depot:creer_bon_vente')
+            if casiers_emportes < 0:
+                messages.error(request, "Le nombre de casiers emportés ne peut pas être négatif.")
+                return redirect('gestion_depot:creer_bon_vente')
+            if casiers_emportes > 10000:
+                messages.error(request, "Le nombre de casiers emportés est trop élevé.")
+                return redirect('gestion_depot:creer_bon_vente')
 
         # Convertir et valider les données
         try:
@@ -139,6 +155,14 @@ def creer_bon_vente(request):
                     )
                 )
         LigneVente.objects.bulk_create(lignes)
+
+        # Suivi des casiers emportés (si précisé)
+        if casiers_emportes > 0:
+            CasierEmporte.objects.create(
+                bon=bon,
+                client=bon.client,
+                nombre_casiers=casiers_emportes,
+            )
 
         messages.success(request, f"Bon de vente {bon.reference} créé avec succès !")
         return redirect('gestion_depot:liste_bons_vente')

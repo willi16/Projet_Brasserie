@@ -36,6 +36,13 @@
         <h2 class="text-3xl font-bold my-1">{{ produits_en_alerte|length }}</h2>
         <small>produits en stock bas</small>
       </div>
+      {% if casiers_en_retard is not None %}
+      <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=en_retard" class="card bg-red-600 text-white p-5 hover:opacity-90">
+        <h5 class="font-semibold flex items-center gap-2">Casiers en retard</h5>
+        <h2 class="text-3xl font-bold my-1">{{ casiers_en_retard }}</h2>
+        <small>à rendre / sanction</small>
+      </a>
+      {% endif %}
       <div class="card bg-red-600 text-white p-5">
         <h5 class="font-semibold flex items-center gap-2">Utilisateur</h5>
         <h2 class="text-3xl font-bold my-1 truncate">{{ request.user.username }}</h2>

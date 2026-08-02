@@ -50,6 +50,28 @@
     </table>
   </div>
 
+  {% if bon.casier_emporte %}
+  <div class="card mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div>
+        <strong>Casiers emportés :</strong> {{ bon.casier_emporte.nombre_casiers }}<br>
+        <strong>Rendus :</strong> {{ bon.casier_emporte.nombre_rendus }}<br>
+        <strong>Restant :</strong> {{ bon.casier_emporte.restant }}
+        <span class="ml-2">
+          {% if bon.casier_emporte.date_retour_complet %}
+            <span class="badge badge-success">Retourné le {{ bon.casier_emporte.date_retour_complet|date:"d/m/Y H:i" }}</span>
+          {% elif bon.casier_emporte.en_retard %}
+            <span class="badge badge-danger">En retard ({{ bon.casier_emporte.montant_sanction }} FCFA)</span>
+          {% else %}
+            <span class="badge badge-warning">À rendre avant le {{ bon.casier_emporte.date_limite|date:"d/m/Y H:i" }}</span>
+          {% endif %}
+        </span>
+      </div>
+      <a href="{% url 'gestion_depot:liste_casiers_emportes' %}" class="btn btn-sm btn-secondary">Voir le suivi</a>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="flex gap-2 flex-wrap">
     <a href="{% url 'gestion_depot:apercu_facture' bon.id %}" class="btn btn-primary">Aperçu de la facture</a>
     <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Télécharger le PDF</a>
