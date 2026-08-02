@@ -11,6 +11,30 @@ services:
       - ALLOWED_HOSTS=0.0.0.0,localhost,127.0.0.1,devia,192.168.43.25
     depends_on:
       - db
+    volumes:
+      - media_data:/app/media
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/gestion/', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  cron:
+    build: .
+    command: ./cron_rapport.sh
+    env_file:
+      - .env
+    environment:
+      - ALLOWED_HOSTS=0.0.0.0,localhost,127.0.0.1,devia,192.168.43.25
+    depends_on:
+      db:
+        condition: service_started
+      web:
+        condition: service_healthy
+    volumes:
+      - media_data:/app/media
     restart: unless-stopped
 
   db:
@@ -27,3 +51,4 @@ services:
 
 volumes:
   pgdata:
+  media_data:
