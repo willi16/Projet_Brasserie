@@ -1,58 +1,56 @@
-<!-- templates/gestion_depot/profil_utilisateur.html -->
 {% extends "base.html" %}
 
 {% block title %}Mon profil{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="max-w-4xl">
+  <h2 class="text-2xl font-semibold mb-4">Mon profil</h2>
+
   <div class="card">
-    <div class="card-header bg-info text-white">
-      <h4><i class="fas fa-user me-2"></i> Mon profil</h4>
-    </div>
-    <div class="card-body">
-      {% if profil %}
-        <div class="row">
-          <div class="col-md-4 text-center">
-            {% if profil.photo %}
-              <img src="{{ profil.photo.url }}" class="rounded-circle img-fluid border" alt="Photo">
-            {% else %}
-              <i class="fas fa-user-circle text-secondary" style="font-size: 6rem;"></i>
-            {% endif %}
-            <h5 class="mt-2">{{ profil.user.get_full_name|default:profil.user.username }}</h5>
-            <p class="text-muted">{{ profil.user.email }}</p>
-          </div>
+    {% if profil %}
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="text-center">
+          {% if profil.photo %}
+            <img src="{{ profil.photo.url }}" class="rounded-full w-32 h-32 object-cover border mx-auto" alt="Photo">
+          {% else %}
+            <div class="mx-auto w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+          {% endif %}
+          <h5 class="mt-3 font-semibold text-lg">{{ profil.user.get_full_name|default:profil.user.username }}</h5>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">{{ profil.user.email }}</p>
+        </div>
 
-          <div class="col-md-8">
-            <ul class="list-group">
-              <li class="list-group-item"><strong>Téléphone :</strong> {{ profil.telephone|default:"Non renseigné" }}</li>
-              <li class="list-group-item"><strong>Adresse :</strong> {{ profil.adresse|linebreaksbr|default:"Non renseignée" }}</li>
-              <li class="list-group-item"><strong>Date de naissance :</strong> {{ profil.date_naissance|default:"Non renseignée" }}</li>
-              <li class="list-group-item"><strong>Statut marital :</strong> {{ profil.get_statut_marital_display|default:"Non renseigné" }}</li>
-            </ul>
+        <div class="md:col-span-2">
+          <ul class="divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <li class="px-4 py-3"><strong>Téléphone :</strong> {{ profil.telephone|default:"Non renseigné" }}</li>
+            <li class="px-4 py-3"><strong>Adresse :</strong> {{ profil.adresse|linebreaksbr|default:"Non renseignée" }}</li>
+            <li class="px-4 py-3"><strong>Date de naissance :</strong> {{ profil.date_naissance|default:"Non renseignée" }}</li>
+            <li class="px-4 py-3"><strong>Statut marital :</strong> {{ profil.get_statut_marital_display|default:"Non renseigné" }}</li>
+          </ul>
 
-            {% if profil.carte_id_recto or profil.carte_id_verso %}
-              <h5 class="mt-4">Documents d'identité</h5>
-              <div class="d-flex gap-3">
-                {% if profil.carte_id_recto %}
-                  <a href="{{ profil.carte_id_recto.url }}" target="_blank" class="btn btn-outline-primary">
-                    <i class="fas fa-id-card me-1"></i> Voir recto
-                  </a>
-                {% endif %}
-                {% if profil.carte_id_verso %}
-                  <a href="{{ profil.carte_id_verso.url }}" target="_blank" class="btn btn-outline-secondary">
-                    <i class="fas fa-id-card me-1"></i> Voir verso
-                  </a>
-                {% endif %}
-              </div>
-            {% endif %}
+          {% if profil.carte_id_recto or profil.carte_id_verso %}
+            <h5 class="mt-4 font-semibold">Documents d'identité</h5>
+            <div class="flex gap-2 mt-2">
+              {% if profil.carte_id_recto %}
+                <a href="{{ profil.carte_id_recto.url }}" target="_blank" class="btn btn-secondary">Voir recto</a>
+              {% endif %}
+              {% if profil.carte_id_verso %}
+                <a href="{{ profil.carte_id_verso.url }}" target="_blank" class="btn btn-secondary">Voir verso</a>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <div class="mt-4">
+            <a href="{% url 'gestion_depot:modifier_profil' %}" class="btn btn-primary">Modifier mon profil</a>
           </div>
         </div>
-      {% else %}
-        <div class="alert alert-warning">
-          Aucun profil trouvé pour votre compte. Veuillez contacter l'administrateur.
-        </div>
-      {% endif %}
-    </div>
+      </div>
+    {% else %}
+      <div class="card bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">
+        Aucun profil trouvé pour votre compte. Veuillez contacter l'administrateur.
+      </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

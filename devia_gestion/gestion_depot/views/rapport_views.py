@@ -1,4 +1,4 @@
-# gestion_depot/views.py
+# gestion_depot/views/rapport_views.py
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
@@ -59,65 +59,36 @@ def rapport_ventes(request):
 
     bon_ids = list(ventes_qs.values_list('id', flat=True))
 
-    # === 3. Statistiques par produit (annotate) ===
-    # lignes_qs = LigneVente.objects.filter(bon_id__in=bon_ids)
-
-    # stats_produits = lignes_qs.values(
-    #     'produit__id',
-    #     'produit__nom'
-    # ).annotate(
-    #     quantite_totale=Sum(Cast(F('quantite_casiers') * F('fraction'), FloatField())),
-    #     revenu_total=Sum(
-    #         F('produit__prix_vente_casier') * Cast(F('quantite_casiers') * F('fraction'), FloatField()),
-    #         output_field=FloatField()
-    #     ),
-    #     nombre_ventes=Count('id')
-    # ).order_by('-quantite_totale')
-
-    # stats_produits = list(stats_produits)
-
-    # total_revenu_agg = lignes_qs.aggregate(
-    #     total=Sum(
-    #         F('produit__prix_vente_casier') * Cast(F('quantite_casiers') * F('fraction'), FloatField()),
-    #         output_field=FloatField()
-    #     )
-    # )
-    # total_revenu = total_revenu_agg['total'] or 0
-
-    # produit_plus_vendu = stats_produits[0] if stats_produits else None
-    # produit_moins_vendu = stats_produits[-1] if stats_produits else None
-    
-    
     # === 3. Statistiques par produit (avec bénéfice) ===
-    lignes_qs = LigneVente.objects.filter(bon_id__in=bon_ids).select_related('produit')
+    lignes_qs = LigneVente.objects.filter(bon_id__in=bon_ids).select_related('produit', 'bon', 'bon__vendeur')
 
     stats_produits = lignes_qs.values(
         'produit__id',
         'produit__nom',
-        'produit__prix_achat_casier',  # ← Ajouté
-        'produit__prix_vente_casier'   # ← Ajouté
+        'produit__prix_achat_casier',
+        'produit__prix_vente_casier'
     ).annotate(
         quantite_totale=Sum(Cast(F('quantite_casiers') * F('fraction'), FloatField())),
+        nombre_ventes=Count('id'),
     ).order_by('-quantite_totale')
 
-    # Calcul manuel du bénéfice (car annotate complexe avec prix_achat)
     stats_produits_list = []
     for stat in stats_produits:
         quantite = float(stat['quantite_totale'])
         prix_vente = float(stat['produit__prix_vente_casier'])
         prix_achat = float(stat['produit__prix_achat_casier'])
-        
+
         revenu = prix_vente * quantite
         cout = prix_achat * quantite
         benefice = revenu - cout
-        
+
         stats_produits_list.append({
             'produit__nom': stat['produit__nom'],
             'quantite_totale': quantite,
             'revenu_total': revenu,
             'cout_total': cout,
             'benefice_total': benefice,
-            'nombre_ventes': lignes_qs.filter(produit__id=stat['produit__id']).count()
+            'nombre_ventes': stat['nombre_ventes'],
         })
 
     total_revenu = sum(s['revenu_total'] for s in stats_produits_list)
@@ -155,7 +126,7 @@ def rapport_ventes(request):
 
     # === 5. Données graphique ===
     ventes_par_jour = defaultdict(float)
-    for ligne in lignes_qs.only('bon__date_vente', 'quantite_casiers', 'fraction', 'produit__prix_vente_casier'):
+    for ligne in lignes_qs:
         jour = DateFormat(ligne.bon.date_vente).format('Y-m-d')
         total_ligne = float(ligne.produit.prix_vente_casier * ligne.quantite_casiers * ligne.fraction)
         ventes_par_jour[jour] += total_ligne
@@ -164,65 +135,6 @@ def rapport_ventes(request):
     data_ventes = [round(ventes_par_jour[jour], 0) for jour in labels_jours]
 
     # === 6. Export Excel ===
-    # if request.GET.get('export') == 'excel':
-    #     response = HttpResponse(
-    #         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    #     )
-    #     response['Content-Disposition'] = 'attachment; filename="rapport_ventes.xlsx"'
-
-    #     wb = openpyxl.Workbook()
-    #     ws = wb.active
-    #     ws.title = "Rapport de Ventes"
-
-    #     ws.merge_cells('A1:D1')
-    #     ws['A1'] = "RAPPORT DE VENTES"
-    #     ws['A1'].font = Font(size=16, bold=True)
-    #     ws['A1'].alignment = Alignment(horizontal='center')
-
-    #     debut_str = str(date_debut_obj) if date_debut_obj else "Indéfini"
-    #     fin_str = str(date_fin_obj) if date_fin_obj else "Indéfini"
-    #     ws.merge_cells('A2:D2')
-    #     ws['A2'] = f"Période : du {debut_str} au {fin_str}"
-    #     ws['A2'].alignment = Alignment(horizontal='center')
-
-    #     ws.append([])
-    #     ws.append(['Produit', 'Quantité totale', 'Revenu total (FCFA)', 'Nombre de ventes'])
-    #     for cell in ws[4]:
-    #         cell.font = Font(bold=True)
-
-    #     for stat in stats_produits:
-    #         ws.append([
-    #             stat['produit__nom'],
-    #             round(stat['quantite_totale'], 2),
-    #             round(stat['revenu_total'], 0),
-    #             stat['nombre_ventes']
-    #         ])
-
-    #     ws.append([])
-    #     ws.append(['Total général', '', round(total_revenu, 0), ''])
-
-    #     wb.save(response)
-    #     return response
-
-    # # === 7. Récupérer les lignes pour le tableau détaillé ===
-    # lignes = LigneVente.objects.filter(bon_id__in=bon_ids).select_related('bon', 'produit').order_by('-bon__date_vente')
-
-    # # === 8. Contexte final ===
-    # context = {
-    #     'total_revenu': round(total_revenu, 2),
-    #     'produit_plus_vendu': produit_plus_vendu,
-    #     'produit_moins_vendu': produit_moins_vendu,
-    #     'inventaire': inventaire,
-    #     'date_debut': date_debut_obj,
-    #     'date_fin': date_fin_obj,
-    #     'periode': periode,
-    #     'labels_jours': json.dumps(labels_jours),
-    #     'data_ventes': json.dumps(data_ventes),
-    #     'lignes': lignes,  # ⬅️ Crucial pour afficher le tableau des ventes
-    # }
-
-
-    # === 6. Export Excel (mise à jour) ===
     if request.GET.get('export') == 'excel':
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -260,23 +172,18 @@ def rapport_ventes(request):
             ])
 
         ws.append([])
-        ws.append(['TOTAL', '', 
-                round(total_revenu, 0), 
-                round(total_cout, 0), 
-                round(total_benefice, 0), 
-                ''])
+        ws.append(['TOTAL', '',
+                   round(total_revenu, 0),
+                   round(total_cout, 0),
+                   round(total_benefice, 0),
+                   ''])
 
         wb.save(response)
         return response
 
     # === 7. Récupérer les lignes détaillées (avec bénéfice par ligne) ===
     lignes = []
-    for ligne in LigneVente.objects.filter(bon_id__in=bon_ids).select_related('bon', 'produit').order_by('-bon__date_vente'):
-        # quantite_totale = float(ligne.quantite_casiers * ligne.fraction)
-        # ca = float(ligne.produit.prix_vente_casier) * quantite_totale
-        # cout = float(ligne.produit.prix_achat_casier) * quantite_totale
-        # benefice = ca - cout
-        
+    for ligne in lignes_qs.order_by('-bon__date_vente'):
         try:
             quantite_totale = float(ligne.quantite_casiers * ligne.fraction)
             ca = float(ligne.produit.prix_vente_casier) * quantite_totale
@@ -287,14 +194,14 @@ def rapport_ventes(request):
             cout = 0
             benefice = 0
             quantite_totale = 0
-        
+
         lignes.append({
             'bon': ligne.bon,
             'produit': ligne.produit,
             'quantite_totale': quantite_totale,
             'ca': ca,
             'benefice': benefice,
-            'fraction_display': ligne.get_fraction_display(),
+            'fraction_display': str(ligne.fraction),
         })
 
     # === 8. Contexte final ===
@@ -311,8 +218,7 @@ def rapport_ventes(request):
         'labels_jours': json.dumps(labels_jours),
         'data_ventes': json.dumps(data_ventes),
         'lignes': lignes,
-        'stats_produits': stats_produits_list,  # Pour le tableau résumé
+        'stats_produits': stats_produits_list,
     }
-    
-    
+
     return render(request, 'gestion_depot/rapport.html', context)

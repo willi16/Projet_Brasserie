@@ -1,8 +1,18 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
-from .models import ProfilUtilisateur
+from crispy_forms.helper import FormHelper
+from .models import ProfilUtilisateur, Produit, Fournisseur
 from django.contrib.auth.models import Group
+
+
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.fields['username'].widget.attrs['placeholder'] = "Nom d'utilisateur"
+        self.fields['password'].widget.attrs['placeholder'] = "Mot de passe"
 
 class CreerCompteEmployeForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -27,26 +37,15 @@ class CreerCompteEmployeForm(UserCreationForm):
     photo = forms.ImageField(required=False, label="Photo de profil")
     carte_id_recto = forms.ImageField(required=False, label="Carte d'identité - Recto")
     carte_id_verso = forms.ImageField(required=False, label="Carte d'identité - Verso")
-    
-    
+
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name, field in self.fields.items():
-            # Si c'est un widget avec input_type (ex: TextInput, PasswordInput, etc.)
-            if hasattr(field.widget, 'input_type'):
-                if field.widget.input_type == 'checkbox':
-                    field.widget.attrs.update({'class': 'form-check-input'})
-                else:
-                    field.widget.attrs.update({
-                        'class': 'form-control',
-                        'placeholder': field.label,
-                    })
-            else:
-                # Pour les widgets sans input_type (comme Textarea, Select, etc.)
-                field.widget.attrs.update({
-                    'class': 'form-control',
-                    'placeholder': field.label,
-                })
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        for field in self.fields.values():
+            if not field.widget.attrs.get('placeholder'):
+                field.widget.attrs['placeholder'] = field.label
 
     class Meta:
         model = User
@@ -104,3 +103,52 @@ class CreerCompteEmployeForm(UserCreationForm):
             elif self.cleaned_data['role'] == 'gerant':
                 user.groups.add(Group.objects.get(name='Gérant'))
         return user
+
+
+class ProduitForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+
+    class Meta:
+        model = Produit
+        fields = ['nom', 'categorie', 'casier_contenu', 'prix_achat_casier', 'prix_vente_casier', 'seuil_alerte']
+        widgets = {
+            'nom': forms.TextInput(attrs={'placeholder': "Nom du produit"}),
+            'prix_achat_casier': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'prix_vente_casier': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'seuil_alerte': forms.NumberInput(attrs={'min': '0'}),
+        }
+
+
+class FournisseurForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+
+    class Meta:
+        model = Fournisseur
+        fields = ['nom', 'contact', 'adresse']
+        widgets = {
+            'nom': forms.TextInput(attrs={'placeholder': "Nom du fournisseur"}),
+            'contact': forms.TextInput(attrs={'placeholder': "Téléphone"}),
+            'adresse': forms.TextInput(attrs={'placeholder': "Adresse"}),
+        }
+
+
+class ProfilForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+
+    class Meta:
+        model = ProfilUtilisateur
+        fields = ['telephone', 'adresse', 'photo']
+        widgets = {
+            'telephone': forms.TextInput(attrs={'placeholder': "Téléphone"}),
+            'adresse': forms.Textarea(attrs={'rows': 3, 'placeholder': "Adresse"}),
+            'photo': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }

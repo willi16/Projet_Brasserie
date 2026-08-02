@@ -3,13 +3,13 @@
 {% block title %}Créer un bon de vente{% endblock %}
 
 {% block content %}
-<h2>Créer un bon de vente</h2>
+<h2 class="text-2xl font-semibold mb-4">Créer un bon de vente</h2>
 
-<form method="post" id="bon-vente-form">
+<form method="post" id="bon-vente-form" class="card">
   {% csrf_token %}
   <div class="mb-3">
     <label for="client_nom" class="form-label">Nom du client</label>
-    <input type="text" class="form-control" id="client_nom" name="client_nom" required>
+    <input type="text" class="form-input" id="client_nom" name="client_nom" required>
   </div>
 
   <div class="mb-3">
@@ -20,53 +20,51 @@
     </select>
   </div>
 
-  <h4>Lignes de vente</h4>
-  <div id="lignes-container">
-    <div class="ligne product-row">
-      <div class="row g-2">
-        <div class="col-md-4">
-          <label>Produit</label>
+  <h4 class="font-semibold text-lg mb-3">Lignes de vente</h4>
+  <div id="lignes-container" class="space-y-3">
+    <div class="ligne product-row border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        <div class="md:col-span-4">
+          <label class="form-label">Produit</label>
           <select name="produit" class="form-select produit-select" required>
             <option value="">-- Sélectionner --</option>
             {% for produit in produits %}
-              <option 
-                value="{{ produit.id }}" 
+              <option
+                value="{{ produit.id }}"
                 data-price="{{ produit.prix_vente_casier }}"
-                data-stock="{{ produit.stock_disponible }}"
+                data-stock="{{ produit.stock_actuel|default:0 }}"
                 data-nom="{{ produit.nom }}">
                 {{ produit.nom }} ({{ produit.prix_vente_casier }} FCFA)
               </option>
             {% endfor %}
           </select>
-          <small class="stock-info text-muted mt-1">Stock: <span class="stock-value">0</span> casiers</small>
-          <small class="error-stock text-danger d-none mt-1">⚠️ Stock insuffisant</small>
+          <small class="stock-info text-gray-500 dark:text-gray-400 text-xs mt-1 block">Stock: <span class="stock-value">0</span> casiers</small>
+          <small class="error-stock text-red-600 dark:text-red-400 text-xs mt-1 block hidden">Stock insuffisant</small>
         </div>
-        <div class="col-md-3">
-          <label>Fraction</label>
-          <select name="fraction" class="form-select" required>
-            <option value="1.00">Casier complet</option>
-            <option value="0.75">3/4 de casier</option>
-            <option value="0.50">Demi-casier</option>
-            <option value="0.25">1/4 de casier</option>
-          </select>
+        <div class="md:col-span-3">
+          <label class="form-label">Fraction</label>
+          <input type="number" name="fraction" class="form-input" min="0.25" step="0.25" max="9.99" value="1.00" required>
+          <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">Ex. 1.00 = casier complet, 0.50 = demi-casier</small>
         </div>
-        <div class="col-md-3">
-          <label>Quantité</label>
-          <input type="number" name="quantite" class="form-control" min="0.01" step="0.01" required>
+        <div class="md:col-span-3">
+          <label class="form-label">Quantité</label>
+          <input type="number" name="quantite" class="form-input" min="0.01" step="0.01" required>
         </div>
-        <div class="col-md-2 d-flex align-items-center justify-content-end">
+        <div class="md:col-span-2 flex items-center justify-end">
           <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
         </div>
       </div>
     </div>
   </div>
 
-  <button type="button" id="add-ligne" class="btn btn-secondary mt-2">Ajouter une ligne</button>
-  <button type="submit" class="btn btn-primary mt-2" id="submit-btn">Créer le bon</button>
+  <div class="flex flex-wrap gap-2 mt-4">
+    <button type="button" id="add-ligne" class="btn btn-secondary">Ajouter une ligne</button>
+    <button type="submit" class="btn btn-primary" id="submit-btn">Créer le bon</button>
+  </div>
 </form>
 
 <!-- Aperçu du total -->
-<div id="preview-total" class="alert alert-info mt-3" style="display:none;">
+<div id="preview-total" class="card mt-3 bg-sky-50 dark:bg-gray-800 hidden">
   <strong>Total estimé :</strong> <span id="total-amount">0</span> FCFA
 </div>
 
@@ -88,12 +86,12 @@
     const stockInfo = row.querySelector('.stock-value');
     const errorInfo = row.querySelector('.error-stock');
     const quantiteInput = row.querySelector('input[name="quantite"]');
-    const fractionSelect = row.querySelector('select[name="fraction"]');
+    const fractionSelect = row.querySelector('input[name="fraction"]');
 
     const produitId = select.value;
     if (!produitId) {
       stockInfo.textContent = '0';
-      errorInfo.classList.add('d-none');
+      errorInfo.classList.add('hidden');
       return;
     }
 
@@ -105,11 +103,11 @@
     stockInfo.textContent = stock;
 
     if (quantiteTotale > stock) {
-      errorInfo.classList.remove('d-none');
-      quantiteInput.classList.add('is-invalid');
+      errorInfo.classList.remove('hidden');
+      quantiteInput.classList.add('border-red-500');
     } else {
-      errorInfo.classList.add('d-none');
-      quantiteInput.classList.remove('is-invalid');
+      errorInfo.classList.add('hidden');
+      quantiteInput.classList.remove('border-red-500');
     }
   }
 
@@ -120,7 +118,7 @@
 
     document.querySelectorAll('.product-row').forEach(row => {
       const select = row.querySelector('.produit-select');
-      const fractionSelect = row.querySelector('select[name="fraction"]');
+      const fractionSelect = row.querySelector('input[name="fraction"]');
       const quantiteInput = row.querySelector('input[name="quantite"]');
 
       if (!select || !fractionSelect || !quantiteInput) return;
@@ -143,7 +141,7 @@
     });
 
     document.getElementById('total-amount').textContent = Math.round(total);
-    document.getElementById('preview-total').style.display = total > 0 ? 'block' : 'none';
+    document.getElementById('preview-total').classList.toggle('hidden', total <= 0);
 
     return !stockInsuffisant;
   }
@@ -155,8 +153,10 @@
 
     // Réinitialiser
     newLigne.querySelector('.produit-select').value = '';
-    newLigne.querySelector('select[name="fraction"]').value = '1.00';
+    newLigne.querySelector('input[name="fraction"]').value = '1.00';
     newLigne.querySelector('input[name="quantite"]').value = '';
+    newLigne.querySelector('input[name="quantite"]').classList.remove('border-red-500');
+    newLigne.querySelector('.error-stock').classList.add('hidden');
 
     // Attacher suppression
     newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
@@ -197,31 +197,47 @@
   });
 
   // Mise à jour quand quantité ou fraction change
-  document.querySelectorAll('input[name="quantite"], select[name="fraction"]').forEach(el => {
+  document.querySelectorAll('input[name="quantite"], input[name="fraction"]').forEach(el => {
     el.addEventListener('change', updatePreview);
     el.addEventListener('input', updatePreview);
   });
 
   // Confirmation avant soumission
-  document.getElementById('bon-vente-form').addEventListener('submit', function (e) {
+  document.getElementById('bon-vente-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.target;
     const total = parseFloat(document.getElementById('total-amount').textContent) || 0;
     const stockOK = updatePreview(); // Vérifie aussi le stock
 
     if (total <= 0) {
-      alert("Veuillez ajouter au moins un produit valide.");
-      e.preventDefault();
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Aucun produit',
+        text: 'Veuillez ajouter au moins un produit valide.'
+      });
       return;
     }
 
     if (!stockOK) {
-      alert("⚠️ Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.");
-      e.preventDefault();
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Stock insuffisant',
+        text: 'Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.'
+      });
       return;
     }
 
-    const confirmed = confirm(`⚠️ Confirmer la création du bon de vente ?\nTotal : ${total} FCFA\n\nCliquez sur "OK" pour confirmer.`);
-    if (!confirmed) {
-      e.preventDefault();
+    const result = await Swal.fire({
+      icon: 'question',
+      title: 'Confirmer la création du bon de vente ?',
+      text: 'Total : ' + total + ' FCFA',
+      showCancelButton: true,
+      confirmButtonText: 'Confirmer',
+      cancelButtonText: 'Annuler'
+    });
+
+    if (result.isConfirmed) {
+      form.submit();
     }
   });
 

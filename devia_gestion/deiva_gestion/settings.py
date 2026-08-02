@@ -21,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ee&jbbx731*0t27z-zs*%o@^8t7xtc@34p2t9kpcr#w&p()*sm'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-placeholder-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
 
@@ -39,11 +39,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_crontab',
+    'crispy_forms',
+    'crispy_tailwind',
     'gestion_depot',
 ]
 
+CRISPY_TEMPLATE_PACK = 'tailwind'
+CRISPY_ALLOWED_TEMPLATE_PACKS = ('tailwind',)
 
-# Planifier le rapport à 23h59 chaque jour
+
+# Planifier le rapport à 23h59 chaque jour.
+# NOTE : django-crontab nécessite un démon cron (hôte ou conteneur).
+# En Docker, exécuter le conteneur avec le service cron, ou utiliser celery beat.
 CRONJOBS = [
     ('59 23 * * *', 'gestion_depot.management.commands.generer_rapport_quotidien.Command'),
 ]
@@ -89,17 +96,22 @@ WSGI_APPLICATION = 'deiva_gestion.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+#
+# Sélection du moteur via la variable d'environnement DB_ENGINE :
+#   - 'sqlite'   (défaut en développement local, aucune variable requise)
+#   - 'postgres' (production / Docker)
+# Rétrocompatibilité : si DOCKER_ENV est défini, on retombe sur postgres.
+DB_ENGINE = config('DB_ENGINE', default='postgres' if os.getenv('DOCKER_ENV') else 'sqlite')
 
-
-if os.getenv("DOCKER_ENV"):
+if DB_ENGINE == 'postgres':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('DB_NAME'),
-            'USER': os.getenv('DB_USER'),
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': 'db',
-            'PORT': '5432',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='db'),
+            'PORT': config('DB_PORT', default='5432'),
         }
     }
 else:

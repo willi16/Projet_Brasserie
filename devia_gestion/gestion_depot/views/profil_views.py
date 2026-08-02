@@ -4,27 +4,29 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from gestion_depot.models import ProfilUtilisateur
-from gestion_depot.decorators import group_required
+from gestion_depot.forms import ProfilForm
+
 
 @login_required
 def profil_utilisateur(request):
     profil = get_object_or_404(ProfilUtilisateur, user=request.user)
     return render(request, 'gestion_depot/profil.html', {'profil': profil})
 
-@group_required('Gérant', 'Admin')
+
 @login_required
 def modifier_profil(request):
     profil = request.user.profilutilisateur
 
     if request.method == 'POST':
-        profil.telephone = request.POST.get('telephone')
-        profil.adresse = request.POST.get('adresse')
+        form = ProfilForm(request.POST, request.FILES, instance=profil)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profil mis à jour avec succès !")
+            return redirect('gestion_depot:profil_utilisateur')
+    else:
+        form = ProfilForm(instance=profil)
 
-        if request.FILES.get('photo'):
-            profil.photo = request.FILES['photo']
-
-        profil.save()
-        messages.success(request, "Profil mis à jour avec succès !")
-        return redirect('gestion_depot:profil_utilisateur')
-
-    return render(request, 'gestion_depot/modifier_profil.html', {'profil': profil})
+    return render(request, 'gestion_depot/modifier_profil.html', {
+        'form': form,
+        'profil': profil,
+    })

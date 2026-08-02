@@ -1,8 +1,11 @@
 import os
 import tempfile
 import shutil
-from django.shortcuts import get_object_or_404
-from datetime import datetime
+import subprocess
+from decimal import Decimal
+from pathlib import Path
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden
 from django.conf import settings
@@ -14,78 +17,96 @@ def user_can_view_facture(user, bon):
     """Vérifie si l'utilisateur peut voir la facture d'un bon."""
     if user.is_superuser:
         return True
-    if user.groups.filter(name__in=['Gérant','Admin']).exists():
+    if user.groups.filter(name__in=['Gérant', 'Admin']).exists():
         return True
     if user.groups.filter(name='Caissier').exists() and bon.vendeur == user:
         return True
     return False
 
 
-def safe_str(text):
-    """Convertit n'importe quel objet en chaîne UTF-8 sûre."""
+def latex_escape(text):
+    """Échappe les caractères spéciaux LaTeX pour éviter les injections/cassures."""
     if text is None:
         return ""
-    try:
-        # Convertir en str, puis en UTF-8, puis en str à nouveau
-        return str(text).encode('utf-8', errors='replace').decode('utf-8')
-    except Exception:
-        return str(text).encode('latin1', errors='replace').decode('latin1')
+    text = str(text)
+    replacements = {
+        '\\': r'\textbackslash{}',
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\textasciicircum{}',
+    }
+    for char, escaped in replacements.items():
+        text = text.replace(char, escaped)
+    return text
+
+
+def format_decimal(value):
+    return "%.2f" % float(value)
+
+
+def _lignes_facture(bon):
+    """Calcule les lignes (valeurs brutes) et le total d'une facture."""
+    total = Decimal('0')
+    lignes = []
+    for ligne in bon.lignes.all():
+        prix_unitaire = ligne.produit.prix_vente_casier * ligne.fraction
+        montant = prix_unitaire * ligne.quantite_casiers
+        total += montant
+        lignes.append({
+            'quantite_casiers': ligne.quantite_casiers,
+            'produit_nom': ligne.produit.nom,
+            'fraction': ligne.fraction,
+            'prix_unitaire': prix_unitaire,
+            'montant': montant,
+        })
+    return lignes, total
 
 
 @login_required
 def generer_facture(request, id):
-    bon = get_object_or_404(BonVente, id=id)
+    bon = get_object_or_404(
+        BonVente.objects.select_related('client', 'vendeur').prefetch_related('lignes__produit'),
+        id=id,
+    )
 
     if not user_can_view_facture(request.user, bon):
         return HttpResponseForbidden("Vous n'êtes pas autorisé à générer cette facture.")
-    
 
-    lignes = []
-    total_facture = 0
-    for ligne in bon.lignes.all():
-        ligne.prix_unitaire = float(ligne.produit.prix_vente_casier) * float(ligne.fraction)
-        ligne.total = ligne.prix_unitaire * float(ligne.quantite_casiers)
-        lignes.append(ligne)
-        total_facture += ligne.total
+    lignes, total_facture = _lignes_facture(bon)
+    lignes_tex = [
+        {
+            'quantite_casiers': format_decimal(l['quantite_casiers']),
+            'produit_nom': latex_escape(l['produit_nom']),
+            'fraction_display': format_decimal(l['fraction']),
+            'prix_unitaire': format_decimal(l['prix_unitaire']),
+            'montant': format_decimal(l['montant']),
+        }
+        for l in lignes
+    ]
 
-    # Date formatée depuis Python
-    date_str = datetime.now().strftime("%d/%m/%Y à %Hh%M")
+    date_str = timezone.localtime().strftime("%d/%m/%Y à %Hh%M")
 
-    env = Environment(loader=FileSystemLoader('gestion_depot/templates'))
+    template_dir = Path(settings.BASE_DIR) / 'gestion_depot' / 'templates'
+    env = Environment(loader=FileSystemLoader(str(template_dir)))
     template = env.get_template('facture_jinja_template.tex')
-    
-        # Avant le render, nettoyez les données
+
     safe_bon = {
-        'reference': safe_str(bon.reference),
-        'client': {
-            'nom': safe_str(bon.client.nom) if bon.client else 'Inconnu'
-        },
-        'vendeur': {
-            'username': safe_str(bon.vendeur.username)
-        },
-        'lignes': [
-            {
-                'quantite_casiers': "%.2f" % float(ligne.quantite_casiers),
-                'produit': {
-                    'nom': safe_str(ligne.produit.nom),
-                    'prix_vente_casier': float(ligne.produit.prix_vente_casier),
-                },
-                'fraction': safe_str(ligne.get_fraction_display()),
-                'prix_total': "%.2f" % ligne.prix_total(),
-            }
-            for ligne in bon.lignes.all()
-        ],
-        'total': "%.2f" % total_facture,
+        'reference': latex_escape(bon.reference),
+        'client_nom': latex_escape(bon.client.nom) if bon.client else 'Inconnu',
+        'vendeur': latex_escape(bon.vendeur.username),
     }
 
-    # Passez les données nettoyées au template
-    
-    
     latex_content = template.render(
         bon=safe_bon,
-        lignes=lignes,
-        total_facture=total_facture,
-        date_str=date_str
+        lignes=lignes_tex,
+        total_facture=format_decimal(total_facture),
+        date_str=date_str,
     )
 
     # Créer un dossier temporaire dans /app pour éviter les problèmes de permissions
@@ -94,32 +115,32 @@ def generer_facture(request, id):
         pdf_path = os.path.join(tmp_dir, f"facture_{bon.id}.pdf")
         logo_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png')
         logo_dst = os.path.join(tmp_dir, "logo.png")
-
-
-        # Copier le cachet
         cachet_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'cachet.jpeg')
         cachet_dst = os.path.join(tmp_dir, "cachet.jpeg")
-        
-        
 
         # Écrire le .tex
         with open(tex_path, 'w', encoding='utf-8') as f:
             f.write(latex_content)
 
-        # Copier le logo
+        # Copier le logo et le cachet
         if not os.path.exists(logo_src):
             return HttpResponse(f"Logo non trouvé : {logo_src}", status=500)
         shutil.copy(logo_src, logo_dst)
-        
-        
+
         if not os.path.exists(cachet_src):
             return HttpResponse(f"Cachet non trouvé : {cachet_src}", status=500)
         shutil.copy(cachet_src, cachet_dst)
 
         # Compiler LaTeX
-        result = os.system(f'cd "{tmp_dir}" && pdflatex -interaction=nonstopmode "facture_{bon.id}.tex"')
+        result = subprocess.run(
+            ['pdflatex', '-interaction=nonstopmode', f"facture_{bon.id}.tex"],
+            cwd=tmp_dir,
+            capture_output=True,
+            text=True,
+            errors='replace',
+        )
 
-        if result != 0:
+        if result.returncode != 0:
             log_path = os.path.join(tmp_dir, f"facture_{bon.id}.log")
             if os.path.exists(log_path):
                 try:
@@ -133,8 +154,7 @@ def generer_facture(request, id):
                     status=500,
                     content_type="text/plain"
                 )
-            else:
-                return HttpResponse("Compilation LaTeX échouée sans log.", status=500)
+            return HttpResponse("Compilation LaTeX échouée sans log.", status=500)
 
         if not os.path.exists(pdf_path):
             return HttpResponse("PDF non généré.", status=500)
@@ -154,15 +174,35 @@ def generer_facture(request, id):
         # Sauvegarder copie
         facture_dir = os.path.join(settings.MEDIA_ROOT, 'factures')
         os.makedirs(facture_dir, exist_ok=True)
-        archive_filename = f"facture_{bon.reference}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        archive_filename = f"facture_{bon.reference}_{timezone.localtime().strftime('%Y%m%d_%H%M%S')}.pdf"
         archive_path = os.path.join(facture_dir, archive_filename)
 
         with open(archive_path, 'wb') as f:
             f.write(pdf_data)
 
         bon.facture_pdf = f"factures/{archive_filename}"
-        bon.date_facture_generee = datetime.now()
+        bon.date_facture_generee = timezone.now()
         bon.save(update_fields=['facture_pdf', 'date_facture_generee'])
 
         return response
 
+
+@login_required
+def apercu_facture(request, id):
+    """Aperçu HTML de la facture avant impression."""
+    bon = get_object_or_404(
+        BonVente.objects.select_related('client', 'vendeur').prefetch_related('lignes__produit'),
+        id=id,
+    )
+
+    if not user_can_view_facture(request.user, bon):
+        return HttpResponseForbidden("Vous n'êtes pas autorisé à consulter cette facture.")
+
+    lignes, total = _lignes_facture(bon)
+
+    return render(request, 'gestion_depot/apercu_facture.html', {
+        'bon': bon,
+        'lignes': lignes,
+        'total_facture': total,
+        'date_str': timezone.localtime().strftime("%d/%m/%Y"),
+    })

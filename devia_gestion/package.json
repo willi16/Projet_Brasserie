@@ -1,0 +1,13 @@
+{
+  "name": "devia_gestion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fichiers de build Tailwind CSS pour Devia Gestion",
+  "scripts": {
+    "build:css": "tailwindcss -i ./tailwind/input.css -o ./static/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./tailwind/input.css -o ./static/css/tailwind.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

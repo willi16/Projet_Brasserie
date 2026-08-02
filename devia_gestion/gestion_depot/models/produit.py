@@ -33,8 +33,8 @@ class Produit(models.Model):
 
     def __str__(self):
         return f"{self.nom} ({self.casier_contenu} btl)"
-    
-class Meta:
+
+    class Meta:
         constraints = [
             models.CheckConstraint(
                 check=models.Q(prix_vente_casier__gte=models.F('prix_achat_casier')),

@@ -3,9 +3,11 @@
 {% block title %}Créer un bon de livraison{% endblock %}
 
 {% block content %}
-  <h2>Créer un bon de livraison</h2>
+  <h2 class="text-2xl font-semibold mb-4">Créer un bon de livraison</h2>
 
-  <form method="post">
+  <form method="post" class="card confirm-form" data-title="Confirmer la livraison"
+        data-text="Confirmer l'enregistrement de ce bon de livraison ?"
+        data-confirm-text="Enregistrer">
     {% csrf_token %}
     <div class="mb-3">
       <label for="fournisseur" class="form-label">Fournisseur</label>
@@ -16,45 +18,47 @@
       </select>
     </div>
 
-    <h4>Lignes de livraison</h4>
-    <div id="lignes-container">
-        <div class="ligne mb-3">
-            <div class="row">
-            <div class="col-md-3">
-                <label>Produit</label>
-                <select name="produit" class="form-select" required>
-                {% for produit in produits %}
-                    <option value="{{ produit.id }}">{{ produit.nom }}</option>
-                {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label>Type de casier</label>
-                <select name="casier_contenu" class="form-select" required>
-                <option value="6">6 bouteilles</option>
-                <option value="12">12 bouteilles</option>
-                <option value="20">20 bouteilles</option>
-                <option value="24">24 bouteilles</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label>Prix d'achat (par casier)</label>
-                <input type="number" name="prix_achat_casier" class="form-control" min="0" step="0.01" required>
-            </div>
-            <div class="col-md-2">
-                <label>Quantité (casiers)</label>
-                <input type="number" name="quantite" class="form-control" min="0.01" step="0.01" required>
-            </div>
-            <div class="col-md-3">
-                <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
-            </div>
-            </div>
+    <h4 class="font-semibold text-lg mb-3">Lignes de livraison</h4>
+    <div id="lignes-container" class="space-y-3">
+      <div class="ligne border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+          <div class="md:col-span-3">
+            <label class="form-label">Produit</label>
+            <select name="produit" class="form-select" required>
+              {% for produit in produits %}
+                <option value="{{ produit.id }}">{{ produit.nom }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="form-label">Type de casier</label>
+            <select name="casier_contenu" class="form-select" required>
+              <option value="6">6 bouteilles</option>
+              <option value="12">12 bouteilles</option>
+              <option value="20">20 bouteilles</option>
+              <option value="24">24 bouteilles</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="form-label">Prix d'achat (par casier)</label>
+            <input type="number" name="prix_achat_casier" class="form-input" min="0" step="0.01" required>
+          </div>
+          <div class="md:col-span-2">
+            <label class="form-label">Quantité (casiers)</label>
+            <input type="number" name="quantite" class="form-input" min="0.01" step="0.01" required>
+          </div>
+          <div class="md:col-span-3 flex items-center justify-end">
+            <button type="button" class="btn btn-danger remove-ligne">Supprimer</button>
+          </div>
         </div>
+      </div>
     </div>
 
-    <button type="button" id="add-ligne" class="btn btn-secondary mb-3">Ajouter une ligne</button>
-    <button type="submit" class="btn btn-primary">Enregistrer la livraison</button>
-    <a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Annuler</a>
+    <div class="flex flex-wrap gap-2 mt-4">
+      <button type="button" id="add-ligne" class="btn btn-secondary">Ajouter une ligne</button>
+      <button type="submit" class="btn btn-primary">Enregistrer la livraison</button>
+      <a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Annuler</a>
+    </div>
   </form>
 
   <script>

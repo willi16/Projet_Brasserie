@@ -8,7 +8,6 @@ from .bonVente_views import (
     valider_bon_vente
 )
 from .rapport_views import rapport_ventes
-from .auth_views import login_view #logout_view 
 from .produit_views import (
     liste_produits_avec_stock,
     ajouter_produit,
@@ -30,8 +29,6 @@ __all__ = [
     'dashboard', 
     'creer_bon_vente', 
     'rapport_ventes',
-    'login_view',
-    'logout_view',
     'liste_produits_avec_stock',
     'ajouter_produit',
     'modifier_produit',
