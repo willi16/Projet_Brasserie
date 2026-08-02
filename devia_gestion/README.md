@@ -280,7 +280,7 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 1. Menu **Casiers emportés** : la liste des casiers partis avec les clients.
 2. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
 3. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
-4. **Sanction :** le montant par casier non rendu (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *restant × montant* une fois le délai de 3 jours dépassé.
+4. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier dépend du **modèle** (GM12 = 12 bouteilles, GM20 = 20, PM24 = 24), déterminé automatiquement par le produit.
 
 ### Enregistrer une livraison (tâche du gérant/admin)
 
@@ -320,7 +320,7 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 ### Casiers emportés
 - Saisis lors de la création du bon de vente, suivis dans le menu **Casiers emportés**.
 - Retour **partiel ou total** enregistré par le caissier ; délai de retour de **3 jours**.
-- **Sanction automatique** en cas de retard : montant par casier configurable (menu **Paramètres**), calculé et affiché sans action manuelle.
+- **Sanction automatique** en cas de retard : montant par bouteille configurable (menu **Paramètres**), calculé et affiché sans action manuelle.
 - Le suivi est purement comptable : les retours **ne modifient pas** le stock de produits.
 
 ### Livraisons

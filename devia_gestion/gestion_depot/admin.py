@@ -36,8 +36,8 @@ class EnAlerteFilter(admin.SimpleListFilter):
 
 @admin.register(Produit)
 class ProduitAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'categorie', 'casier_contenu', 'prix_vente_casier', 'stock_disponible', 'en_alerte')
-    list_filter = ('categorie', 'casier_contenu', EnAlerteFilter)
+    list_display = ('nom', 'categorie', 'casier_contenu', 'modele', 'prix_vente_casier', 'stock_disponible', 'en_alerte')
+    list_filter = ('categorie', 'casier_contenu', 'modele', EnAlerteFilter)
     search_fields = ('nom',)
 
 
@@ -72,8 +72,8 @@ class LigneVenteAdmin(admin.ModelAdmin):
 
 @admin.register(CasierEmporte)
 class CasierEmporteAdmin(admin.ModelAdmin):
-    list_display = ['client', 'bon', 'nombre_casiers', 'nombre_rendus', 'date_emport', 'date_retour_complet']
-    list_filter = ['date_emport']
+    list_display = ['client', 'bon', 'modele', 'nombre_casiers', 'nombre_rendus', 'date_emport', 'date_retour_complet']
+    list_filter = ['modele', 'date_emport']
     search_fields = ['client__nom', 'bon__reference']
 
 

@@ -170,6 +170,7 @@ class CasierEmporteTests(BaseTest):
         casier = CasierEmporte.objects.latest('id')
         self.assertEqual(casier.nombre_casiers, 3)
         self.assertEqual(casier.restant, 3)
+        self.assertEqual(casier.modele, 'PM24')
         self.assertFalse(casier.en_retard)
 
     def test_sans_casiers_emportes_pas_d_enregistrement(self):
@@ -221,18 +222,30 @@ class CasierEmporteTests(BaseTest):
         casier.refresh_from_db()
         self.assertEqual(casier.nombre_rendus, 0)
 
-    def test_en_retard_et_sanction(self):
+    def test_modele_derive_du_produit(self):
+        produit12 = Produit.objects.create(
+            nom='Bière 33cl', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('700'), prix_vente_casier=Decimal('750'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(produit12.modele, 'GM12')
+        self.assertEqual(produit12.get_modele_display(), 'Grand modèle - 12 bouteilles')
+
+    def test_en_retard_et_sanction_par_bouteille(self):
         Parametre.objects.create(nom=SANCTION_CASIER, valeur=Decimal('500'))
         bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
         casier = CasierEmporte.objects.create(
-            bon=bon, client=self.client_test, nombre_casiers=4, nombre_rendus=1,
+            bon=bon, client=self.client_test, modele='GM12',
+            nombre_casiers=4, nombre_rendus=1,
         )
         CasierEmporte.objects.filter(id=casier.id).update(
             date_emport=timezone.now() - timedelta(days=4),
         )
         casier.refresh_from_db()
         self.assertTrue(casier.en_retard)
-        self.assertEqual(casier.montant_sanction, Decimal('1500'))
+        self.assertEqual(casier.bouteilles_par_casier, 12)
+        self.assertEqual(casier.restant_bouteilles, 36)
+        self.assertEqual(casier.montant_sanction, Decimal('18000'))
 
     def test_acces_interdit_sans_role(self):
         User.objects.create_user(username='simple', password='pass12345')

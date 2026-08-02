@@ -43,8 +43,8 @@ def liste_casiers_emportes(request):
     elif statut == 'en_cours':
         casiers = casiers.filter(date_retour_complet__isnull=True).exclude(id__in=en_retard)
 
-    total_restant = sum(c.restant for c in en_retard)
-    total_sanction = total_restant * Parametre.get_sanction_montant()
+    total_restant_bouteilles = sum(c.restant_bouteilles for c in en_retard)
+    total_sanction = sum(c.montant_sanction for c in en_retard)
 
     return render(request, 'gestion_depot/liste_casiers_emportes.html', {
         'casiers': casiers,
@@ -52,7 +52,7 @@ def liste_casiers_emportes(request):
         'nb_en_retard': en_retard.count(),
         'nb_en_cours': CasierEmporte.objects.filter(date_retour_complet__isnull=True).exclude(id__in=en_retard).count(),
         'nb_retournes': CasierEmporte.objects.filter(date_retour_complet__isnull=False).count(),
-        'total_restant': total_restant,
+        'total_restant_bouteilles': total_restant_bouteilles,
         'total_sanction': total_sanction,
         'montant_sanction': Parametre.get_sanction_montant(),
     })

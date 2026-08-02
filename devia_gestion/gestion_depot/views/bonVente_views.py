@@ -14,6 +14,7 @@ from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvemen
 FRACTION_MIN = Decimal('0.25')
 FRACTION_MAX = Decimal('9.99')
 TYPES_PAIEMENT_VALIDES = {'especes', 'credit'}
+MODELE_VALIDES = {m[0] for m in Produit.MODELE_CHOICES}
 
 
 def stocks_disponibles(produits):
@@ -59,6 +60,7 @@ def creer_bon_vente(request):
         # Casiers emportés (saisie séparée, facultative)
         casiers_emportes_raw = (request.POST.get('casiers_emportes') or '').strip()
         casiers_emportes = 0
+        modele = request.POST.get('casiers_emportes_modele') or ''
         if casiers_emportes_raw:
             try:
                 casiers_emportes = int(casiers_emportes_raw)
@@ -89,6 +91,13 @@ def creer_bon_vente(request):
         # Récupérer les produits en une seule requête
         produits_dict = Produit.objects.in_bulk(produit_ids)
         stocks = stocks_disponibles(produits_dict.values())
+
+        # Modèle de casier : choisi dans le formulaire, sinon celui du premier produit
+        if not modele and produits_dict:
+            modele = produits_dict.get(produit_ids[0]).modele
+        if casiers_emportes > 0 and modele not in MODELE_VALIDES:
+            messages.error(request, "Le modèle de casier est invalide.")
+            return redirect('gestion_depot:creer_bon_vente')
 
         # Vérifier les droits de l'utilisateur (admin ou gérant ?)
         is_admin_or_gestionnaire = request.user.is_superuser or request.user.groups.filter(
@@ -161,6 +170,7 @@ def creer_bon_vente(request):
             CasierEmporte.objects.create(
                 bon=bon,
                 client=bon.client,
+                modele=modele,
                 nombre_casiers=casiers_emportes,
             )
 

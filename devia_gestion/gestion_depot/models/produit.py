@@ -15,12 +15,34 @@ class Produit(models.Model):
         (24, '24 bouteilles'),
     ]
 
+    MODELE_CHOICES = [
+        ('GM12', 'Grand modèle - 12 bouteilles'),
+        ('GM20', 'Grand modèle - 20 bouteilles'),
+        ('PM24', 'Petit modèle - 24 bouteilles'),
+    ]
+
     nom = models.CharField(max_length=100)
     categorie = models.CharField(max_length=20, choices=CATEGORIE_CHOICES)
     casier_contenu = models.IntegerField(choices=CASIER_CHOICES)
+    modele = models.CharField(max_length=10, choices=MODELE_CHOICES, default='GM12')
     prix_achat_casier = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     prix_vente_casier = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     seuil_alerte = models.IntegerField(default=5, validators=[MinValueValidator(0)])
+
+    def save(self, *args, **kwargs):
+        self.modele = self.get_modele()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def modele_from_casier_contenu(cls, casier_contenu):
+        return {
+            12: 'GM12',
+            20: 'GM20',
+            24: 'PM24',
+        }.get(casier_contenu, 'GM12')
+
+    def get_modele(self):
+        return Produit.modele_from_casier_contenu(self.casier_contenu)
 
     
     def stock_disponible(self):

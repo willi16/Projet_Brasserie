@@ -2,6 +2,7 @@
 from django.db import models
 from decimal import Decimal
 
+# Montant de la sanction par bouteille non rendue (500 FCFA par défaut)
 SANCTION_CASIER = 'sanction_casier_montant'
 
 

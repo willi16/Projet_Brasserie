@@ -19,6 +19,7 @@
         <th>Nom</th>
         <th>Catégorie</th>
         <th>Contenu</th>
+        <th>Modèle</th>
         <th>Prix vente</th>
         <th>Stock</th>
         <th>Seuil d'alerte</th>
@@ -35,6 +36,7 @@
         <td>{{ produit.nom }}</td>
         <td>{{ produit.get_categorie_display }}</td>
         <td>{{ produit.casier_contenu }} btl</td>
+        <td><span class="badge badge-info">{{ produit.get_modele_display }}</span></td>
         <td>{{ produit.prix_vente_casier }} FCFA</td>
         <td>{{ produit.stock_actuel|floatformat:2|default:0 }}</td>
         <td>{{ produit.seuil_alerte }}</td>
@@ -58,7 +60,7 @@
       {% empty %}
       <tr>
         {% user_can_edit request.user as can_edit %}
-        <td colspan="{% if can_edit %}8{% else %}7{% endif %}" class="text-center py-6">Aucun produit trouvé.</td>
+        <td colspan="{% if can_edit %}9{% else %}8{% endif %}" class="text-center py-6">Aucun produit trouvé.</td>
       </tr>
       {% endfor %}
     </tbody>

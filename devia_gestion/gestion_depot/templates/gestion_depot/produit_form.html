@@ -11,6 +11,11 @@
     <form method="post" {% if action == 'Modifier' %}class="confirm-form" data-title="Modifier le produit" data-text="Confirmer l'enregistrement des modifications ?" data-confirm-text="Enregistrer"{% endif %}>
       {% csrf_token %}
       {% crispy form %}
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        La mention du modèle est déduite du nombre de bouteilles par casier :
+        <strong>12 bouteilles = GM12</strong> (grand modèle), <strong>20 bouteilles = GM20</strong> (grand modèle),
+        <strong>24 bouteilles = PM24</strong> (petit modèle). Elle sert au calcul de la sanction des casiers emportés.
+      </p>
       <div class="flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">{{ action }}</button>
         <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>

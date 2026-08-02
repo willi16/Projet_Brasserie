@@ -264,9 +264,11 @@ class Command(BaseCommand):
             else:
                 nombre_rendus = nombre
                 date_retour = timezone.now()
+            ligne = bon.lignes.select_related('produit').first()
             CasierEmporte.objects.create(
                 bon=bon,
                 client=bon.client,
+                modele=ligne.produit.modele if ligne else 'GM12',
                 nombre_casiers=nombre,
                 nombre_rendus=nombre_rendus,
                 date_retour_complet=date_retour,
