@@ -1,6 +1,5 @@
 # gestion_depot/views/fournisseur_views.py
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from ..models import Fournisseur
 from ..decorators import group_required
@@ -22,7 +21,7 @@ def ajouter_fournisseur(request):
             contact=contact,
             adresse=adresse
         )
-        messages.success(request, f"✅ Fournisseur '{fournisseur.nom}' ajouté.")
+        messages.success(request, f"Fournisseur '{fournisseur.nom}' ajouté.")
         return redirect('gestion_depot:liste_fournisseurs')
 
     return render(request, 'gestion_depot/fournisseur_form.html', {'action': 'Ajouter'})
@@ -37,7 +36,7 @@ def modifier_fournisseur(request, pk):
         fournisseur.adresse = request.POST.get('adresse')
         fournisseur.save()
 
-        messages.success(request, f"✅ Fournisseur '{fournisseur.nom}' mis à jour.")
+        messages.success(request, f"Fournisseur '{fournisseur.nom}' mis à jour.")
         return redirect('gestion_depot:liste_fournisseurs')
 
     return render(request, 'gestion_depot/fournisseur_form.html', {
@@ -50,5 +49,5 @@ def supprimer_fournisseur(request, pk):
     fournisseur = get_object_or_404(Fournisseur, pk=pk)
     nom = fournisseur.nom
     fournisseur.delete()
-    messages.success(request, f"🗑️ Fournisseur '{nom}' supprimé.")
+    messages.success(request, f"Fournisseur '{nom}' supprimé.")
     return redirect('gestion_depot:liste_fournisseurs')

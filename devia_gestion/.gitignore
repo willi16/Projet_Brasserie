@@ -28,6 +28,8 @@ db.sqlite3-journal
 media/factures/
 media/photos/
 media/cartes_id/
+media/rapports/
+staticfiles/
 
 # Environnement
 .env

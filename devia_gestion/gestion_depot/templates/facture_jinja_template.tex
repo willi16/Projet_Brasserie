@@ -29,7 +29,6 @@
 \renewcommand{\footrulewidth}{0pt}
 \rhead{\footnotesize \textcolor{primary}{Facture \# {{ bon.reference }}}}
 \lhead{\footnotesize \textcolor{primary}{Dépôt Boissons}}
-
 % Utiliser TeX Gyre Termes comme police principale (déjà activée par \usepackage{tgtermes})
 % Pas besoin de \setmainfont ici
 
@@ -74,8 +73,8 @@
 % Client et vendeur
 \noindent
 \begin{tabular}{@{}ll@{}}
- \textbf{Client :} & {{ bon.client.nom if bon.client else 'Inconnu' }} \\
- \textbf{Vendeur :} & {{ bon.vendeur.username }}
+ \textbf{Client :} & {{ bon.client_nom }} \\
+ \textbf{Vendeur :} & {{ bon.vendeur }}
 \end{tabular}
 
 \vspace{0.3cm}
@@ -111,11 +110,11 @@
  \endlastfoot
 
 {% for ligne in lignes %}
- {{ "%.2f"|format(ligne.quantite_casiers) }} &
- {{ ligne.produit.nom }} &
- {{ ligne.get_fraction_display() }} &
- {{ "%.2f"|format(ligne.produit.prix_vente_casier * ligne.fraction) }} FCFA &
- {{ "%.2f"|format(ligne.prix_total()) }} FCFA \\
+ {{ ligne.quantite_casiers }} &
+ {{ ligne.produit_nom }} &
+ {{ ligne.fraction_display }} &
+ {{ ligne.prix_unitaire }} FCFA &
+ {{ ligne.montant }} FCFA \\
  \hline 
 {% endfor %}  
 
@@ -125,7 +124,7 @@
 
 % Total
 \begin{flushright}
- \textbf{TOTAL :} \textcolor{primary}{\textbf{{ "%.2f"|format(total_facture) }} FCFA}
+ \textbf{TOTAL :} \textcolor{primary}{\textbf{{ total_facture }} FCFA}
 \end{flushright}
 
 \vspace{0.6cm}

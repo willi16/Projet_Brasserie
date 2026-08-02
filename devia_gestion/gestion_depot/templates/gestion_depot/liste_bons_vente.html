@@ -53,15 +53,21 @@
         <td>{{ bon.date_vente|date:"d/m/Y H:i" }}</td>
         <td>{{ bon.client.nom|default:"-" }}</td>
         <td>{{ bon.vendeur.username }}</td>
-        <td>{{ bon.total }}</td>
+        <td>{{ bon.montant_total|default:bon.total|floatformat:0 }}</td>
         <td><span class="badge {% if bon.statut == 'valide' %}bg-success{% elif bon.statut == 'annule' %}bg-danger{% else %}bg-warning{% endif %}">{{ bon.get_statut_display }}</span></td>
         <td>
           <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn btn-info btn-sm me-1">Détail</a>
           <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning btn-sm me-1">Facture</a>
           {% if bon.statut == 'en_cours' %}
-            <a href="{% url 'gestion_depot:valider_bon_vente' bon.id %}" class="btn btn-success btn-sm">Valider</a>
+            <form method="post" action="{% url 'gestion_depot:valider_bon_vente' bon.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-sm">Valider</button>
+            </form>
           {% elif bon.statut == 'valide' %}
-            <a href="{% url 'gestion_depot:annuler_bon_vente' bon.id %}" class="btn btn-danger btn-sm">Annuler</a>
+            <form method="post" action="{% url 'gestion_depot:annuler_bon_vente' bon.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Annuler</button>
+            </form>
           {% endif %}
         </td>
       </tr>

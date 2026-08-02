@@ -4,14 +4,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from gestion_depot.models import ProfilUtilisateur
-from gestion_depot.decorators import group_required
+
 
 @login_required
 def profil_utilisateur(request):
     profil = get_object_or_404(ProfilUtilisateur, user=request.user)
     return render(request, 'gestion_depot/profil.html', {'profil': profil})
 
-@group_required('Gérant', 'Admin')
+
 @login_required
 def modifier_profil(request):
     profil = request.user.profilutilisateur

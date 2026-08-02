@@ -6,23 +6,16 @@ from .fournisseur import Fournisseur
 class BonLivraison(models.Model):
     reference = models.CharField(max_length=50, unique=True)
     date_livraison = models.DateTimeField(auto_now_add=True)
-    fournisseur = models.ForeignKey(Fournisseur, on_delete=models.CASCADE)
-    utilisateur = models.ForeignKey(User, on_delete=models.CASCADE)
+    fournisseur = models.ForeignKey(Fournisseur, on_delete=models.PROTECT)
+    utilisateur = models.ForeignKey(User, on_delete=models.PROTECT)
 
 
     def save(self, *args, **kwargs):
+        if not self.pk:
+            super().save(*args, **kwargs)
         if not self.reference:
-            # Génère une référence automatique
-            last_bon = BonLivraison.objects.order_by('-id').first()
-            if last_bon and last_bon.reference:
-                try:
-                    ref_num = int(last_bon.reference.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    ref_num = 1
-            else:
-                ref_num = 1
-            self.reference = f"LIV-{ref_num:04d}"
-        super().save(*args, **kwargs)
+            self.reference = f"LIV-{self.pk:04d}"
+            super().save(update_fields=['reference'])
 
 
 

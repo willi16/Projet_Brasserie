@@ -31,7 +31,7 @@
     </div>
     <div class="col-md-2 mt-4">
       <a href="?export=excel&date_debut={{ date_debut|date:'Y-m-d' }}&date_fin={{ date_fin|date:'Y-m-d' }}&periode={{ periode }}"
-         class="btn btn-success">📥 Exporter Excel</a>
+         class="btn btn-success">Exporter Excel</a>
     </div>
   </form>
 
@@ -69,7 +69,7 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-header bg-success text-white">
-          <h5>✅ Produit le plus vendu</h5>
+          <h5>Produit le plus vendu</h5>
         </div>
         <div class="card-body">
           {% if produit_plus_vendu %}
@@ -85,7 +85,7 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-header bg-danger text-white">
-          <h5>⚠️ Produit le moins vendu</h5>
+          <h5>Produit le moins vendu</h5>
         </div>
         <div class="card-body">
           {% if produit_moins_vendu %}
@@ -174,7 +174,7 @@
   <!-- Inventaire -->
   <div class="card mb-4">
     <div class="card-header bg-light">
-      <h5>📦 Inventaire</h5>
+      <h5>Inventaire</h5>
     </div>
     <div class="card-body">
       <table class="table table-striped">
@@ -194,7 +194,7 @@
               <td>{{ item.seuil_alerte }}</td>
               <td>
                 <span class="badge {% if item.en_alerte %}bg-warning text-dark{% else %}bg-success{% endif %}">
-                  {% if item.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
+                  {% if item.en_alerte %}Stock bas{% else %}OK{% endif %}
                 </span>
               </td>
             </tr>
@@ -211,14 +211,14 @@
   <!-- Graphique des ventes -->
   <div class="card mb-4">
     <div class="card-header bg-light">
-      <h5>📈 Évolution des ventes</h5>
+      <h5>Évolution des ventes</h5>
     </div>
     <div class="card-body">
       <canvas id="ventesChart" width="400" height="200"></canvas>
     </div>
   </div>
 
-  <!-- ✅ Chart.js en local (pas de CDN) -->
+  <!-- Chart.js en local (pas de CDN) -->
   <script src="{% static 'js/chart.umd.min.js' %}"></script>
   <script>
     const ctx = document.getElementById('ventesChart').getContext('2d');

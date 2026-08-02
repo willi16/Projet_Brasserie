@@ -71,7 +71,7 @@
               {% for produit in produits_disponibles %}
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                   {{ produit.nom }}
-                  <span class="badge bg-primary rounded-pill">{{ produit.stock_disponible }}</span>
+                  <span class="badge bg-primary rounded-pill">{{ produit.stock_actuel|floatformat:0 }}</span>
                 </li>
               {% empty %}
                 <li class="list-group-item text-muted">Aucun produit disponible.</li>
@@ -103,7 +103,7 @@
                     <tr>
                       <td>{{ vente.reference }}</td>
                       <td>{{ vente.date_vente|date:"d/m/Y H:i" }}</td>
-                      <td>{{ vente.client_nom|default:"-" }}</td>
+                      <td>{{ vente.client.nom|default:"-" }}</td>
                       <td>{{ vente.total }} FCFA</td>
                     </tr>
                   {% empty %}

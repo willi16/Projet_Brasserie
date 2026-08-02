@@ -16,26 +16,29 @@ def creer_compte_employe(request):
         form = CreerCompteEmployeForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-             # Envoyer email
-            send_mail(
-                subject="Bienvenue sur la plateforme DEIVA !",
-                message=f"""
-            Bonjour {user.username},
+            # Envoyer email (ne bloque pas la création si l'envoi échoue)
+            try:
+                send_mail(
+                    subject="Bienvenue sur la plateforme DEIVA !",
+                    message=f"""
+Bonjour {user.username},
 
-            Votre compte a été créé avec succès sur la plateforme de gestion du dépôt DEIVA.
+Votre compte a été créé avec succès sur la plateforme de gestion du dépôt DEIVA.
 
-            Identifiants :
-            - Nom d'utilisateur : {user.username}
-            - Rôle : {form.cleaned_data['role']}
+Identifiants :
+- Nom d'utilisateur : {user.username}
+- Rôle : {form.cleaned_data['role']}
 
-            Veuillez vous connecter dès maintenant : http://devia
+Veuillez vous connecter dès maintenant : http://devia
 
-            L'équipe DEIVA
-            """,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
+L'équipe DEIVA
+""",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
             messages.success(request, f"Compte '{user.username}' créé avec succès.")
             return redirect('gestion_depot:dashboard')
     else:

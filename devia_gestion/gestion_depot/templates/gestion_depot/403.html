@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Accès refusé{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <div class="alert alert-danger text-center">
+    <h4><i class="fas fa-lock me-2"></i> Accès refusé</h4>
+    <p>Vous n’êtes pas autorisé à consulter cette ressource.</p>
+    <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-primary">Retour aux ventes</a>
+  </div>
+</div>
+{% endblock %}

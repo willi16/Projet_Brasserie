@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load custom_tags %}  <!-- ✅ Toujours chargé -->
+{% load custom_tags %}  <!-- Toujours chargé -->
 
 {% block title %}Liste des produits{% endblock %}
 
@@ -39,7 +39,7 @@
       <td>{{ produit.seuil_alerte }}</td>
       <td>
         <span class="badge bg-{% if produit.en_alerte %}warning{% else %}success{% endif %}">
-          {% if produit.en_alerte %}⚠️ Stock bas{% else %}✅ OK{% endif %}
+          {% if produit.en_alerte %}Stock bas{% else %}OK{% endif %}
         </span>
       </td>
       {% user_can_edit request.user as can_edit %}

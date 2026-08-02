@@ -1,52 +1,32 @@
 # gestion_depot/views/auth_views.py
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
-
-def login_view(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            messages.success(request, f"Bienvenue, {user.username} !")
-            return redirect('gestion_depot:dashboard')
-        else:
-            messages.error(request, "Nom d'utilisateur ou mot de passe incorrect.")
-    
-    return render(request, 'gestion_depot/login.html')
-
-# def logout_view(request):
-#     logout(request)
-#     messages.info(request, "Vous avez été déconnecté.")
-#     return redirect('gestion_depot:login')
-
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User, Group
 from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponse
+from datetime import timezone
+import openpyxl
+
 from gestion_depot.models import userActionLog
 
+
+def _is_admin(user):
+    return user.is_superuser or user.groups.filter(name='Admin').exists()
 
 
 @login_required
 def manage_users(request):
     # Vérifier si l'utilisateur est admin
-    if not (request.user.is_superuser or request.user.groups.filter(name='Admin').exists()):
+    if not _is_admin(request.user):
         raise PermissionDenied("Vous n'êtes pas autorisé à gérer les comptes.")
 
     # Récupérer tous les groupes disponibles pour le filtre
     all_groups = Group.objects.all().order_by('name')
-    
+
     # Filtre par groupe (via GET)
     group_filter = request.GET.get('group')
     if group_filter and group_filter != "all":
@@ -55,9 +35,8 @@ def manage_users(request):
         users = User.objects.all()
 
     users = users.order_by('date_joined')
-    
-    
-    #  Pagination
+
+    # Pagination
     paginator = Paginator(users, 15)  # 15 utilisateurs par page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -67,8 +46,7 @@ def manage_users(request):
         user_id = request.POST.get('user_id')
         action = request.POST.get('action')
         user = get_object_or_404(User, id=user_id)
-        
-        
+
         # Empêcher la désactivation du compte de l'utilisateur courant
         if user == request.user and action == 'deactivate':
             messages.error(request, "Vous ne pouvez pas désactiver votre propre compte.")
@@ -86,8 +64,8 @@ def manage_users(request):
         elif action == 'deactivate':
             user.is_active = False
             user.save()
-            
-            # 🔔 Envoyer un email à l'utilisateur désactivé (si email défini)
+
+            # Envoyer un email à l'utilisateur désactivé (si email défini)
             if user.email:
                 try:
                     send_mail(
@@ -107,8 +85,7 @@ L'équipe Deiva""",
                 except Exception:
                     # Ne pas bloquer si l'email échoue
                     pass
-            
-            
+
             userActionLog.objects.create(
                 performed_by=request.user,
                 target_user=user,
@@ -119,7 +96,7 @@ L'équipe Deiva""",
         return redirect('manage_users')
 
     context = {
-        'page_obj': page_obj, 
+        'page_obj': page_obj,
         'users': users,
         'all_groups': all_groups,
         'selected_group': group_filter,
@@ -127,12 +104,9 @@ L'équipe Deiva""",
     return render(request, 'gestion_depot/manage_users.html', context)
 
 
-
-from django.http import JsonResponse
-
 @login_required
 def edit_user_roles(request, user_id):
-    if not (request.user.is_superuser or request.user.groups.filter(name='Admin').exists()):
+    if not _is_admin(request.user):
         return JsonResponse({'error': 'Non autorisé'}, status=403)
 
     user = get_object_or_404(User, id=user_id)
@@ -156,17 +130,10 @@ def edit_user_roles(request, user_id):
     return render(request, 'gestion_depot/edit_user_roles.html', context)
 
 
-
-
-
-from django.http import HttpResponse
-import openpyxl
-from datetime import timezone
-
 @login_required
 def user_logs_full(request):
-    if not (request.user.is_superuser or request.user.groups.filter(name='Admin').exists()):
-        raise ("Accès refusé.")
+    if not _is_admin(request.user):
+        raise PermissionDenied("Accès refusé.")
 
     logs = userActionLog.UserActionLog.objects.select_related('performed_by', 'target_user').order_by('-timestamp')
 

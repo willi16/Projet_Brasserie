@@ -8,5 +8,5 @@ def user_can_edit(user):
     """Retourne True si l'utilisateur peut modifier/supprimer (pas caissier)."""
     if user.is_superuser:
         return True
-    groupes_autorises = ['Gérants','Gérant','Gerant', 'Admin']
+    groupes_autorises = ['Gérant', 'Admin']
     return user.groups.filter(name__in=groupes_autorises).exists()

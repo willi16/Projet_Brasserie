@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 from .produit import Produit
 from .bon_vente import BonVente
 from django.core.validators import MinValueValidator
@@ -18,7 +19,7 @@ class LigneVente(models.Model):
 
     def prix_total(self):
         prix_casier = self.produit.prix_vente_casier
-        return int(prix_casier * self.fraction * self.quantite_casiers)
+        return (prix_casier * self.fraction * self.quantite_casiers).quantize(Decimal('0.01'))
 
     def __str__(self):
         return f"{self.quantite_casiers} x {self.produit.nom} ({self.get_fraction_display()})"

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import ProfilUtilisateur
+from .models import ProfilUtilisateur, Produit
 from django.contrib.auth.models import Group
 
 class CreerCompteEmployeForm(UserCreationForm):
@@ -104,3 +104,17 @@ class CreerCompteEmployeForm(UserCreationForm):
             elif self.cleaned_data['role'] == 'gerant':
                 user.groups.add(Group.objects.get(name='Gérant'))
         return user
+
+
+class ProduitForm(forms.ModelForm):
+    class Meta:
+        model = Produit
+        fields = ['nom', 'categorie', 'casier_contenu', 'prix_achat_casier', 'prix_vente_casier', 'seuil_alerte']
+        widgets = {
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom du produit"}),
+            'categorie': forms.Select(attrs={'class': 'form-control'}),
+            'casier_contenu': forms.Select(attrs={'class': 'form-control'}),
+            'prix_achat_casier': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'prix_vente_casier': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'seuil_alerte': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+        }

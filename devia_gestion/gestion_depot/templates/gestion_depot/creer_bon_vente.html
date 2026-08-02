@@ -32,14 +32,14 @@
               <option 
                 value="{{ produit.id }}" 
                 data-price="{{ produit.prix_vente_casier }}"
-                data-stock="{{ produit.stock_disponible }}"
+                data-stock="{{ produit.stock_actuel|default:0 }}"
                 data-nom="{{ produit.nom }}">
                 {{ produit.nom }} ({{ produit.prix_vente_casier }} FCFA)
               </option>
             {% endfor %}
           </select>
           <small class="stock-info text-muted mt-1">Stock: <span class="stock-value">0</span> casiers</small>
-          <small class="error-stock text-danger d-none mt-1">⚠️ Stock insuffisant</small>
+          <small class="error-stock text-danger d-none mt-1">Stock insuffisant</small>
         </div>
         <div class="col-md-3">
           <label>Fraction</label>
@@ -214,12 +214,12 @@
     }
 
     if (!stockOK) {
-      alert("⚠️ Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.");
+      alert("Stock insuffisant pour un ou plusieurs produits. Veuillez ajuster les quantités.");
       e.preventDefault();
       return;
     }
 
-    const confirmed = confirm(`⚠️ Confirmer la création du bon de vente ?\nTotal : ${total} FCFA\n\nCliquez sur "OK" pour confirmer.`);
+    const confirmed = confirm(`Confirmer la création du bon de vente ?\nTotal : ${total} FCFA\n\nCliquez sur "OK" pour confirmer.`);
     if (!confirmed) {
       e.preventDefault();
     }

@@ -21,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ee&jbbx731*0t27z-zs*%o@^8t7xtc@34p2t9kpcr#w&p()*sm'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-placeholder-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
 
@@ -43,7 +43,9 @@ INSTALLED_APPS = [
 ]
 
 
-# Planifier le rapport à 23h59 chaque jour
+# Planifier le rapport à 23h59 chaque jour.
+# NOTE : django-crontab nécessite un démon cron (hôte ou conteneur).
+# En Docker, exécuter le conteneur avec le service cron, ou utiliser celery beat.
 CRONJOBS = [
     ('59 23 * * *', 'gestion_depot.management.commands.generer_rapport_quotidien.Command'),
 ]
