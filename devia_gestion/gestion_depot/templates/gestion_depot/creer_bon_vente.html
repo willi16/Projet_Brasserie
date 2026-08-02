@@ -20,20 +20,6 @@
     </select>
   </div>
 
-  <div class="mb-3">
-    <label for="casiers_emportes" class="form-label">Casiers emportés</label>
-    <input type="number" class="form-input" id="casiers_emportes" name="casiers_emportes" min="0" step="1" value="0">
-    <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">Casiers à suivre (retour sous 3 jours), laissez 0 si aucun.</small>
-  </div>
-
-  <div class="mb-3" id="modele-casier-container">
-    <label for="casiers_emportes_modele" class="form-label">Modèle de casier</label>
-    <select class="form-select" id="casiers_emportes_modele" name="casiers_emportes_modele">
-      <option value="">-- Choisir le modèle --</option>
-    </select>
-    <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">Déterminé par les produits de la vente (GM12, GM20, PM24).</small>
-  </div>
-
   <h4 class="font-semibold text-lg mb-3">Lignes de vente</h4>
   <div id="lignes-container" class="space-y-3">
     <div class="ligne product-row border border-gray-200 dark:border-gray-700 rounded-lg p-3">
@@ -47,9 +33,7 @@
                 value="{{ produit.id }}"
                 data-price="{{ produit.prix_vente_casier }}"
                 data-stock="{{ produit.stock_actuel|default:0 }}"
-                data-nom="{{ produit.nom }}"
-                data-modele="{{ produit.modele }}"
-                data-bouteilles="{{ produit.casier_contenu }}">
+                data-nom="{{ produit.nom }}">
                 {{ produit.nom }} ({{ produit.prix_vente_casier }} FCFA)
               </option>
             {% endfor %}
@@ -93,43 +77,9 @@
     produitsData[id] = {
       nom: opt.dataset.nom,
       prix: parseFloat(opt.dataset.price),
-      stock: parseFloat(opt.dataset.stock),
-      modele: opt.dataset.modele,
-      bouteilles: parseInt(opt.dataset.bouteilles) || 12
+      stock: parseFloat(opt.dataset.stock)
     };
   });
-
-  const MODELE_LABELS = {
-    GM12: 'Grand modèle - 12 bouteilles',
-    GM20: 'Grand modèle - 20 bouteilles',
-    PM24: 'Petit modèle - 24 bouteilles'
-  };
-
-  // Alimenter le sélecteur de modèle selon les produits de la vente
-  function updateModeleSelect() {
-    const select = document.getElementById('casiers_emportes_modele');
-    if (!select) return;
-    const models = [];
-    document.querySelectorAll('.product-row .produit-select').forEach(sel => {
-      const id = sel.value;
-      if (id && produitsData[id] && !models.includes(produitsData[id].modele)) {
-        models.push(produitsData[id].modele);
-      }
-    });
-    const current = select.value;
-    select.innerHTML = '<option value="">-- Choisir le modèle --</option>';
-    models.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = MODELE_LABELS[m] || m;
-      select.appendChild(opt);
-    });
-    if (models.length === 1) {
-      select.value = models[0];
-    } else if (models.includes(current)) {
-      select.value = current;
-    }
-  }
 
   // Mettre à jour le stock affiché
   function updateStockDisplay(row) {
@@ -213,7 +163,6 @@
     newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
       newLigne.remove();
       updatePreview();
-      updateModeleSelect();
     });
 
     // Attacher événements
@@ -229,7 +178,6 @@
     });
 
     container.appendChild(newLigne);
-    updateModeleSelect();
   });
 
   // Suppression des lignes existantes
@@ -237,7 +185,6 @@
     btn.addEventListener('click', function () {
       this.closest('.ligne').remove();
       updatePreview();
-      updateModeleSelect();
     });
   });
 
@@ -247,7 +194,6 @@
       const row = this.closest('.product-row');
       updateStockDisplay(row);
       updatePreview();
-      updateModeleSelect();
     });
   });
 
@@ -282,17 +228,6 @@
       return;
     }
 
-    const casiersEmportes = parseInt(document.getElementById('casiers_emportes').value) || 0;
-    const modeleSelect = document.getElementById('casiers_emportes_modele');
-    if (casiersEmportes > 0 && !modeleSelect.value) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Modèle de casier requis',
-        text: 'Indiquez le modèle de casier emporté (GM12, GM20 ou PM24).'
-      });
-      return;
-    }
-
     const result = await Swal.fire({
       icon: 'question',
       title: 'Confirmer la création du bon de vente ?',
@@ -313,7 +248,6 @@
       updateStockDisplay(row);
     });
     updatePreview();
-    updateModeleSelect();
   });
 </script>
 {% endblock %}

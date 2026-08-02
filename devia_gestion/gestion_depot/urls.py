@@ -48,6 +48,7 @@ urlpatterns = [
 
     # Casiers emportés
     path('casiers/', casier_views.liste_casiers_emportes, name='liste_casiers_emportes'),
+    path('casiers/bon/<int:bon_id>/enregistrer/', casier_views.enregistrer_casiers_bon, name='enregistrer_casiers_bon'),
     path('casiers/<int:id>/retour/', casier_views.enregistrer_retour_casiers, name='enregistrer_retour_casiers'),
     path('parametres/sanction/', casier_views.configurer_sanction, name='configurer_sanction'),
 

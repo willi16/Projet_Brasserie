@@ -12,9 +12,10 @@
       {% csrf_token %}
       {% crispy form %}
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        La mention du modèle est déduite du nombre de bouteilles par casier :
-        <strong>12 bouteilles = GM12</strong> (grand modèle), <strong>20 bouteilles = GM20</strong> (grand modèle),
-        <strong>24 bouteilles = PM24</strong> (petit modèle). Elle sert au calcul de la sanction des casiers emportés.
+        Le modèle de casier est déduit de la capacité indiquée dans le <strong>nom</strong> du produit :
+        boisson/bière de <strong>50cl ou plus = grand modèle</strong> (GM12 ou GM20 selon le nombre de bouteilles),
+        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong> et les <strong>sucreries</strong>
+        n'ont pas de casier. Il sert au calcul de la sanction des casiers emportés.
       </p>
       <div class="flex gap-2 mt-4">
         <button type="submit" class="btn btn-primary">{{ action }}</button>

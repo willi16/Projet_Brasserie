@@ -10,17 +10,12 @@ from .produit import Produit
 
 DELAI_RETOUR_JOURS = 3
 
-BOUTEILLES_PAR_MODELE = {
-    'GM12': 12,
-    'GM20': 20,
-    'PM24': 24,
-}
-
 
 class CasierEmporte(models.Model):
     bon = models.OneToOneField(BonVente, related_name='casier_emporte', on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE)
     modele = models.CharField(max_length=10, choices=Produit.MODELE_CHOICES, default='GM12')
+    bouteilles_par_casier = models.IntegerField(default=12)
     nombre_casiers = models.IntegerField()
     nombre_rendus = models.IntegerField(default=0)
     date_emport = models.DateTimeField(auto_now_add=True)
@@ -29,10 +24,6 @@ class CasierEmporte(models.Model):
     @property
     def restant(self):
         return self.nombre_casiers - self.nombre_rendus
-
-    @property
-    def bouteilles_par_casier(self):
-        return BOUTEILLES_PAR_MODELE.get(self.modele, 12)
 
     @property
     def restant_bouteilles(self):

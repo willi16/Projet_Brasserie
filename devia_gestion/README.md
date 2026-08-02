@@ -277,10 +277,12 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 
 ### Suivre les casiers emportés
 
-1. Menu **Casiers emportés** : la liste des casiers partis avec les clients.
-2. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
-3. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
-4. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier dépend du **modèle** (GM12 = 12 bouteilles, GM20 = 20, PM24 = 24), déterminé automatiquement par le produit.
+1. Après avoir **créé le bon de vente**, ouvrez le **détail du bon** : un bouton **Enregistrer des casiers** apparaît si le bon contient une boisson ou une bière.
+2. Le **modèle** est rempli automatiquement : **boisson/bière de 50cl ou plus = grand modèle** (GM12 ou GM20), **en dessous de 50cl = petit modèle** (PM24). Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »).
+3. Menu **Casiers emportés** : la liste des casiers partis avec les clients. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
+4. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
+5. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier est celui du produit (12, 20 ou 24).
+6. **Eau et sucreries** : pas de casier à suivre, tout est emporté.
 
 ### Enregistrer une livraison (tâche du gérant/admin)
 
@@ -309,16 +311,18 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 
 ### Produits
 - Ajouter, modifier, supprimer un produit.
-- Champs : nom, catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
+- Champs : nom (avec la capacité, ex. « Coca-Cola 50cl »), catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
+- Le **modèle de casier** est déduit automatiquement : boisson/bière de 50cl ou plus = grand modèle (GM12/GM20), en dessous = petit modèle (PM24) ; eau et sucrerie = pas de casier.
 - Le stock est calculé automatiquement à partir des mouvements (entrées – sorties).
 
 ### Ventes
-- **Nouvelle vente** : création d'un bon avec plusieurs lignes, fractions de casier, casiers emportés à suivre, vérification du stock en temps réel, alerte de seuil.
+- **Nouvelle vente** : création d'un bon avec plusieurs lignes, fractions de casier, vérification du stock en temps réel, alerte de seuil.
 - **Liste des ventes** : filtres et total par bon.
-- **Détail d'un bon** : lignes, total, état des casiers emportés, actions *Valider* (déduit le stock), *Annuler* (restaure le stock), *Aperçu de la facture*.
+- **Détail d'un bon** : lignes, total, actions *Valider* (déduit le stock), *Annuler* (restaure le stock), *Aperçu de la facture*, et enregistrement des **casiers à retourner** après la vente.
 
 ### Casiers emportés
-- Saisis lors de la création du bon de vente, suivis dans le menu **Casiers emportés**.
+- Enregistrés **après la création du bon**, depuis le **détail du bon** (bouton *Enregistrer des casiers*), puis suivis dans le menu **Casiers emportés**.
+- Modèle déterminé automatiquement par le produit (grand modèle = 50cl ou plus, petit modèle = en dessous) ; seules les **boissons et bières** sont concernées.
 - Retour **partiel ou total** enregistré par le caissier ; délai de retour de **3 jours**.
 - **Sanction automatique** en cas de retard : montant par bouteille configurable (menu **Paramètres**), calculé et affiché sans action manuelle.
 - Le suivi est purement comptable : les retours **ne modifient pas** le stock de produits.

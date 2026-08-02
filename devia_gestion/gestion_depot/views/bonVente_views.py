@@ -8,13 +8,13 @@ from django.db.models import Sum, Case, When, F, FloatField
 from django.contrib.auth.models import User
 from datetime import datetime
 
-from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement, CasierEmporte
+from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
+from gestion_depot.views.casier_views import produit_casier_du_bon
 
 
 FRACTION_MIN = Decimal('0.25')
 FRACTION_MAX = Decimal('9.99')
 TYPES_PAIEMENT_VALIDES = {'especes', 'credit'}
-MODELE_VALIDES = {m[0] for m in Produit.MODELE_CHOICES}
 
 
 def stocks_disponibles(produits):
@@ -57,23 +57,6 @@ def creer_bon_vente(request):
             messages.error(request, "Type de paiement invalide.")
             return redirect('gestion_depot:creer_bon_vente')
 
-        # Casiers emportés (saisie séparée, facultative)
-        casiers_emportes_raw = (request.POST.get('casiers_emportes') or '').strip()
-        casiers_emportes = 0
-        modele = request.POST.get('casiers_emportes_modele') or ''
-        if casiers_emportes_raw:
-            try:
-                casiers_emportes = int(casiers_emportes_raw)
-            except (ValueError, TypeError):
-                messages.error(request, "Le nombre de casiers emportés est invalide.")
-                return redirect('gestion_depot:creer_bon_vente')
-            if casiers_emportes < 0:
-                messages.error(request, "Le nombre de casiers emportés ne peut pas être négatif.")
-                return redirect('gestion_depot:creer_bon_vente')
-            if casiers_emportes > 10000:
-                messages.error(request, "Le nombre de casiers emportés est trop élevé.")
-                return redirect('gestion_depot:creer_bon_vente')
-
         # Convertir et valider les données
         try:
             produit_ids = [int(p) for p in produits]
@@ -91,13 +74,6 @@ def creer_bon_vente(request):
         # Récupérer les produits en une seule requête
         produits_dict = Produit.objects.in_bulk(produit_ids)
         stocks = stocks_disponibles(produits_dict.values())
-
-        # Modèle de casier : choisi dans le formulaire, sinon celui du premier produit
-        if not modele and produits_dict:
-            modele = produits_dict.get(produit_ids[0]).modele
-        if casiers_emportes > 0 and modele not in MODELE_VALIDES:
-            messages.error(request, "Le modèle de casier est invalide.")
-            return redirect('gestion_depot:creer_bon_vente')
 
         # Vérifier les droits de l'utilisateur (admin ou gérant ?)
         is_admin_or_gestionnaire = request.user.is_superuser or request.user.groups.filter(
@@ -164,15 +140,6 @@ def creer_bon_vente(request):
                     )
                 )
         LigneVente.objects.bulk_create(lignes)
-
-        # Suivi des casiers emportés (si précisé)
-        if casiers_emportes > 0:
-            CasierEmporte.objects.create(
-                bon=bon,
-                client=bon.client,
-                modele=modele,
-                nombre_casiers=casiers_emportes,
-            )
 
         messages.success(request, f"Bon de vente {bon.reference} créé avec succès !")
         return redirect('gestion_depot:liste_bons_vente')
@@ -326,4 +293,7 @@ def detail_bon_vente(request, id):
         messages.error(request, "Vous n'êtes pas autorisé à consulter cette vente.")
         return redirect('gestion_depot:liste_bons_vente')
 
-    return render(request, 'gestion_depot/detail_bon_vente.html', {'bon': bon})
+    return render(request, 'gestion_depot/detail_bon_vente.html', {
+        'bon': bon,
+        'produit_casier': produit_casier_du_bon(bon),
+    })

@@ -1,5 +1,30 @@
+import re
 from django.db import models
 from django.core.validators import MinValueValidator
+
+# Catégories dont les casiers peuvent être emportés et rendus
+CATEGORIES_AVEC_CASIERS = {'boisson', 'biere'}
+
+# Capacité (cl) à partir de laquelle on considère un "grand modèle"
+SEUIL_GRAND_MODELE_CL = 50
+
+
+def capacite_cl(nom):
+    """Extrait la capacité d'une bouteille depuis le nom du produit (ex. '50cl', '1.5L', '330ml')."""
+    m = re.search(r'([\d.,]+)\s*(ml|cl|l)', nom or '', re.IGNORECASE)
+    if not m:
+        return None
+    try:
+        valeur = float(m.group(1).replace(',', '.'))
+    except ValueError:
+        return None
+    unite = m.group(2).lower()
+    if unite == 'ml':
+        return valeur / 10
+    if unite == 'l':
+        return valeur * 100
+    return valeur
+
 
 class Produit(models.Model):
     CATEGORIE_CHOICES = [
@@ -19,6 +44,7 @@ class Produit(models.Model):
         ('GM12', 'Grand modèle - 12 bouteilles'),
         ('GM20', 'Grand modèle - 20 bouteilles'),
         ('PM24', 'Petit modèle - 24 bouteilles'),
+        ('NC', 'Pas de casier'),
     ]
 
     nom = models.CharField(max_length=100)
@@ -33,16 +59,14 @@ class Produit(models.Model):
         self.modele = self.get_modele()
         super().save(*args, **kwargs)
 
-    @classmethod
-    def modele_from_casier_contenu(cls, casier_contenu):
-        return {
-            12: 'GM12',
-            20: 'GM20',
-            24: 'PM24',
-        }.get(casier_contenu, 'GM12')
-
     def get_modele(self):
-        return Produit.modele_from_casier_contenu(self.casier_contenu)
+        """Grand modèle (GM12/GM20) si boisson/bière >= 50cl, petit modèle (PM24) sinon, pas de casier pour le reste."""
+        if self.categorie not in CATEGORIES_AVEC_CASIERS:
+            return 'NC'
+        capacite = capacite_cl(self.nom)
+        if capacite is not None and capacite < SEUIL_GRAND_MODELE_CL:
+            return 'PM24'
+        return 'GM12' if self.casier_contenu == 12 else 'GM20'
 
     
     def stock_disponible(self):

@@ -13,6 +13,7 @@ from gestion_depot.models import (
     Parametre, CasierEmporte,
 )
 from gestion_depot.models.parametre import SANCTION_CASIER
+from gestion_depot.models.produit import CATEGORIES_AVEC_CASIERS
 
 class Command(BaseCommand):
     help = 'Supprime toutes les données et génère des données de test réalistes'
@@ -56,7 +57,7 @@ class Command(BaseCommand):
         self.stdout.write('   - Admin: admin / admin123')
         self.stdout.write('   - Gérant: gerant1 / gerant123')
         self.stdout.write('   - Caissier: caissier1 / caissier123')
-        self.stdout.write('   - 12 produits, 5 clients, 2 fournisseurs')
+        self.stdout.write('   - 14 produits, 5 clients, 2 fournisseurs')
         self.stdout.write('   - 8 livraisons, 15 ventes')
         self.stdout.write('   - Stocks mis à jour via Mouvement')
 
@@ -119,16 +120,23 @@ class Command(BaseCommand):
 
     def create_products(self):
         produits_data = [
-            ("Coca-Cola 50cl", "boisson", 24, 700, 750),
-            ("Fanta Orange 50cl", "boisson", 24, 650, 700),
-            ("Sprite 50cl", "boisson", 24, 650, 700),
-            ("Pepsi 50cl", "boisson", 24, 650, 700),
-            ("Flag 65cl", "biere", 24, 900, 950),
-            ("Guiness 65cl", "biere", 24, 1000, 1050),
-            ("Stella 65cl", "biere", 24, 950, 1000),
+            # Boissons 50cl ou plus -> grand modèle (GM)
+            ("Coca-Cola 50cl", "boisson", 20, 700, 750),
+            ("Fanta Orange 50cl", "boisson", 20, 650, 700),
+            ("Sprite 50cl", "boisson", 20, 650, 700),
+            ("Pepsi 50cl", "boisson", 20, 650, 700),
+            # Boissons en dessous de 50cl -> petit modèle (PM)
+            ("Coca-Cola 33cl", "boisson", 24, 600, 650),
+            ("Fanta Orange 33cl", "boisson", 24, 550, 600),
+            # Bières -> grand modèle (GM)
+            ("Flag 65cl", "biere", 12, 900, 950),
+            ("Guiness 65cl", "biere", 12, 1000, 1050),
+            ("Stella 65cl", "biere", 12, 950, 1000),
+            # Eaux -> pas de casier (tout est emporté)
             ("Eau Cristal 1.5L", "eau", 12, 500, 550),
             ("Eau Volvic 1.5L", "eau", 12, 550, 600),
             ("Eau Source 50cl", "eau", 24, 300, 350),
+            # Sucreries -> pas de casier
             ("Chips Sel 100g", "sucrerie", 24, 400, 450),
             ("Chips Fromage 100g", "sucrerie", 24, 400, 450),
         ]
@@ -255,8 +263,15 @@ class Command(BaseCommand):
             defaults={'valeur': 500},
         )
 
-        bons = list(BonVente.objects.filter(statut='valide')[:8])
+        bons = list(BonVente.objects.filter(statut='valide')[:10])
         for i, bon in enumerate(bons):
+            produit = None
+            for ligne in bon.lignes.select_related('produit'):
+                if ligne.produit.categorie in CATEGORIES_AVEC_CASIERS:
+                    produit = ligne.produit
+                    break
+            if produit is None:
+                continue
             nombre = random.randint(1, 5)
             if i < 4:
                 nombre_rendus = random.choice([0, nombre // 2])
@@ -264,11 +279,11 @@ class Command(BaseCommand):
             else:
                 nombre_rendus = nombre
                 date_retour = timezone.now()
-            ligne = bon.lignes.select_related('produit').first()
             CasierEmporte.objects.create(
                 bon=bon,
                 client=bon.client,
-                modele=ligne.produit.modele if ligne else 'GM12',
+                modele=produit.modele,
+                bouteilles_par_casier=produit.casier_contenu,
                 nombre_casiers=nombre,
                 nombre_rendus=nombre_rendus,
                 date_retour_complet=date_retour,
