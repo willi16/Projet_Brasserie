@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Suivi des casiers emportés{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Suivi des casiers emportés</h2>
+
+<div class="card mb-4">
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}"
+       class="btn {% if not statut_filter %}btn-primary{% else %}btn-secondary{% endif %}">Tous</a>
+    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=en_cours"
+       class="btn {% if statut_filter == 'en_cours' %}btn-primary{% else %}btn-secondary{% endif %}">
+      En attente ({{ nb_en_cours }})
+    </a>
+    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=en_retard"
+       class="btn {% if statut_filter == 'en_retard' %}btn-primary{% else %}btn-secondary{% endif %}">
+      En retard ({{ nb_en_retard }})
+    </a>
+    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=retourne"
+       class="btn {% if statut_filter == 'retourne' %}btn-primary{% else %}btn-secondary{% endif %}">
+      Retournés ({{ nb_retournes }})
+    </a>
+  </div>
+</div>
+
+<div class="card mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+  <div>
+    <h5 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Sanction par bouteille</h5>
+    <p class="text-lg font-bold">{{ montant_sanction }} FCFA</p>
+  </div>
+  <div>
+    <h5 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Bouteilles en retard</h5>
+    <p class="text-lg font-bold">{{ total_restant_bouteilles }} bouteille(s)</p>
+  </div>
+  <div>
+    <h5 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Montant dû (retards)</h5>
+    <p class="text-lg font-bold">{{ total_sanction }} FCFA</p>
+  </div>
+</div>
+
+<div class="card p-0 overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Bon</th>
+        <th>Modèle</th>
+        <th>Date emport</th>
+        <th>Date limite</th>
+        <th>Emportés</th>
+        <th>Rendus</th>
+        <th>Restant</th>
+        <th>Bouteilles</th>
+        <th>Statut</th>
+        <th>Sanction</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in casiers %}
+        <tr>
+          <td>{{ c.client.nom }}</td>
+          <td>
+            <a href="{% url 'gestion_depot:detail_bon_vente' c.bon.id %}" class="text-brand-600 dark:text-brand-400">{{ c.bon.reference }}</a>
+          </td>
+          <td><span class="badge badge-info">{{ c.get_modele_display }}</span></td>
+          <td>{{ c.date_emport|date:"d/m/Y H:i" }}</td>
+          <td>{{ c.date_limite|date:"d/m/Y H:i" }}</td>
+          <td>{{ c.nombre_casiers }}</td>
+          <td>{{ c.nombre_rendus }}</td>
+          <td>{{ c.restant }}</td>
+          <td>{{ c.restant_bouteilles }}</td>
+          <td>
+            {% if c.date_retour_complet %}
+              <span class="badge badge-success">Retourné</span>
+            {% elif c.en_retard %}
+              <span class="badge badge-danger">En retard</span>
+            {% else %}
+              <span class="badge badge-warning">En attente</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if c.en_retard %}
+              <span class="text-red-600 font-semibold">{{ c.montant_sanction }} FCFA</span>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if c.restant > 0 %}
+              <form method="post" action="{% url 'gestion_depot:enregistrer_retour_casiers' c.id %}" class="flex gap-1 items-end">
+                {% csrf_token %}
+                <input type="number" name="quantite_rendue" min="1" max="{{ c.restant }}" step="1"
+                       value="{{ c.restant }}" class="form-input !w-20" required>
+                <button type="submit" class="btn btn-sm btn-success">Retour</button>
+              </form>
+            {% else %}
+              <span class="text-gray-400">-</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="12" class="text-center py-6">Aucun casier emporté trouvé.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

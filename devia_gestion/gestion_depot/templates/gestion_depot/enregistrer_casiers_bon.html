@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Enregistrer des casiers - {{ bon.reference }}{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Enregistrer des casiers à retourner</h2>
+
+<div class="card max-w-lg">
+  <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+    <strong>Bon :</strong> {{ bon.reference }}<br>
+    <strong>Client :</strong> {{ bon.client.nom|default:"-" }}<br>
+    <strong>Produit à casier :</strong> {{ produit_casier.nom }} ({{ produit_casier.casier_contenu }} bouteilles/casier)
+  </div>
+
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label for="modele" class="form-label">Modèle de casier</label>
+      <select name="modele" id="modele" class="form-select" required>
+        {% for valeur, label in modeles %}
+          <option value="{{ valeur }}" {% if valeur == modele_par_defaut %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">
+        Déterminé automatiquement : boisson/bière de 50cl ou plus = grand modèle, en dessous = petit modèle.
+      </small>
+    </div>
+    <div>
+      <label for="nombre_casiers" class="form-label">Nombre de casiers emportés</label>
+      <input type="number" name="nombre_casiers" id="nombre_casiers" class="form-input" min="1" max="10000" step="1" required>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

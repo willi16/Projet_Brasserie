@@ -25,6 +25,11 @@ from .livraison_views import (
     liste_livraisons,
     creer_bon_livraison
 )
+from .casier_views import (
+    liste_casiers_emportes,
+    enregistrer_retour_casiers,
+    configurer_sanction,
+)
 __all__ = [
     'dashboard', 
     'creer_bon_vente', 
@@ -42,5 +47,8 @@ __all__ = [
     'detail_bon_vente',
     'liste_bons_vente',
     'annuler_bon_vente',
-    'valider_bon_vente'
+    'valider_bon_vente',
+    'liste_casiers_emportes',
+    'enregistrer_retour_casiers',
+    'configurer_sanction',
 ]

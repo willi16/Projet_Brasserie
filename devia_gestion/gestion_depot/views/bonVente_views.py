@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from datetime import datetime
 
 from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
+from gestion_depot.views.casier_views import produit_casier_du_bon
 
 
 FRACTION_MIN = Decimal('0.25')
@@ -292,4 +293,7 @@ def detail_bon_vente(request, id):
         messages.error(request, "Vous n'êtes pas autorisé à consulter cette vente.")
         return redirect('gestion_depot:liste_bons_vente')
 
-    return render(request, 'gestion_depot/detail_bon_vente.html', {'bon': bon})
+    return render(request, 'gestion_depot/detail_bon_vente.html', {
+        'bon': bon,
+        'produit_casier': produit_casier_du_bon(bon),
+    })

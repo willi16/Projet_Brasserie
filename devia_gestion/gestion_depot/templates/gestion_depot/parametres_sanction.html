@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Paramètres - Sanction casiers{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Paramètres de la sanction casiers</h2>
+
+<div class="card max-w-lg">
+  <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+    Un casier emporté doit être rendu sous <strong>{{ delai }} jours</strong>. Passé ce délai, une sanction de
+    <strong>{{ param.valeur }} FCFA par bouteille</strong> non rendue est appliquée automatiquement
+    (modèle GM12, GM20 ou PM24).
+  </p>
+  <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">
+    Le modèle est déterminé par le produit : boisson/bière de <strong>50cl ou plus = grand modèle</strong>,
+    en dessous = <strong>petit modèle</strong>. L'eau et les sucreries n'ont pas de casier à suivre.
+  </p>
+
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label for="montant" class="form-label">Montant de la sanction par bouteille (FCFA)</label>
+      <input type="number" name="montant" id="montant" class="form-input" min="0" step="100"
+             value="{{ param.valeur }}" required>
+    </div>
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -46,6 +46,7 @@ Ce guide est écrit pour que **même une personne qui n'est pas programmeur** pu
 | **Bon de vente** | La note de vente à un client : produit(s), fraction, quantité, montant total. |
 | **Bon de livraison** | L'entrée de marchandises reçue d'un fournisseur (fait remonter le stock). |
 | **Facture** | Le document officiel remis au client, avec les détails de la vente. On peut l'**apercevoir à l'écran** puis **l'imprimer** ou **la télécharger en PDF**. |
+| **Casier emporté** | Un casier (vide) que le client emporte et doit **rendre sous 3 jours**. Passé ce délai, une **sanction** est calculée automatiquement. |
 | **Rapport** | Bilan des ventes, bénéfices et produits sur une période donnée. |
 
 Les utilisateurs ont des **rôles** :
@@ -54,7 +55,7 @@ Les utilisateurs ont des **rôles** :
 |---|---|
 | **Admin** | Tout : gestion des produits, fournisseurs, ventes, livraisons, rapports, comptes des employés, journal d'activité. |
 | **Gérant** | Tout sauf la gestion des comptes des employés. |
-| **Caissier** | Enregistrer les ventes (il ne voit que les siennes), créer des factures. |
+| **Caissier** | Enregistrer les ventes (il ne voit que les siennes), créer des factures, saisir et suivre les casiers emportés. |
 
 ---
 
@@ -266,12 +267,22 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 3. Renseignez le **nom du client** et le **type de paiement** (Espèces / Crédit).
 4. Choisissez le **produit**, la **fraction** du casier (1.00 = casier complet, 0.50 = demi-casier, etc.) et la **quantité**.
    - Le stock disponible s'affiche sous le produit. Une vente qui dépasse le stock est bloquée.
-5. Cliquez sur **Ajouter une ligne** pour plusieurs articles.
-6. Vérifiez le **total estimé**, puis **Créer le bon**.
-7. Le bon apparaît dans **Ventes** avec le statut *En cours*. Validez-le pour **déduire le stock** (bouton Valider).
-8. Générez la **facture** : voir la rubrique [La facture](#la-facture-aperçu-et-pdf).
+5. Renseignez les **casiers emportés** : le nombre de casiers (vides) que le client emporte avec lui. Laissez **0** s'il n'emporte rien. Ils seront à rendre sous **3 jours** (voir rubrique [Casiers emportés](#casiers-emportés)).
+6. Cliquez sur **Ajouter une ligne** pour plusieurs articles.
+7. Vérifiez le **total estimé**, puis **Créer le bon**.
+8. Le bon apparaît dans **Ventes** avec le statut *En cours*. Validez-le pour **déduire le stock** (bouton Valider).
+9. Générez la **facture** : voir la rubrique [La facture](#la-facture-aperçu-et-pdf).
 
 > **Seuil d'alerte :** si une vente atteint ou dépasse le seuil du produit (ex. vente de 5 casiers ou plus), seul un **gérant** ou un **admin** peut la valider.
+
+### Suivre les casiers emportés
+
+1. Après avoir **créé le bon de vente**, ouvrez le **détail du bon** : un bouton **Enregistrer des casiers** apparaît si le bon contient une boisson ou une bière.
+2. Le **modèle** est rempli automatiquement : **boisson/bière de 50cl ou plus = grand modèle** (GM12 ou GM20), **en dessous de 50cl = petit modèle** (PM24). Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »).
+3. Menu **Casiers emportés** : la liste des casiers partis avec les clients. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
+4. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
+5. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier est celui du produit (12, 20 ou 24).
+6. **Eau et sucreries** : pas de casier à suivre, tout est emporté.
 
 ### Enregistrer une livraison (tâche du gérant/admin)
 
@@ -300,13 +311,21 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 
 ### Produits
 - Ajouter, modifier, supprimer un produit.
-- Champs : nom, catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
+- Champs : nom (avec la capacité, ex. « Coca-Cola 50cl »), catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
+- Le **modèle de casier** est déduit automatiquement : boisson/bière de 50cl ou plus = grand modèle (GM12/GM20), en dessous = petit modèle (PM24) ; eau et sucrerie = pas de casier.
 - Le stock est calculé automatiquement à partir des mouvements (entrées – sorties).
 
 ### Ventes
 - **Nouvelle vente** : création d'un bon avec plusieurs lignes, fractions de casier, vérification du stock en temps réel, alerte de seuil.
 - **Liste des ventes** : filtres et total par bon.
-- **Détail d'un bon** : lignes, total, actions *Valider* (déduit le stock), *Annuler* (restaure le stock), *Aperçu de la facture*.
+- **Détail d'un bon** : lignes, total, actions *Valider* (déduit le stock), *Annuler* (restaure le stock), *Aperçu de la facture*, et enregistrement des **casiers à retourner** après la vente.
+
+### Casiers emportés
+- Enregistrés **après la création du bon**, depuis le **détail du bon** (bouton *Enregistrer des casiers*), puis suivis dans le menu **Casiers emportés**.
+- Modèle déterminé automatiquement par le produit (grand modèle = 50cl ou plus, petit modèle = en dessous) ; seules les **boissons et bières** sont concernées.
+- Retour **partiel ou total** enregistré par le caissier ; délai de retour de **3 jours**.
+- **Sanction automatique** en cas de retard : montant par bouteille configurable (menu **Paramètres**), calculé et affiché sans action manuelle.
+- Le suivi est purement comptable : les retours **ne modifient pas** le stock de produits.
 
 ### Livraisons
 - Création et liste des bons de livraison des fournisseurs ; chaque livraison alimente le stock.
@@ -349,7 +368,7 @@ Dans Docker, tout est déjà installé.
 | `python manage.py seed_data` | Charge des données de test (supprime d'abord les données existantes). |
 | `python manage.py create_groups` | Crée les rôles (Caissier, Gérant, Admin) sans les données de test. |
 | `python manage.py runserver` | Démarre le serveur local. |
-| `python manage.py test gestion_depot` | Lance les tests automatisés (14 tests). |
+| `python manage.py test gestion_depot` | Lance les tests automatisés (24 tests). |
 | `python manage.py check` | Vérifie que le projet est cohérent. |
 | `python manage.py collectstatic` | Regroupe les fichiers statiques (CSS/JS) dans `staticfiles/`. |
 | `npm run build:css` | Reconstruit le CSS Tailwind (après modification de `tailwind/input.css` ou des templates). |

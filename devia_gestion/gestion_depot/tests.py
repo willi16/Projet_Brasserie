@@ -3,10 +3,14 @@ from django.test import TestCase
 from django.test import Client as DjangoClient
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
+from django.utils import timezone
+from datetime import timedelta
 from gestion_depot.models import (
     Produit, Fournisseur, Client, BonVente, BonLivraison,
     LigneVente, LigneLivraison, Mouvement, ProfilUtilisateur,
+    CasierEmporte, Parametre,
 )
+from gestion_depot.models.parametre import SANCTION_CASIER
 
 
 class BaseTest(TestCase):
@@ -139,3 +143,179 @@ class LoginTests(BaseTest):
         self.http_client.login(username='caissier1', password='pass12345')
         response = self.http_client.get(reverse('gestion_depot:dashboard'))
         self.assertEqual(response.status_code, 200)
+
+
+class CasierEmporteTests(BaseTest):
+    def setUp(self):
+        super().setUp()
+        Mouvement.objects.create(
+            produit=self.produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+
+    def _creer_bon(self):
+        return self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+            'client_nom': 'Client Casiers',
+            'type_paiement': 'especes',
+            'produit': [str(self.produit.id)],
+            'fraction': ['1.00'],
+            'quantite': ['2'],
+        })
+
+    def test_creation_bon_sans_enregistrement_de_casiers(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        self._creer_bon()
+        self.assertEqual(CasierEmporte.objects.count(), 0)
+
+    def test_enregistrement_casiers_apres_creation_bon(self):
+        produit = Produit.objects.create(
+            nom='Flag 65cl', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('900'), prix_vente_casier=Decimal('950'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(produit.modele, 'GM12')
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        LigneVente.objects.create(bon=bon, produit=produit, fraction=Decimal('1.00'), quantite_casiers=Decimal('2'))
+
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_casiers_bon', args=[bon.id]),
+            {'nombre_casiers': '3'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:detail_bon_vente', args=[bon.id]))
+        casier = CasierEmporte.objects.latest('id')
+        self.assertEqual(casier.bon, bon)
+        self.assertEqual(casier.nombre_casiers, 3)
+        self.assertEqual(casier.restant, 3)
+        self.assertEqual(casier.modele, 'GM12')
+        self.assertEqual(casier.bouteilles_par_casier, 12)
+        self.assertFalse(casier.en_retard)
+
+    def test_bon_sans_produit_a_casier_pas_de_suivi(self):
+        eau = Produit.objects.create(
+            nom='Eau Cristal 1.5L', categorie='eau', casier_contenu=12,
+            prix_achat_casier=Decimal('500'), prix_vente_casier=Decimal('550'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(eau.modele, 'NC')
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        LigneVente.objects.create(bon=bon, produit=eau, fraction=Decimal('1.00'), quantite_casiers=Decimal('1'))
+
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_casiers_bon', args=[bon.id]),
+            {'nombre_casiers': '3'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:detail_bon_vente', args=[bon.id]))
+        self.assertEqual(CasierEmporte.objects.count(), 0)
+
+    def test_retour_partiel(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=5)
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '2'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:liste_casiers_emportes'))
+        casier.refresh_from_db()
+        self.assertEqual(casier.nombre_rendus, 2)
+        self.assertEqual(casier.restant, 3)
+        self.assertIsNone(casier.date_retour_complet)
+
+    def test_retour_complet(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=5)
+        self.http_client.login(username='caissier1', password='pass12345')
+        self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '5'},
+        )
+        casier.refresh_from_db()
+        self.assertEqual(casier.restant, 0)
+        self.assertIsNotNone(casier.date_retour_complet)
+
+    def test_retour_superieur_au_restant_rejete(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=3)
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:enregistrer_retour_casiers', args=[casier.id]),
+            {'quantite_rendue': '4'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:liste_casiers_emportes'))
+        casier.refresh_from_db()
+        self.assertEqual(casier.nombre_rendus, 0)
+
+    def test_modele_auto_selon_taille(self):
+        grand = Produit.objects.create(
+            nom='Bière 65cl', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('900'), prix_vente_casier=Decimal('950'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(grand.modele, 'GM12')
+        self.assertEqual(grand.get_modele_display(), 'Grand modèle - 12 bouteilles')
+
+        petit = Produit.objects.create(
+            nom='Coca-Cola 33cl', categorie='boisson', casier_contenu=24,
+            prix_achat_casier=Decimal('600'), prix_vente_casier=Decimal('650'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(petit.modele, 'PM24')
+        self.assertEqual(petit.get_modele_display(), 'Petit modèle - 24 bouteilles')
+
+        eau = Produit.objects.create(
+            nom='Eau Source 50cl', categorie='eau', casier_contenu=24,
+            prix_achat_casier=Decimal('300'), prix_vente_casier=Decimal('350'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(eau.modele, 'NC')
+        self.assertEqual(eau.get_modele_display(), 'Pas de casier')
+
+    def test_en_retard_et_sanction_par_bouteille(self):
+        Parametre.objects.create(nom=SANCTION_CASIER, valeur=Decimal('500'))
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        casier = CasierEmporte.objects.create(
+            bon=bon, client=self.client_test, modele='GM12',
+            nombre_casiers=4, nombre_rendus=1,
+        )
+        CasierEmporte.objects.filter(id=casier.id).update(
+            date_emport=timezone.now() - timedelta(days=4),
+        )
+        casier.refresh_from_db()
+        self.assertTrue(casier.en_retard)
+        self.assertEqual(casier.bouteilles_par_casier, 12)
+        self.assertEqual(casier.restant_bouteilles, 36)
+        self.assertEqual(casier.montant_sanction, Decimal('18000'))
+
+    def test_acces_interdit_sans_role(self):
+        User.objects.create_user(username='simple', password='pass12345')
+        self.http_client.login(username='simple', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes'))
+        self.assertRedirects(response, reverse('gestion_depot:dashboard'))
+
+    def test_pages_suivi_et_parametres_rendues(self):
+        Parametre.objects.create(nom=SANCTION_CASIER, valeur=Decimal('500'))
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=4, nombre_rendus=1)
+
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes'))
+        self.assertEqual(response.status_code, 200)
+        response = self.http_client.get(reverse('gestion_depot:liste_casiers_emportes') + '?statut=en_retard')
+        self.assertEqual(response.status_code, 200)
+        response = self.http_client.get(reverse('gestion_depot:configurer_sanction'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_configurer_sanction_reserve_gerant_admin(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:configurer_sanction'))
+        self.assertRedirects(response, reverse('gestion_depot:dashboard'))
+
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.post(
+            reverse('gestion_depot:configurer_sanction'),
+            {'montant': '750'},
+        )
+        self.assertRedirects(response, reverse('gestion_depot:configurer_sanction'))
+        self.assertEqual(Parametre.get(SANCTION_CASIER), Decimal('750'))
