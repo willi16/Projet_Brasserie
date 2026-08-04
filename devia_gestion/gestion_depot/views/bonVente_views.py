@@ -191,7 +191,7 @@ def valider_bon_vente(request, id):
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='sortie',
-                quantite_casiers=ligne.quantite_casiers,
+                quantite_casiers=ligne.fraction * ligne.quantite_casiers,
                 utilisateur=request.user,
                 ligne_vente=ligne,
             )
@@ -220,7 +220,7 @@ def annuler_bon_vente(request, id):
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='entree',
-                quantite_casiers=ligne.quantite_casiers,
+                quantite_casiers=ligne.fraction * ligne.quantite_casiers,
                 utilisateur=request.user,
                 fournisseur=None,
             )

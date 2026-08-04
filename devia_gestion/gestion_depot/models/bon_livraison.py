@@ -16,6 +16,8 @@ class BonLivraison(models.Model):
         if not self.reference:
             self.reference = f"LIV-{self.pk:04d}"
             super().save(update_fields=['reference'])
+            return
+        super().save(*args, **kwargs)
 
 
 

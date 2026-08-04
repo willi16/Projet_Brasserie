@@ -11,7 +11,7 @@ from django.http import JsonResponse, HttpResponse
 from datetime import timezone
 import openpyxl
 
-from gestion_depot.models import userActionLog
+from gestion_depot.models.userActionLog import UserActionLog
 
 
 def _is_admin(user):
@@ -50,12 +50,12 @@ def manage_users(request):
         # Empêcher la désactivation du compte de l'utilisateur courant
         if user == request.user and action == 'deactivate':
             messages.error(request, "Vous ne pouvez pas désactiver votre propre compte.")
-            return redirect('manage_users')
+            return redirect('gestion_depot:manage_users')
 
         if action == 'activate':
             user.is_active = True
             user.save()
-            userActionLog.objects.create(
+            UserActionLog.objects.create(
                 performed_by=request.user,
                 target_user=user,
                 action='activate'
@@ -86,14 +86,14 @@ L'équipe Deiva""",
                     # Ne pas bloquer si l'email échoue
                     pass
 
-            userActionLog.objects.create(
+            UserActionLog.objects.create(
                 performed_by=request.user,
                 target_user=user,
                 action='deactivate'
             )
             messages.success(request, f"Le compte {user.username} a été désactivé.")
 
-        return redirect('manage_users')
+        return redirect('gestion_depot:manage_users')
 
     context = {
         'page_obj': page_obj,
@@ -135,7 +135,7 @@ def user_logs_full(request):
     if not _is_admin(request.user):
         raise PermissionDenied("Accès refusé.")
 
-    logs = userActionLog.UserActionLog.objects.select_related('performed_by', 'target_user').order_by('-timestamp')
+    logs = UserActionLog.objects.select_related('performed_by', 'target_user').order_by('-timestamp')
 
     # Export Excel
     if request.GET.get('export') == 'excel':

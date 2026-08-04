@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.test import Client as DjangoClient
 from django.urls import reverse
 from django.contrib.auth.models import User, Group
@@ -82,6 +82,24 @@ class BonVenteTests(BaseTest):
         response = self.http_client.get(reverse('gestion_depot:valider_bon_vente', args=[bon.id]))
         self.assertEqual(response.status_code, 405)
 
+    def test_validation_mouvement_prend_en_compte_fraction(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        LigneVente.objects.create(bon=bon, produit=self.produit, fraction=Decimal('0.50'), quantite_casiers=Decimal('2'))
+        Mouvement.objects.create(
+            produit=self.produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:valider_bon_vente', args=[bon.id]))
+        self.assertRedirects(response, reverse('gestion_depot:liste_bons_vente'))
+
+        bon.refresh_from_db()
+        self.assertEqual(bon.statut, 'valide')
+        self.assertEqual(self.produit.stock_disponible(), Decimal('9.00'))
+        sortie = Mouvement.objects.get(ligne_vente=bon.lignes.first())
+        self.assertEqual(sortie.quantite_casiers, Decimal('1.00'))
+
     def test_creer_bon_vente_fraction_libre(self):
         Mouvement.objects.create(
             produit=self.produit, type_mouvement='entree',
@@ -126,6 +144,26 @@ class BonLivraisonTests(BaseTest):
         bon = BonLivraison.objects.create(fournisseur=self.fournisseur, utilisateur=self.admin)
         self.assertTrue(bon.reference.startswith('LIV-'))
 
+    def test_mise_a_jour_persistee(self):
+        bon = BonLivraison.objects.create(fournisseur=self.fournisseur, utilisateur=self.admin)
+        autre_fournisseur = Fournisseur.objects.create(nom='Autre fournisseur', contact='00000000')
+        bon.fournisseur = autre_fournisseur
+        bon.save()
+        bon.refresh_from_db()
+        self.assertEqual(bon.fournisseur, autre_fournisseur)
+
+    def test_creation_livraison_produit_invalide_redirige_sans_500(self):
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:creer_bon_livraison'), {
+            'fournisseur': str(self.fournisseur.id),
+            'produit': ['abc'],
+            'casier_contenu': ['24'],
+            'prix_achat_casier': ['700'],
+            'quantite': ['2'],
+        })
+        self.assertRedirects(response, reverse('gestion_depot:creer_bon_livraison'))
+        self.assertEqual(BonLivraison.objects.count(), 0)
+
 
 class DocumentTests(BaseTest):
     def test_traversal_bloque(self):
@@ -143,6 +181,25 @@ class LoginTests(BaseTest):
         self.http_client.login(username='caissier1', password='pass12345')
         response = self.http_client.get(reverse('gestion_depot:dashboard'))
         self.assertEqual(response.status_code, 200)
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_manage_users_activer_desactiver_redirige(self):
+        self.http_client.login(username='admin1', password='pass12345')
+        user = User.objects.create_user(username='testuser', password='pass12345')
+
+        response = self.http_client.post(reverse('gestion_depot:manage_users'), {
+            'user_id': user.id, 'action': 'deactivate',
+        })
+        self.assertRedirects(response, reverse('gestion_depot:manage_users'))
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+
+        response = self.http_client.post(reverse('gestion_depot:manage_users'), {
+            'user_id': user.id, 'action': 'activate',
+        })
+        self.assertRedirects(response, reverse('gestion_depot:manage_users'))
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
 
 
 class CasierEmporteTests(BaseTest):
