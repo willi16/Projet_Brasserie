@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Gérer les comptes utilisateurs{% endblock %}
 
@@ -9,24 +10,20 @@
         <a href="{% url 'gestion_depot:user_logs_full' %}" class="btn btn-secondary btn-sm">Voir tout l'historique</a>
     </div>
 
-    <!-- Filtre par rôle -->
-    <form method="get" class="card mb-4">
+    <div class="card mb-4">
         <div class="flex items-center gap-2">
-            <label for="group" class="form-label mb-0">Filtrer par rôle :</label>
-            <select name="group" id="group" onchange="this.form.submit()" class="form-select w-auto">
+            <label for="filter-group" class="form-label mb-0">Filtrer par rôle :</label>
+            <select name="group" id="filter-group" class="form-select w-auto">
                 <option value="all" {% if not selected_group or selected_group == "all" %}selected{% endif %}>Tous les rôles</option>
                 {% for group in all_groups %}
                     <option value="{{ group.name }}" {% if selected_group == group.name %}selected{% endif %}>{{ group.name }}</option>
                 {% endfor %}
             </select>
-            {% if page_obj.number != 1 %}
-                <input type="hidden" name="page" value="{{ page_obj.number }}">
-            {% endif %}
         </div>
-    </form>
+    </div>
 
     <div class="card p-0 overflow-x-auto mb-4">
-        <table class="table">
+        <table id="table-users" class="table display">
             <thead>
                 <tr>
                     <th>Nom d'utilisateur</th>
@@ -36,68 +33,61 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for user in page_obj %}
+            <tfoot>
                 <tr>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        {% if user.is_active %}
-                            <span class="badge badge-success">Actif</span>
-                        {% else %}
-                            <span class="badge badge-danger">Inactif</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if user.is_superuser %}
-                            <span class="badge badge-secondary">Superadmin</span>
-                        {% else %}
-                            {% for group in user.groups.all %}
-                                <span class="badge badge-info">{{ group.name }}</span>
-                            {% empty %}
-                                <span class="badge badge-secondary">Aucun</span>
-                            {% endfor %}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="flex gap-1 flex-wrap items-center">
-                            <form method="post">
-                                {% csrf_token %}
-                                <input type="hidden" name="user_id" value="{{ user.id }}">
-                                {% if user.is_active %}
-                                    <button type="submit" name="action" value="deactivate" class="btn btn-sm btn-warning">Désactiver</button>
-                                {% else %}
-                                    <button type="submit" name="action" value="activate" class="btn btn-sm btn-success">Activer</button>
-                                {% endif %}
-                            </form>
-                            <a href="{% url 'gestion_depot:edit_user_roles' user.id %}" class="btn btn-sm btn-info">Modifier les rôles</a>
-                        </div>
-                    </td>
+                    <th>Nom d'utilisateur</th>
+                    <th>Email</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                 </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center py-6">Aucun utilisateur trouvé.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
+            </tfoot>
         </table>
     </div>
-
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-    <nav class="flex justify-center gap-1" aria-label="Pagination">
-        {% if page_obj.has_previous %}
-            <a class="btn btn-sm btn-secondary" href="?page=1{% if selected_group %}&group={{ selected_group }}{% endif %}">Première</a>
-            <a class="btn btn-sm btn-secondary" href="?page={{ page_obj.previous_page_number }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Précédente</a>
-        {% endif %}
-
-        <span class="inline-flex items-center px-3 py-1 text-sm">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
-
-        {% if page_obj.has_next %}
-            <a class="btn btn-sm btn-secondary" href="?page={{ page_obj.next_page_number }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Suivante</a>
-            <a class="btn btn-sm btn-secondary" href="?page={{ page_obj.paginator.num_pages }}{% if selected_group %}&group={{ selected_group }}{% endif %}">Dernière</a>
-        {% endif %}
-    </nav>
-    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var table = $('#table-users').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_users' %}",
+      type: 'GET',
+      data: function (d) {
+        d.group = $('#filter-group').val();
+      }
+    },
+    columns: [
+      { data: 'username' },
+      { data: 'email', render: function (d) { return d || '-'; } },
+      { data: 'statut_html', orderable: false, searchable: false },
+      { data: 'roles_html', orderable: false, searchable: false },
+      { data: 'actions_html', orderable: false, searchable: false }
+    ],
+    order: [[0, 'asc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      api.columns().every(function () {
+        var col = this;
+        if (!col.searchable()) return;
+        $('<input class="form-input !w-full !px-2 !py-1 !text-sm" placeholder="Filtrer..." autocomplete="off">')
+          .appendTo($(col.footer()))
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+
+  $('#filter-group').on('change', function () {
+    table.ajax.reload();
+  });
+});
+</script>
 {% endblock %}

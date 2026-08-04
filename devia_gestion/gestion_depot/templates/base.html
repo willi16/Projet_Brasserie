@@ -11,6 +11,9 @@
 
   <!-- SweetAlert2 local -->
   <link rel="stylesheet" href="{% static 'css/sweetalert2.min.css' %}">
+
+  <!-- DataTables local -->
+  <link rel="stylesheet" href="{% static 'css/datatables.min.css' %}">
 </head>
 <body class="flex flex-col min-h-screen" id="body-root">
 
@@ -196,6 +199,10 @@
   <!-- SweetAlert2 local -->
   <script src="{% static 'js/sweetalert2.min.js' %}"></script>
 
+  <!-- jQuery + DataTables locaux -->
+  <script src="{% static 'js/jquery.min.js' %}"></script>
+  <script src="{% static 'js/datatables.min.js' %}"></script>
+
   <script>
     // Sidebar link style
     const sidebarLinks = document.querySelectorAll('.sidebar-link');
@@ -341,5 +348,7 @@
       });
     });
   </script>
+
+  {% block extra_js %}{% endblock %}
 </body>
 </html>

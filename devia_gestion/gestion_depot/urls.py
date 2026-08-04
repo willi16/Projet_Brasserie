@@ -13,6 +13,7 @@ from gestion_depot.views import(
     employe_views,
     auth_views,
     casier_views,
+    datatable_views,
 )
 
 app_name = 'gestion_depot'
@@ -67,5 +68,14 @@ urlpatterns = [
     path('manage-users/edit/<int:user_id>/', auth_views.edit_user_roles, name='edit_user_roles'),
 
     path('manage-users/logs/', auth_views.user_logs_full, name='user_logs_full'),
+
+    # Endpoints DataTables (server-side)
+    path('dt/produits/', datatable_views.dt_produits, name='dt_produits'),
+    path('dt/fournisseurs/', datatable_views.dt_fournisseurs, name='dt_fournisseurs'),
+    path('dt/livraisons/', datatable_views.dt_livraisons, name='dt_livraisons'),
+    path('dt/ventes/', datatable_views.dt_bons_vente, name='dt_bons_vente'),
+    path('dt/casiers/', datatable_views.dt_casiers, name='dt_casiers'),
+    path('dt/users/', datatable_views.dt_users, name='dt_users'),
+    path('dt/logs/', datatable_views.dt_logs, name='dt_logs'),
 ]
 

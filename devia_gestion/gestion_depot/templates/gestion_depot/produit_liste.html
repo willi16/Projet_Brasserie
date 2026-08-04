@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 {% load custom_tags %}
+{% load static %}
 
 {% block title %}Liste des produits{% endblock %}
 
 {% block content %}
+{% user_can_edit request.user as can_edit %}
 <div class="flex items-center justify-between mb-4">
   <h2 class="text-2xl font-semibold">Liste des produits</h2>
-  {% user_can_edit request.user as can_edit %}
   {% if can_edit %}
     <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary">Ajouter un produit</a>
   {% endif %}
 </div>
 
 <div class="card p-0 overflow-x-auto">
-  <table class="table">
+  <table id="table-produits" class="table display">
     <thead>
       <tr>
         <th>Nom</th>
@@ -24,46 +25,74 @@
         <th>Stock</th>
         <th>Seuil d'alerte</th>
         <th>Statut</th>
-        {% user_can_edit request.user as can_edit %}
         {% if can_edit %}
           <th>Actions</th>
         {% endif %}
       </tr>
     </thead>
-    <tbody>
-      {% for produit in produits %}
+    <tfoot>
       <tr>
-        <td>{{ produit.nom }}</td>
-        <td>{{ produit.get_categorie_display }}</td>
-        <td>{{ produit.casier_contenu }} btl</td>
-        <td><span class="badge badge-info">{{ produit.get_modele_display }}</span></td>
-        <td>{{ produit.prix_vente_casier }} FCFA</td>
-        <td>{{ produit.stock_actuel|floatformat:2|default:0 }}</td>
-        <td>{{ produit.seuil_alerte }}</td>
-        <td>
-          <span class="badge {% if produit.en_alerte %}badge-warning{% else %}badge-success{% endif %}">
-            {% if produit.en_alerte %}Stock bas{% else %}OK{% endif %}
-          </span>
-        </td>
-        {% user_can_edit request.user as can_edit %}
+        <th>Nom</th>
+        <th>Catégorie</th>
+        <th></th>
+        <th>Modèle</th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
         {% if can_edit %}
-          <td>
-            <div class="flex gap-1">
-              <a href="{% url 'gestion_depot:modifier_produit' produit.id %}" class="btn btn-sm btn-warning">Modifier</a>
-              <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger confirm-delete"
-                 data-title="Supprimer le produit"
-                 data-text="Voulez-vous vraiment supprimer « {{ produit.nom }} » ? Cette action est irréversible.">Supprimer</a>
-            </div>
-          </td>
+          <th></th>
         {% endif %}
       </tr>
-      {% empty %}
-      <tr>
-        {% user_can_edit request.user as can_edit %}
-        <td colspan="{% if can_edit %}9{% else %}8{% endif %}" class="text-center py-6">Aucun produit trouvé.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+    </tfoot>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% user_can_edit request.user as can_edit %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var canEdit = {{ can_edit|yesno:"true,false" }};
+  var columns = [
+    { data: 'nom' },
+    { data: 'categorie_display' },
+    { data: 'casier_contenu', searchable: false, render: function (d) { return d + ' btl'; } },
+    { data: 'modele_display', render: function (d) { return '<span class="badge badge-info">' + d + '</span>'; } },
+    { data: 'prix_vente_casier', searchable: false, render: function (d) { return d + ' FCFA'; } },
+    { data: 'stock_actuel', searchable: false, render: function (d) { return Number(d).toFixed(2); } },
+    { data: 'seuil_alerte', searchable: false },
+    { data: 'statut_html', orderable: false, searchable: false }
+  ];
+  if (canEdit) {
+    columns.push({ data: 'actions_html', orderable: false, searchable: false });
+  }
+
+  $('#table-produits').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_produits' %}",
+      type: 'GET'
+    },
+    columns: columns,
+    order: [[0, 'asc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      api.columns().every(function () {
+        var col = this;
+        if (!col.searchable()) return;
+        $('<input class="form-input !w-full !px-2 !py-1 !text-sm" placeholder="Filtrer..." autocomplete="off">')
+          .appendTo($(col.footer()))
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+});
+</script>
 {% endblock %}

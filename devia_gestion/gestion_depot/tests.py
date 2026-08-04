@@ -376,3 +376,145 @@ class CasierEmporteTests(BaseTest):
         )
         self.assertRedirects(response, reverse('gestion_depot:configurer_sanction'))
         self.assertEqual(Parametre.get(SANCTION_CASIER), Decimal('750'))
+
+
+class DataTableTests(BaseTest):
+    def _get(self, url_name, params=None, username='caissier1'):
+        self.http_client.login(username=username, password='pass12345')
+        url = reverse(f'gestion_depot:{url_name}')
+        if params:
+            url += '?' + '&'.join(f'{k}={v}' for k, v in params.items())
+        return self.http_client.get(url)
+
+    def test_produits_renvoie_json_data(self):
+        response = self._get('dt_produits', {'draw': '1', 'start': '0', 'length': '10'})
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload['draw'], '1')
+        self.assertIn('recordsTotal', payload)
+        self.assertIn('recordsFiltered', payload)
+        self.assertTrue(len(payload['data']) >= 1)
+        row = payload['data'][0]
+        for key in ('nom', 'categorie_display', 'casier_contenu', 'modele_display',
+                    'prix_vente_casier', 'stock_actuel', 'statut_html'):
+            self.assertIn(key, row)
+        self.assertEqual(row['nom'], self.produit.nom)
+
+    def test_produits_recherche_globale(self):
+        Produit.objects.create(
+            nom='Flag Spécial 65cl', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('900'), prix_vente_casier=Decimal('950'),
+            seuil_alerte=5,
+        )
+        response = self._get('dt_produits', {'search[value]': 'Flag'})
+        payload = response.json()
+        noms = [r['nom'] for r in payload['data']]
+        self.assertIn('Flag Spécial 65cl', noms)
+        self.assertNotIn(self.produit.nom, noms)
+
+    def test_produits_recherche_par_colonne(self):
+        response = self._get('dt_produits', {'columns[1][search][value]': 'boisson'})
+        payload = response.json()
+        self.assertEqual(len(payload['data']), 1)
+        self.assertEqual(payload['data'][0]['nom'], self.produit.nom)
+
+    def test_produits_tri(self):
+        Produit.objects.create(
+            nom='AA Bière', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('900'), prix_vente_casier=Decimal('950'),
+            seuil_alerte=5,
+        )
+        response = self._get('dt_produits', {'order[0][column]': '0', 'order[0][dir]': 'desc'})
+        payload = response.json()
+        noms = [r['nom'] for r in payload['data']]
+        self.assertEqual(noms, sorted(noms, reverse=True))
+
+    def test_produits_pagination(self):
+        for i in range(5):
+            Produit.objects.create(
+                nom=f'Produit pag {i}', categorie='eau', casier_contenu=24,
+                prix_achat_casier=Decimal('300'), prix_vente_casier=Decimal('350'),
+                seuil_alerte=5,
+            )
+        response = self._get('dt_produits', {'start': '0', 'length': '5'})
+        self.assertEqual(len(response.json()['data']), 5)
+
+    def test_fournisseurs_403_pour_caissier(self):
+        response = self._get('dt_fournisseurs', username='caissier1')
+        self.assertEqual(response.status_code, 403)
+
+    def test_fournisseurs_ok_pour_gerant(self):
+        response = self._get('dt_fournisseurs', username='gerant1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['recordsTotal'], 1)
+
+    def test_livraisons_ok_pour_gerant(self):
+        response = self._get('dt_livraisons', username='gerant1')
+        self.assertEqual(response.status_code, 200)
+
+    def test_ventes_caissier_scope_vendeur(self):
+        bon_caissier = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        bon_admin = BonVente.objects.create(vendeur=self.admin, client=self.client_test, type_paiement='especes')
+        response = self._get('dt_bons_vente', username='caissier1')
+        payload = response.json()
+        self.assertEqual(payload['recordsTotal'], 1)
+        self.assertEqual(payload['data'][0]['reference'], bon_caissier.reference)
+
+    def test_ventes_filtre_statut(self):
+        BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes', statut='valide')
+        BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes', statut='annule')
+        response = self._get('dt_bons_vente', {'statut': 'valide'}, username='gerant1')
+        payload = response.json()
+        self.assertEqual(payload['recordsTotal'], 1)
+        self.assertEqual(payload['data'][0]['statut_html'].find('badge-success') != -1, True)
+
+    def test_casiers_ok_avec_filtre(self):
+        bon = BonVente.objects.create(vendeur=self.caissier, client=self.client_test, type_paiement='especes')
+        CasierEmporte.objects.create(bon=bon, client=self.client_test, nombre_casiers=4, nombre_rendus=1)
+        response = self._get('dt_casiers', username='caissier1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['recordsTotal'], 1)
+
+    def test_casiers_403_sans_role(self):
+        User.objects.create_user(username='simple2', password='pass12345')
+        response = self._get('dt_casiers', username='simple2')
+        self.assertEqual(response.status_code, 403)
+
+    def test_users_403_pour_gerant(self):
+        response = self._get('dt_users', username='gerant1')
+        self.assertEqual(response.status_code, 403)
+
+    def test_users_ok_pour_admin(self):
+        response = self._get('dt_users', username='admin1')
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(response.json()['recordsTotal'], 3)
+
+    def test_users_filtre_groupe(self):
+        response = self._get('dt_users', {'group': 'Gérant'}, username='admin1')
+        payload = response.json()
+        self.assertEqual(payload['recordsTotal'], 1)
+        self.assertEqual(payload['data'][0]['username'], 'gerant1')
+
+    def test_logs_ok_pour_admin(self):
+        response = self._get('dt_logs', username='admin1')
+        self.assertEqual(response.status_code, 200)
+
+    def test_logs_403_pour_gerant(self):
+        response = self._get('dt_logs', username='gerant1')
+        self.assertEqual(response.status_code, 403)
+
+    def test_pages_listes_rendues_avec_datatables(self):
+        pages = {
+            'liste_produits': 'caissier1',
+            'liste_bons_vente': 'caissier1',
+            'liste_casiers_emportes': 'caissier1',
+            'liste_fournisseurs': 'gerant1',
+            'liste_livraisons': 'gerant1',
+            'manage_users': 'admin1',
+            'user_logs_full': 'admin1',
+        }
+        for url_name, username in pages.items():
+            self.http_client.login(username=username, password='pass12345')
+            response = self.http_client.get(reverse(f'gestion_depot:{url_name}'))
+            self.assertEqual(response.status_code, 200, msg=f'{url_name} renvoie {response.status_code}')
+            self.assertContains(response, 'DataTable')
