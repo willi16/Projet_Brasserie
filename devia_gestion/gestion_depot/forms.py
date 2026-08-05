@@ -111,6 +111,14 @@ class ProduitForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_tag = False
 
+    def clean(self):
+        cleaned_data = super().clean()
+        prix_achat = cleaned_data.get('prix_achat_casier')
+        prix_vente = cleaned_data.get('prix_vente_casier')
+        if prix_achat is not None and prix_vente is not None and prix_vente < prix_achat:
+            raise forms.ValidationError("Le prix de vente doit être supérieur ou égal au prix d'achat.")
+        return cleaned_data
+
     class Meta:
         model = Produit
         fields = ['nom', 'categorie', 'casier_contenu', 'prix_achat_casier', 'prix_vente_casier', 'seuil_alerte']

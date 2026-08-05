@@ -14,6 +14,47 @@
 
   <!-- DataTables local -->
   <link rel="stylesheet" href="{% static 'css/datatables.min.css' %}">
+
+  <style>
+    /* Barre d'outils DataTables : recherche + filtres alignés en haut */
+    .dataTables_wrapper .dt-topbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .dataTables_wrapper .dt-topbar .dataTables_length,
+    .dataTables_wrapper .dt-topbar .dataTables_filter {
+      float: none;
+    }
+    .dataTables_wrapper .dt-topbar .dataTables_filter {
+      margin-left: auto;
+    }
+    .dataTables_wrapper .dt-colfilters {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    /* Recherche globale DataTables : coins arrondis */
+    .dataTables_wrapper .dataTables_filter input {
+      border-radius: 9999px !important;
+      border: 1px solid #d1d5db !important;
+      padding: 6px 16px !important;
+      outline: none !important;
+      background: transparent;
+      color: inherit;
+    }
+    .dataTables_wrapper .dataTables_filter input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .dark .dataTables_wrapper .dataTables_filter input {
+      border-color: #374151;
+    }
+  </style>
 </head>
 <body class="flex flex-col min-h-screen" id="body-root">
 

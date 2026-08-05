@@ -165,6 +165,67 @@ class BonLivraisonTests(BaseTest):
         self.assertEqual(BonLivraison.objects.count(), 0)
 
 
+class ProduitsMultiCreateTests(BaseTest):
+    def _post_data(self, nb=3, produits=None):
+        data = {
+            'form-TOTAL_FORMS': str(nb),
+            'form-INITIAL_FORMS': '0',
+            'form-MIN_NUM_FORMS': str(nb),
+            'form-MAX_NUM_FORMS': str(nb),
+        }
+        for i in range(nb):
+            if produits:
+                nom, cat, casier, achat, vente = produits[i]
+            else:
+                nom, cat, casier, achat, vente = f'Produit multi {i}', 'boisson', '24', '700', '750'
+            data[f'form-{i}-nom'] = nom
+            data[f'form-{i}-categorie'] = cat
+            data[f'form-{i}-casier_contenu'] = casier
+            data[f'form-{i}-prix_achat_casier'] = achat
+            data[f'form-{i}-prix_vente_casier'] = vente
+            data[f'form-{i}-seuil_alerte'] = '5'
+        return data
+
+    def test_page_get_rendue_avec_n_formulaires(self):
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:produits_multi_create', args=[3]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context['formset'].forms), 3)
+
+    def test_creation_multiple_ok(self):
+        self.http_client.login(username='gerant1', password='pass12345')
+        nb_avant = Produit.objects.count()
+        response = self.http_client.post(
+            reverse('gestion_depot:produits_multi_create', args=[3]),
+            self._post_data(3),
+        )
+        self.assertRedirects(response, reverse('gestion_depot:liste_produits'))
+        self.assertEqual(Produit.objects.count(), nb_avant + 3)
+        self.assertTrue(Produit.objects.filter(nom='Produit multi 0').exists())
+        self.assertTrue(Produit.objects.filter(nom='Produit multi 2').exists())
+
+    def test_prix_vente_inferieur_achat_rejete(self):
+        self.http_client.login(username='gerant1', password='pass12345')
+        nb_avant = Produit.objects.count()
+        data = self._post_data(2, produits=[
+            ('Produit OK', 'eau', '24', '300', '350'),
+            ('Produit invalide', 'eau', '24', '1000', '900'),
+        ])
+        response = self.http_client.post(
+            reverse('gestion_depot:produits_multi_create', args=[2]),
+            data,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Produit.objects.count(), nb_avant)
+
+    def test_nb_forms_hors_borne_redirige(self):
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:produits_multi_create', args=[1]))
+        self.assertRedirects(response, reverse('gestion_depot:liste_produits'))
+        response = self.http_client.get(reverse('gestion_depot:produits_multi_create', args=[21]))
+        self.assertRedirects(response, reverse('gestion_depot:liste_produits'))
+
+
 class DocumentTests(BaseTest):
     def test_traversal_bloque(self):
         self.http_client.login(username='admin1', password='pass12345')

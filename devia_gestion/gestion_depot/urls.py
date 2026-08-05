@@ -26,6 +26,7 @@ urlpatterns = [
     # Produits
     path('produits/', produit_views.liste_produits_avec_stock, name='liste_produits'),
     path('produits/ajouter/', produit_views.ajouter_produit, name='ajouter_produit'),
+    path('produits/multi-create/<int:nb_forms>/', produit_views.produits_multi_create, name='produits_multi_create'),
     path('produits/<int:pk>/modifier/', produit_views.modifier_produit, name='modifier_produit'),
     path('produits/<int:pk>/supprimer/', produit_views.supprimer_produit, name='supprimer_produit'),
 

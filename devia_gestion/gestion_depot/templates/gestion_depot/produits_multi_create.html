@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ajout multiple de produits{% endblock %}
+
+{% block content %}
+<div>
+  <h2 class="text-2xl font-semibold mb-4">Ajout multiple de produits ({{ nb_forms }} produits)</h2>
+
+  <div class="card p-4">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {{ formset.management_form }}
+
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Catégorie</th>
+              <th>Contenu casier</th>
+              <th>Prix achat (FCFA)</th>
+              <th>Prix vente (FCFA)</th>
+              <th>Seuil d'alerte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in formset %}
+            <tr>
+              <td>{{ form.nom|as_crispy_field }}</td>
+              <td>{{ form.categorie|as_crispy_field }}</td>
+              <td>{{ form.casier_contenu|as_crispy_field }}</td>
+              <td>{{ form.prix_achat_casier|as_crispy_field }}</td>
+              <td>{{ form.prix_vente_casier|as_crispy_field }}</td>
+              <td>{{ form.seuil_alerte|as_crispy_field }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if formset.non_form_errors %}
+        <div class="alert alert-error mt-3">
+          {% for error in formset.non_form_errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+        Le modèle de casier est déduit de la capacité indiquée dans le <strong>nom</strong> du produit :
+        boisson/bière de <strong>50cl ou plus = grand modèle</strong> (GM12 ou GM20 selon le nombre de bouteilles),
+        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong> et les <strong>sucreries</strong>
+        n'ont pas de casier.
+      </p>
+
+      <div class="flex gap-2 mt-4">
+        <button type="submit" class="btn btn-primary">Enregistrer les produits</button>
+        <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

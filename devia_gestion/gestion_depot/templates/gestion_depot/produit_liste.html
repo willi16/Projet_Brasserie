@@ -9,7 +9,10 @@
 <div class="flex items-center justify-between mb-4">
   <h2 class="text-2xl font-semibold">Liste des produits</h2>
   {% if can_edit %}
-    <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary">Ajouter un produit</a>
+    <div class="flex gap-2">
+      <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary">Ajouter un produit</a>
+      <button type="button" class="btn btn-secondary" onclick="multiCreateModal()">Ajouter plusieurs produits</button>
+    </div>
   {% endif %}
 </div>
 
@@ -30,21 +33,6 @@
         {% endif %}
       </tr>
     </thead>
-    <tfoot>
-      <tr>
-        <th>Nom</th>
-        <th>Catégorie</th>
-        <th></th>
-        <th>Modèle</th>
-        <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
-        {% if can_edit %}
-          <th></th>
-        {% endif %}
-      </tr>
-    </tfoot>
   </table>
 </div>
 {% endblock %}
@@ -70,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   $('#table-produits').DataTable({
     processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
     serverSide: true,
     ajax: {
       url: "{% url 'gestion_depot:dt_produits' %}",
@@ -82,11 +71,15 @@ document.addEventListener('DOMContentLoaded', function () {
     language: { url: "{% static 'js/french.json' %}" },
     initComplete: function () {
       var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
       api.columns().every(function () {
         var col = this;
-        if (!col.searchable()) return;
-        $('<input class="form-input !w-full !px-2 !py-1 !text-sm" placeholder="Filtrer..." autocomplete="off">')
-          .appendTo($(col.footer()))
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
           .on('keyup change', function () {
             if (col.search() !== this.value) col.search(this.value).draw();
           });
@@ -94,5 +87,35 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+// Ajout multiple de produits : modal SweetAlert (nombre de produits)
+async function multiCreateModal() {
+  const { value: formValues } = await Swal.fire({
+    title: 'Ajout multiple de produits',
+    html: `
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">Nombre de produits *</label>
+      <input type="number" id="swal-nb-forms" min="2" max="20" value="3" required
+             placeholder="Entre 2 et 20" class="swal2-input" style="width: 100%">
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    cancelButtonText: 'Annuler',
+    confirmButtonText: 'Continuer',
+    cancelButtonColor: '#6b7280',
+    confirmButtonColor: '#2563eb',
+    preConfirm: () => {
+      const nb = parseInt(document.getElementById('swal-nb-forms').value, 10);
+      if (!nb || nb < 2 || nb > 20) {
+        Swal.showValidationMessage('Veuillez saisir un nombre entre 2 et 20');
+        return false;
+      }
+      return { nb };
+    },
+    allowOutsideClick: () => !Swal.isLoading()
+  });
+  if (formValues) {
+    window.location.href = "{% url 'gestion_depot:produits_multi_create' 0 %}".replace('0', formValues.nb);
+  }
+}
 </script>
 {% endblock %}

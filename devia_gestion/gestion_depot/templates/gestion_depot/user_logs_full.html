@@ -21,15 +21,6 @@
                     <th>Détails</th>
                 </tr>
             </thead>
-            <tfoot>
-                <tr>
-                    <th></th>
-                    <th>Admin</th>
-                    <th>Action</th>
-                    <th>Utilisateur</th>
-                    <th>Détails</th>
-                </tr>
-            </tfoot>
         </table>
     </div>
 </div>
@@ -40,6 +31,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   $('#table-logs').DataTable({
     processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
     serverSide: true,
     ajax: {
       url: "{% url 'gestion_depot:dt_logs' %}",
@@ -58,11 +50,15 @@ document.addEventListener('DOMContentLoaded', function () {
     language: { url: "{% static 'js/french.json' %}" },
     initComplete: function () {
       var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
       api.columns().every(function () {
         var col = this;
-        if (!col.searchable()) return;
-        $('<input class="form-input !w-full !px-2 !py-1 !text-sm" placeholder="Filtrer..." autocomplete="off">')
-          .appendTo($(col.footer()))
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
           .on('keyup change', function () {
             if (col.search() !== this.value) col.search(this.value).draw();
           });
