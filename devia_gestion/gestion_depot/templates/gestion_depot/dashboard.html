@@ -43,11 +43,11 @@
         <small>à rendre / sanction</small>
       </a>
       {% endif %}
-      <div class="card bg-red-600 text-white p-5">
+      {% comment %} <div class="card bg-red-600 text-white p-5">
         <h5 class="font-semibold flex items-center gap-2">Utilisateur</h5>
         <h2 class="text-3xl font-bold my-1 truncate">{{ request.user.username }}</h2>
         <small class="truncate block">{{ request.user.email }}</small>
-      </div>
+      </div> {% endcomment %}
     </div>
 
     <!-- Produits disponibles -->

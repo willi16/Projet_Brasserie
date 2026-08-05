@@ -3,7 +3,15 @@
 {% block title %}Détail du bon {{ bon.reference }}{% endblock %}
 
 {% block content %}
-  <h2 class="text-2xl font-semibold mb-4">Détail du bon de vente {{ bon.reference }}</h2>
+
+  <div class="flex gap-2 flex-wrap justify-between">
+    <h2 class="text-2xl font-semibold mb-4">Détail du bon de vente {{ bon.reference }}</h2>
+    <div>
+      <a href="{% url 'gestion_depot:apercu_facture' bon.id %}" class="btn btn-primary">Aperçu de la facture</a>
+      <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Télécharger le PDF</a>
+      <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Retour à la liste</a>
+    </div>
+  </div>
 
   <div class="card mb-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -88,9 +96,5 @@
   </div>
   {% endif %}
 
-  <div class="flex gap-2 flex-wrap">
-    <a href="{% url 'gestion_depot:apercu_facture' bon.id %}" class="btn btn-primary">Aperçu de la facture</a>
-    <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-warning">Télécharger le PDF</a>
-    <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Retour à la liste</a>
-  </div>
+  
 {% endblock %}
