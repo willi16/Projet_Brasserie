@@ -1,19 +1,23 @@
 {% extends "base.html" %}
 {% load custom_tags %}
+{% load static %}
 
 {% block title %}Liste des produits{% endblock %}
 
 {% block content %}
+{% user_can_edit request.user as can_edit %}
 <div class="flex items-center justify-between mb-4">
   <h2 class="text-2xl font-semibold">Liste des produits</h2>
-  {% user_can_edit request.user as can_edit %}
   {% if can_edit %}
-    <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary">Ajouter un produit</a>
+    <div class="flex gap-2">
+      <a href="{% url 'gestion_depot:ajouter_produit' %}" class="btn btn-primary">Ajouter un produit</a>
+      <button type="button" class="btn btn-secondary" onclick="multiCreateModal()">Ajouter plusieurs produits</button>
+    </div>
   {% endif %}
 </div>
 
 <div class="card p-0 overflow-x-auto">
-  <table class="table">
+  <table id="table-produits" class="table display">
     <thead>
       <tr>
         <th>Nom</th>
@@ -24,46 +28,94 @@
         <th>Stock</th>
         <th>Seuil d'alerte</th>
         <th>Statut</th>
-        {% user_can_edit request.user as can_edit %}
         {% if can_edit %}
           <th>Actions</th>
         {% endif %}
       </tr>
     </thead>
-    <tbody>
-      {% for produit in produits %}
-      <tr>
-        <td>{{ produit.nom }}</td>
-        <td>{{ produit.get_categorie_display }}</td>
-        <td>{{ produit.casier_contenu }} btl</td>
-        <td><span class="badge badge-info">{{ produit.get_modele_display }}</span></td>
-        <td>{{ produit.prix_vente_casier }} FCFA</td>
-        <td>{{ produit.stock_actuel|floatformat:2|default:0 }}</td>
-        <td>{{ produit.seuil_alerte }}</td>
-        <td>
-          <span class="badge {% if produit.en_alerte %}badge-warning{% else %}badge-success{% endif %}">
-            {% if produit.en_alerte %}Stock bas{% else %}OK{% endif %}
-          </span>
-        </td>
-        {% user_can_edit request.user as can_edit %}
-        {% if can_edit %}
-          <td>
-            <div class="flex gap-1">
-              <a href="{% url 'gestion_depot:modifier_produit' produit.id %}" class="btn btn-sm btn-warning">Modifier</a>
-              <a href="{% url 'gestion_depot:supprimer_produit' produit.id %}" class="btn btn-sm btn-danger confirm-delete"
-                 data-title="Supprimer le produit"
-                 data-text="Voulez-vous vraiment supprimer « {{ produit.nom }} » ? Cette action est irréversible.">Supprimer</a>
-            </div>
-          </td>
-        {% endif %}
-      </tr>
-      {% empty %}
-      <tr>
-        {% user_can_edit request.user as can_edit %}
-        <td colspan="{% if can_edit %}9{% else %}8{% endif %}" class="text-center py-6">Aucun produit trouvé.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% user_can_edit request.user as can_edit %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var canEdit = {{ can_edit|yesno:"true,false" }};
+  var columns = [
+    { data: 'nom' },
+    { data: 'categorie_display' },
+    { data: 'casier_contenu', searchable: false, render: function (d) { return d + ' btl'; } },
+    { data: 'modele_display', render: function (d) { return '<span class="badge badge-info">' + d + '</span>'; } },
+    { data: 'prix_vente_casier', searchable: false, render: function (d) { return d + ' FCFA'; } },
+    { data: 'stock_actuel', searchable: false, render: function (d) { return Number(d).toFixed(2); } },
+    { data: 'seuil_alerte', searchable: false },
+    { data: 'statut_html', orderable: false, searchable: false }
+  ];
+  if (canEdit) {
+    columns.push({ data: 'actions_html', orderable: false, searchable: false });
+  }
+
+  $('#table-produits').DataTable({
+    processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_produits' %}",
+      type: 'GET'
+    },
+    columns: columns,
+    order: [[0, 'asc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
+      api.columns().every(function () {
+        var col = this;
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+});
+
+// Ajout multiple de produits : modal SweetAlert (nombre de produits)
+async function multiCreateModal() {
+  const { value: formValues } = await Swal.fire({
+    title: 'Ajout multiple de produits',
+    html: `
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 text-left">Nombre de produits *</label>
+      <input type="number" id="swal-nb-forms" min="2" max="20" value="3" required
+             placeholder="Entre 2 et 20" class="swal2-input" style="width: 100%">
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    cancelButtonText: 'Annuler',
+    confirmButtonText: 'Continuer',
+    cancelButtonColor: '#6b7280',
+    confirmButtonColor: '#2563eb',
+    preConfirm: () => {
+      const nb = parseInt(document.getElementById('swal-nb-forms').value, 10);
+      if (!nb || nb < 2 || nb > 20) {
+        Swal.showValidationMessage('Veuillez saisir un nombre entre 2 et 20');
+        return false;
+      }
+      return { nb };
+    },
+    allowOutsideClick: () => !Swal.isLoading()
+  });
+  if (formValues) {
+    window.location.href = "{% url 'gestion_depot:produits_multi_create' 0 %}".replace('0', formValues.nb);
+  }
+}
+</script>
 {% endblock %}

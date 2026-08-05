@@ -1,47 +1,50 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Liste des Bons de Vente{% endblock %}
 
 {% block content %}
 <h2 class="text-2xl font-semibold mb-4">Liste des Bons de Vente</h2>
 
-<form method="get" class="card mb-4">
+<form method="get" id="filter-form" class="card mb-4">
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
     <div>
       <label class="form-label">Du</label>
-      <input type="date" name="date_debut" class="form-input" value="{{ date_debut }}">
+      <input type="date" name="date_debut" id="filter-date-debut" class="form-input" value="{{ date_debut }}">
     </div>
     <div>
       <label class="form-label">Au</label>
-      <input type="date" name="date_fin" class="form-input" value="{{ date_fin }}">
+      <input type="date" name="date_fin" id="filter-date-fin" class="form-input" value="{{ date_fin }}">
     </div>
     <div>
       <label class="form-label">Statut</label>
-      <select name="statut" class="form-select">
+      <select name="statut" id="filter-statut" class="form-select">
         <option value="">Tous les statuts</option>
         <option value="en_cours" {% if statut_filter == 'en_cours' %}selected{% endif %}>En cours</option>
         <option value="valide" {% if statut_filter == 'valide' %}selected{% endif %}>Validée</option>
         <option value="annule" {% if statut_filter == 'annule' %}selected{% endif %}>Annulée</option>
       </select>
     </div>
+    {% if not is_caissier %}
     <div>
       <label class="form-label">Vendeur</label>
-      <select name="vendeur" class="form-select">
+      <select name="vendeur" id="filter-vendeur" class="form-select">
         <option value="">Tous les vendeurs</option>
         {% for u in vendeurs %}
           <option value="{{ u.id }}" {% if vendeur_filter == u.id|stringformat:"i" %}selected{% endif %}>{{ u.username }}</option>
         {% endfor %}
       </select>
     </div>
+    {% endif %}
     <div class="flex gap-2">
       <button type="submit" class="btn btn-primary">Filtrer</button>
-      <a href="{% url 'gestion_depot:liste_bons_vente' %}" class="btn btn-secondary">Réinitialiser</a>
+      <a href="{% url 'gestion_depot:liste_bons_vente' %}" id="reset-filters" class="btn btn-secondary">Réinitialiser</a>
     </div>
   </div>
 </form>
 
 <div class="card p-0 overflow-x-auto">
-  <table class="table">
+  <table id="table-ventes" class="table display">
     <thead>
       <tr>
         <th>Référence</th>
@@ -53,45 +56,68 @@
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody>
-      {% for bon in bons %}
-        <tr>
-          <td>{{ bon.reference }}</td>
-          <td>{{ bon.date_vente|date:"d/m/Y H:i" }}</td>
-          <td>{{ bon.client.nom|default:"-" }}</td>
-          <td>{{ bon.vendeur.username }}</td>
-          <td>{{ bon.montant_total|default:bon.total|floatformat:0 }}</td>
-          <td><span class="badge {% if bon.statut == 'valide' %}badge-success{% elif bon.statut == 'annule' %}badge-danger{% else %}badge-warning{% endif %}">{{ bon.get_statut_display }}</span></td>
-          <td>
-            <div class="flex gap-1 flex-wrap">
-              <a href="{% url 'gestion_depot:detail_bon_vente' bon.id %}" class="btn btn-sm btn-info">Détail</a>
-              <a href="{% url 'gestion_depot:generer_facture' bon.id %}" class="btn btn-sm btn-warning">Facture</a>
-              {% if bon.statut == 'en_cours' %}
-                <form method="post" action="{% url 'gestion_depot:valider_bon_vente' bon.id %}"
-                      class="confirm-form" data-title="Valider le bon de vente"
-                      data-text="Confirmer la validation du bon {{ bon.reference }} ? Le stock sera déduit."
-                      data-confirm-text="Valider">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-success">Valider</button>
-                </form>
-              {% elif bon.statut == 'valide' %}
-                <form method="post" action="{% url 'gestion_depot:annuler_bon_vente' bon.id %}"
-                      class="confirm-form" data-title="Annuler le bon de vente"
-                      data-text="Confirmer l'annulation du bon {{ bon.reference }} ? Le stock sera restitué."
-                      data-confirm-text="Oui, annuler">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-danger">Annuler</button>
-                </form>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="7" class="text-center py-6">Aucun bon de vente trouvé.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var table = $('#table-ventes').DataTable({
+    processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_bons_vente' %}",
+      type: 'GET',
+      data: function (d) {
+        d.date_debut = $('#filter-date-debut').val();
+        d.date_fin = $('#filter-date-fin').val();
+        d.statut = $('#filter-statut').val();
+        d.vendeur = $('#filter-vendeur').val();
+      }
+    },
+    columns: [
+      { data: 'reference' },
+      { data: 'date_vente', searchable: false },
+      { data: 'client_nom' },
+      { data: 'vendeur_nom' },
+      { data: 'montant_total', searchable: false, render: function (d) { return Number(d || 0).toLocaleString('fr-FR') + ' FCFA'; } },
+      { data: 'statut_html', orderable: false, searchable: false },
+      { data: 'actions_html', orderable: false, searchable: false }
+    ],
+    order: [[1, 'desc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
+      api.columns().every(function () {
+        var col = this;
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+
+  $('#filter-form').on('submit', function (e) {
+    e.preventDefault();
+    table.ajax.reload();
+  });
+
+  $('#reset-filters').on('click', function (e) {
+    e.preventDefault();
+    $('#filter-form')[0].reset();
+    table.ajax.reload();
+  });
+});
+</script>
 {% endblock %}

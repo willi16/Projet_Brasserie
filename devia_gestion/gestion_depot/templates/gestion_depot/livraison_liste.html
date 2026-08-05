@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Liste des livraisons{% endblock %}
 
@@ -9,7 +10,7 @@
   </div>
 
   <div class="card p-0 overflow-x-auto">
-    <table class="table">
+    <table id="table-livraisons" class="table display">
       <thead>
         <tr>
           <th>Référence</th>
@@ -21,25 +22,51 @@
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody>
-        {% for livraison in livraisons %}
-          <tr>
-            <td>{{ livraison.reference }}</td>
-            <td>{{ livraison.date_livraison|date:"d/m/Y H:i" }}</td>
-            <td>{{ livraison.fournisseur.nom }}</td>
-            <td>{{ livraison.utilisateur.username }}</td>
-            <td>{{ livraison.total_quantite }}</td>
-            <td>{{ livraison.total_montant }} FCFA</td>
-            <td>
-              <a href="{% url 'gestion_depot:detail_bon_livraison' livraison.id %}" class="btn btn-sm btn-info">Détail</a>
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td colspan="7" class="text-center py-6">Aucune livraison trouvée.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  </table>
   </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  $('#table-livraisons').DataTable({
+    processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_livraisons' %}",
+      type: 'GET'
+    },
+    columns: [
+      { data: 'reference' },
+      { data: 'date_livraison', searchable: false },
+      { data: 'fournisseur_nom' },
+      { data: 'utilisateur_nom' },
+      { data: 'total_quantite', searchable: false },
+      { data: 'total_montant', searchable: false, render: function (d) { return d + ' FCFA'; } },
+      { data: 'actions_html', orderable: false, searchable: false }
+    ],
+    order: [[1, 'desc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
+      api.columns().every(function () {
+        var col = this;
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+});
+</script>
 {% endblock %}

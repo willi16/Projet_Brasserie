@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_crontab',
     'crispy_forms',
     'crispy_tailwind',
+    'rest_framework',
     'gestion_depot',
 ]
 

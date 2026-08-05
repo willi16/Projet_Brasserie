@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Liste des fournisseurs{% endblock %}
 
@@ -9,7 +10,7 @@
 </div>
 
 <div class="card p-0 overflow-x-auto">
-  <table class="table">
+  <table id="table-fournisseurs" class="table display">
     <thead>
       <tr>
         <th>Nom</th>
@@ -18,27 +19,48 @@
         <th>Actions</th>
       </tr>
     </thead>
-    <tbody>
-      {% for fournisseur in fournisseurs %}
-        <tr>
-          <td>{{ fournisseur.nom }}</td>
-          <td>{{ fournisseur.contact|default:"-" }}</td>
-          <td>{{ fournisseur.adresse|default:"-" }}</td>
-          <td>
-            <div class="flex gap-1">
-              <a href="{% url 'gestion_depot:modifier_fournisseur' fournisseur.id %}" class="btn btn-sm btn-warning">Modifier</a>
-              <a href="{% url 'gestion_depot:supprimer_fournisseur' fournisseur.id %}" class="btn btn-sm btn-danger confirm-delete"
-                 data-title="Supprimer le fournisseur"
-                 data-text="Voulez-vous vraiment supprimer « {{ fournisseur.nom }} » ? Cette action est irréversible.">Supprimer</a>
-            </div>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="4" class="text-center py-6">Aucun fournisseur trouvé.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  $('#table-fournisseurs').DataTable({
+    processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_fournisseurs' %}",
+      type: 'GET'
+    },
+    columns: [
+      { data: 'nom' },
+      { data: 'contact', render: function (d) { return d || '-'; } },
+      { data: 'adresse', render: function (d) { return d || '-'; } },
+      { data: 'actions_html', orderable: false, searchable: false }
+    ],
+    order: [[0, 'asc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
+      api.columns().every(function () {
+        var col = this;
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+});
+</script>
 {% endblock %}

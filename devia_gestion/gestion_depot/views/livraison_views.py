@@ -28,7 +28,11 @@ def creer_bon_livraison(request):
             messages.error(request, "Fournisseur introuvable.")
             return redirect('gestion_depot:creer_bon_livraison')
 
-        produit_ids = [int(p) for p in produits]
+        try:
+            produit_ids = [int(p) for p in produits]
+        except (ValueError, TypeError):
+            messages.error(request, "Identifiant de produit invalide.")
+            return redirect('gestion_depot:creer_bon_livraison')
         produits_dict = Produit.objects.in_bulk(produit_ids)
 
         # Préparer toutes les lignes avant toute écriture en base
@@ -49,6 +53,10 @@ def creer_bon_livraison(request):
 
             if quantite <= 0 or prix_achat < 0:
                 messages.error(request, f"Quantité ou prix invalide pour {prod.nom}.")
+                return redirect('gestion_depot:creer_bon_livraison')
+
+            if casier_contenu <= 0:
+                messages.error(request, f"Le contenu du casier doit être positif pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
 
             lignes_a_creer.append((prod, quantite, casier_contenu, prix_achat))

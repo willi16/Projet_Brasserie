@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Suivi des casiers emportés{% endblock %}
 
@@ -7,20 +8,20 @@
 
 <div class="card mb-4">
   <div class="flex flex-wrap gap-2">
-    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}"
-       class="btn {% if not statut_filter %}btn-primary{% else %}btn-secondary{% endif %}">Tous</a>
-    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=en_cours"
-       class="btn {% if statut_filter == 'en_cours' %}btn-primary{% else %}btn-secondary{% endif %}">
+    <button type="button" data-statut=""
+            class="statut-btn btn {% if not statut_filter %}btn-primary{% else %}btn-secondary{% endif %}">Tous</button>
+    <button type="button" data-statut="en_cours"
+            class="statut-btn btn {% if statut_filter == 'en_cours' %}btn-primary{% else %}btn-secondary{% endif %}">
       En attente ({{ nb_en_cours }})
-    </a>
-    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=en_retard"
-       class="btn {% if statut_filter == 'en_retard' %}btn-primary{% else %}btn-secondary{% endif %}">
+    </button>
+    <button type="button" data-statut="en_retard"
+            class="statut-btn btn {% if statut_filter == 'en_retard' %}btn-primary{% else %}btn-secondary{% endif %}">
       En retard ({{ nb_en_retard }})
-    </a>
-    <a href="{% url 'gestion_depot:liste_casiers_emportes' %}?statut=retourne"
-       class="btn {% if statut_filter == 'retourne' %}btn-primary{% else %}btn-secondary{% endif %}">
+    </button>
+    <button type="button" data-statut="retourne"
+            class="statut-btn btn {% if statut_filter == 'retourne' %}btn-primary{% else %}btn-secondary{% endif %}">
       Retournés ({{ nb_retournes }})
-    </a>
+    </button>
   </div>
 </div>
 
@@ -40,7 +41,7 @@
 </div>
 
 <div class="card p-0 overflow-x-auto">
-  <table class="table">
+  <table id="table-casiers" class="table display">
     <thead>
       <tr>
         <th>Client</th>
@@ -57,55 +58,67 @@
         <th>Action</th>
       </tr>
     </thead>
-    <tbody>
-      {% for c in casiers %}
-        <tr>
-          <td>{{ c.client.nom }}</td>
-          <td>
-            <a href="{% url 'gestion_depot:detail_bon_vente' c.bon.id %}" class="text-brand-600 dark:text-brand-400">{{ c.bon.reference }}</a>
-          </td>
-          <td><span class="badge badge-info">{{ c.get_modele_display }}</span></td>
-          <td>{{ c.date_emport|date:"d/m/Y H:i" }}</td>
-          <td>{{ c.date_limite|date:"d/m/Y H:i" }}</td>
-          <td>{{ c.nombre_casiers }}</td>
-          <td>{{ c.nombre_rendus }}</td>
-          <td>{{ c.restant }}</td>
-          <td>{{ c.restant_bouteilles }}</td>
-          <td>
-            {% if c.date_retour_complet %}
-              <span class="badge badge-success">Retourné</span>
-            {% elif c.en_retard %}
-              <span class="badge badge-danger">En retard</span>
-            {% else %}
-              <span class="badge badge-warning">En attente</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if c.en_retard %}
-              <span class="text-red-600 font-semibold">{{ c.montant_sanction }} FCFA</span>
-            {% else %}
-              -
-            {% endif %}
-          </td>
-          <td>
-            {% if c.restant > 0 %}
-              <form method="post" action="{% url 'gestion_depot:enregistrer_retour_casiers' c.id %}" class="flex gap-1 items-end">
-                {% csrf_token %}
-                <input type="number" name="quantite_rendue" min="1" max="{{ c.restant }}" step="1"
-                       value="{{ c.restant }}" class="form-input !w-20" required>
-                <button type="submit" class="btn btn-sm btn-success">Retour</button>
-              </form>
-            {% else %}
-              <span class="text-gray-400">-</span>
-            {% endif %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="12" class="text-center py-6">Aucun casier emporté trouvé.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
   </table>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var currentStatut = "{{ statut_filter|default:'' }}";
+  var table = $('#table-casiers').DataTable({
+    processing: true,
+    dom: '<"dt-topbar"l<"dt-colfilters">f>rt<"dt-bottom"ip>',
+    serverSide: true,
+    ajax: {
+      url: "{% url 'gestion_depot:dt_casiers' %}",
+      type: 'GET',
+      data: function (d) {
+        if (currentStatut) d.statut = currentStatut;
+      }
+    },
+    columns: [
+      { data: 'client_nom' },
+      { data: 'bon_reference' },
+      { data: 'modele_display', render: function (d) { return '<span class="badge badge-info">' + d + '</span>'; } },
+      { data: 'date_emport', searchable: false },
+      { data: 'date_limite', orderable: false, searchable: false },
+      { data: 'nombre_casiers', searchable: false },
+      { data: 'nombre_rendus', searchable: false },
+      { data: 'restant', orderable: false, searchable: false },
+      { data: 'restant_bouteilles', orderable: false, searchable: false },
+      { data: 'statut_html', orderable: false, searchable: false },
+      { data: 'sanction_html', orderable: false, searchable: false },
+      { data: 'actions_html', orderable: false, searchable: false }
+    ],
+    order: [[3, 'desc']],
+    pageLength: 10,
+    lengthMenu: [5, 10, 15],
+    language: { url: "{% static 'js/french.json' %}" },
+    initComplete: function () {
+      var api = this.api();
+      var container = $(api.table().container()).find('.dt-colfilters');
+      if (!container.length) return;
+      api.columns().every(function () {
+        var col = this;
+        var searchable = api.settings()[0].aoColumns[col.index()].bSearchable !== false;
+        if (!searchable) return;
+        var title = $(col.header()).text().trim();
+        $('<input class="form-input !px-2 !py-1 !text-sm rounded-full" placeholder="Filtrer ' + title + '" autocomplete="off" style="width:170px">')
+          .appendTo(container)
+          .on('keyup change', function () {
+            if (col.search() !== this.value) col.search(this.value).draw();
+          });
+      });
+    }
+  });
+
+  $('.statut-btn').on('click', function () {
+    currentStatut = $(this).data('statut') || '';
+    $('.statut-btn').removeClass('btn-primary').addClass('btn-secondary');
+    $(this).removeClass('btn-secondary').addClass('btn-primary');
+    table.ajax.reload();
+  });
+});
+</script>
 {% endblock %}
