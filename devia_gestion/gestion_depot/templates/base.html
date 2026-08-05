@@ -54,6 +54,22 @@
     .dark .dataTables_wrapper .dataTables_filter input {
       border-color: #374151;
     }
+    /* Sidebar desktop repliable : quand elle disparaît, le contenu prend toute la largeur */
+    #sidebar {
+      overflow: hidden;
+      transition: width 0.3s ease;
+    }
+    #sidebar.sidebar-collapsed {
+      width: 0;
+      border-right-width: 0;
+    }
+    #sidebar.sidebar-collapsed .sidebar-nav {
+      visibility: hidden;
+      transition: visibility 0s linear 0.3s;
+    }
+    #sidebar .sidebar-nav a {
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body class="flex flex-col min-h-screen" id="body-root">
@@ -120,7 +136,7 @@
     <!-- Sidebar Desktop -->
     {% if user.is_authenticated %}
     <aside id="sidebar" class="hidden lg:block w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
-      <nav class="sticky top-16 p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
+      <nav class="sidebar-nav sticky top-16 p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
         <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'gestion_depot:dashboard' %}">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           <span>Dashboard</span>
@@ -264,17 +280,16 @@
       const mobileSidebar = document.getElementById('mobile-sidebar');
       const backdrop = document.getElementById('mobile-backdrop');
 
-      // Toggle desktop sidebar
+      // Toggle desktop sidebar : le contenu prend alors toute la largeur
       const toggleBtn = document.getElementById('toggle-sidebar');
       if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', () => {
-          sidebar.classList.toggle('hidden');
-          const collapsed = sidebar.classList.contains('hidden');
-          localStorage.setItem('sidebar-collapsed', collapsed);
+          sidebar.classList.toggle('sidebar-collapsed');
+          localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('sidebar-collapsed'));
         });
       }
       if (sidebar && localStorage.getItem('sidebar-collapsed') === 'true') {
-        sidebar.classList.add('hidden');
+        sidebar.classList.add('sidebar-collapsed');
       }
 
       // Mobile sidebar

@@ -9,13 +9,26 @@
 
     <!-- Tailwind CSS local -->
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
+
+    <style>
+      /* Photo de fond : affichée en entier, part conséquente sur desktop */
+      .login-photo {
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: #0f172a;
+      }
+      @media (min-width: 768px) {
+        .login-photo { flex: 1.7 1 0%; }
+      }
+    </style>
   </head>
   <body>
     <div class="flex flex-col md:flex-row w-full min-h-screen shadow-lg">
-      <!-- Colonne de gauche : image -->
-      <div class="relative md:flex-1 flex flex-col justify-center items-center text-white text-center px-8 py-12 h-56 md:h-auto"
-           style="background-image: url('{% if entreprise.fond_login %}{{ entreprise.fond_login.url }}{% else %}{% static "images/youki.jpg" %}{% endif %}'); background-size: cover; background-position: center; background-repeat: no-repeat;">
-        <div class="absolute inset-0 bg-black/50"></div>
+      <!-- Colonne de gauche : image (part conséquente, photo affichée en entier) -->
+      <div class="login-photo relative flex flex-col justify-center items-center text-white text-center px-8 py-12 h-56 md:h-auto"
+           style="background-image: url('{% if entreprise.fond_login %}{{ entreprise.fond_login.url }}{% else %}{% static "images/youki.jpg" %}{% endif %}');">
+        <div class="absolute inset-0 bg-black/40"></div>
         <div class="relative z-10 max-w-md">
           <h3 class="text-3xl font-semibold mb-4 drop-shadow">Bienvenue chez {{ entreprise.nom }} !</h3>
           <p class="text-lg leading-relaxed">Connectez-vous pour accéder à votre espace sécurisé.</p>
