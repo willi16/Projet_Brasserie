@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
-from .models import ProfilUtilisateur, Produit, Fournisseur
+from .models import ProfilUtilisateur, Produit, Fournisseur, ParametresEntreprise
 from django.contrib.auth.models import Group
 
 
@@ -159,4 +159,18 @@ class ProfilForm(forms.ModelForm):
             'telephone': forms.TextInput(attrs={'placeholder': "Téléphone"}),
             'adresse': forms.Textarea(attrs={'rows': 3, 'placeholder': "Adresse"}),
             'photo': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
+
+class ParametresEntrepriseForm(forms.ModelForm):
+    class Meta:
+        model = ParametresEntreprise
+        fields = [
+            'nom', 'sous_titre', 'description', 'telephone', 'email',
+            'adresse', 'devise', 'logo', 'cachet', 'fond_login',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'logo': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'cachet': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+            'fond_login': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paramètres - Entreprise{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-semibold mb-4">Paramètres de l'entreprise</h2>
+
+<div class="card max-w-3xl">
+  <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+    Ces informations apparaissent sur la page de connexion, la barre de navigation et les factures
+    (aperçu et PDF). Configurez-les lors de l'installation chez un client.
+  </p>
+
+  <form method="post" enctype="multipart/form-data" class="space-y-3">
+    {% csrf_token %}
+
+    <div>
+      <label for="id_nom" class="form-label">Nom de l'entreprise</label>
+      {{ form.nom }}
+    </div>
+
+    <div>
+      <label for="id_sous_titre" class="form-label">Sous-titre / type d'activité</label>
+      {{ form.sous_titre }}
+    </div>
+
+    <div>
+      <label for="id_description" class="form-label">Description</label>
+      {{ form.description }}
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label for="id_telephone" class="form-label">Téléphone</label>
+        {{ form.telephone }}
+      </div>
+      <div>
+        <label for="id_email" class="form-label">Email</label>
+        {{ form.email }}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label for="id_adresse" class="form-label">Adresse</label>
+        {{ form.adresse }}
+      </div>
+      <div>
+        <label for="id_devise" class="form-label">Devise (ex : F, FCFA, €)</label>
+        {{ form.devise }}
+      </div>
+    </div>
+
+    <hr class="my-4 border-gray-200 dark:border-gray-700">
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div>
+        <label for="id_logo" class="form-label">Logo</label>
+        {% if entreprise.logo %}
+          <img src="{{ entreprise.logo.url }}" class="h-16 mb-2 object-contain" alt="Logo actuel">
+        {% endif %}
+        {{ form.logo }}
+      </div>
+      <div>
+        <label for="id_cachet" class="form-label">Cachet / tampon</label>
+        {% if entreprise.cachet %}
+          <img src="{{ entreprise.cachet.url }}" class="h-16 mb-2 object-contain" alt="Cachet actuel">
+        {% endif %}
+        {{ form.cachet }}
+      </div>
+      <div>
+        <label for="id_fond_login" class="form-label">Fond de connexion</label>
+        {% if entreprise.fond_login %}
+          <img src="{{ entreprise.fond_login.url }}" class="h-16 mb-2 object-contain" alt="Fond actuel">
+        {% endif %}
+        {{ form.fond_login }}
+      </div>
+    </div>
+
+    <div class="flex gap-2 justify-center pt-2">
+      <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

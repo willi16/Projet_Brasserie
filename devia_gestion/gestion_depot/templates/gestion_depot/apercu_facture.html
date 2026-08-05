@@ -162,18 +162,17 @@
 <div class="sheet">
   <div class="header">
     <div class="brand">
-      <div class="name">DEIVA</div>
-      <div class="subtitle">Commerce Général</div>
+      <div class="name">{{ entreprise.nom }}</div>
+      <div class="subtitle">{{ entreprise.sous_titre }}</div>
       <div class="details">
-        Vente en Gros et en Détails de Boissons,<br>
-        Eaux Minérales et Divers<br>
-        Tél: +228 90 69 53 91 / 98 88 86 42<br>
-        etsdeivtg@gmail.com<br>
-        Lomé - TOGO
+        {% for ligne in entreprise.description_lignes %}{{ ligne }}<br>{% endfor %}
+        Tél: {{ entreprise.telephone }}<br>
+        {{ entreprise.email }}<br>
+        {{ entreprise.adresse }}
       </div>
     </div>
     <div class="doc-info">
-      <img class="header-logo" src="{% static 'images/logo.png' %}" alt="DEIVA">
+      <img class="header-logo" src="{% if entreprise.logo %}{{ entreprise.logo.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="{{ entreprise.nom }}">
       <div class="facture">FACTURE</div>
       <div class="ref">Réf : {{ bon.reference }}</div>
       <div>Lomé, le {{ date_str }}</div>
@@ -207,8 +206,8 @@
           <td class="left">{{ ligne.quantite_casiers|floatformat:2 }}</td>
           <td class="left">{{ ligne.produit_nom }}</td>
           <td>{{ ligne.fraction|floatformat:2 }}</td>
-          <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} F</td>
-          <td class="right">{{ ligne.montant|floatformat:2 }} FCFA</td>
+          <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} {{ entreprise.devise }}</td>
+          <td class="right">{{ ligne.montant|floatformat:2 }} {{ entreprise.devise }}</td>
         </tr>
       {% empty %}
         <tr>
@@ -218,7 +217,7 @@
     </tbody>
   </table>
 
-  <div class="total">TOTAL : {{ total_facture|floatformat:2 }} FCFA</div>
+  <div class="total">TOTAL : {{ total_facture|floatformat:2 }} {{ entreprise.devise }}</div>
 
   <div class="signature">
     <div class="block">
@@ -229,16 +228,16 @@
 </div>
 
 <div class="facture-footer">
-  <img class="foot-logo" src="{% static 'images/logo.png' %}" alt="DEIVA">
+  <img class="foot-logo" src="{% if entreprise.logo %}{{ entreprise.logo.url }}{% else %}{% static 'images/logo.png' %}{% endif %}" alt="{{ entreprise.nom }}">
   <span class="foot-pages"></span>
 </div>
 
 <div class="watermark" aria-hidden="true">
-  <div class="wm-row">Devia Devia Devia Devia</div>
-  <div class="wm-row">Devia Devia Devia Devia</div>
-  <div class="wm-row">Devia Devia Devia Devia</div>
-  <div class="wm-row">Devia Devia Devia Devia</div>
-  <div class="wm-row">Devia Devia Devia Devia</div>
-  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
+  <div class="wm-row">{{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }} {{ entreprise.nom }}</div>
 </div>
 {% endblock %}

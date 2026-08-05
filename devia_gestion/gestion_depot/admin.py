@@ -1,7 +1,7 @@
 # gestion_depot/admin.py
 from django.contrib import admin
 from django.db.models import Sum, Case, When, F
-from .models import Produit, Fournisseur, Mouvement, BonVente, LigneVente, CasierEmporte, Parametre
+from .models import Produit, Fournisseur, Mouvement, BonVente, LigneVente, CasierEmporte, Parametre, ParametresEntreprise
 
 
 # Filtre personnalisé pour 'en_alerte'
@@ -80,3 +80,8 @@ class CasierEmporteAdmin(admin.ModelAdmin):
 @admin.register(Parametre)
 class ParametreAdmin(admin.ModelAdmin):
     list_display = ['nom', 'valeur']
+
+
+@admin.register(ParametresEntreprise)
+class ParametresEntrepriseAdmin(admin.ModelAdmin):
+    list_display = ['nom', 'telephone', 'email', 'devise']
