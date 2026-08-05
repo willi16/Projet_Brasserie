@@ -6,20 +6,20 @@
 {% block content %}
   <h2 class="text-2xl font-semibold mb-4">Rapport des ventes</h2>
 
-  <!-- Filtres -->
-  <form method="get" class="card mb-4">
+  <!-- Filtres (dynamiques, pas de bouton Filtrer) -->
+  <form method="get" id="filter-form" class="card mb-4">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
       <div>
         <label class="form-label">Date début</label>
-        <input type="date" name="date_debut" class="form-input" value="{{ date_debut|date:'Y-m-d' }}">
+        <input type="date" name="date_debut" id="filter-date-debut" class="form-input" value="{{ date_debut|date:'Y-m-d' }}">
       </div>
       <div>
         <label class="form-label">Date fin</label>
-        <input type="date" name="date_fin" class="form-input" value="{{ date_fin|date:'Y-m-d' }}">
+        <input type="date" name="date_fin" id="filter-date-fin" class="form-input" value="{{ date_fin|date:'Y-m-d' }}">
       </div>
       <div>
         <label class="form-label">Période</label>
-        <select name="periode" class="form-select">
+        <select name="periode" id="filter-periode" class="form-select">
           <option value="">Toutes les périodes</option>
           <option value="journalier" {% if periode == 'journalier' %}selected{% endif %}>Journalier</option>
           <option value="hebdomadaire" {% if periode == 'hebdomadaire' %}selected{% endif %}>Hebdomadaire</option>
@@ -27,11 +27,11 @@
         </select>
       </div>
       <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-        <a href="{% url 'gestion_depot:rapport_ventes' %}" class="btn btn-secondary">Réinitialiser</a>
+        <button type="button" id="reset-filters" class="btn btn-secondary">Réinitialiser</button>
       </div>
       <div>
-        <a href="?export=excel&date_debut={{ date_debut|date:'Y-m-d' }}&date_fin={{ date_fin|date:'Y-m-d' }}&periode={{ periode }}"
+        <a id="export-excel"
+           href="?export=excel&date_debut={{ date_debut|date:'Y-m-d' }}&date_fin={{ date_fin|date:'Y-m-d' }}&periode={{ periode }}"
            class="btn btn-success">Exporter Excel</a>
       </div>
     </div>
@@ -39,30 +39,31 @@
 
   <!-- Résumé -->
   <div class="card mb-4 bg-sky-50 dark:bg-gray-800">
-    <strong>Total des ventes :</strong> {{ total_revenu|floatformat:0 }} FCFA
+    <strong>Total des ventes : <span id="total-revenu-summary">{{ total_revenu|floatformat:0 }}</span> FCFA</strong>
   </div>
 
   <!-- Statistiques -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
     <div class="card bg-brand-600 text-white p-5">
       <h5 class="font-semibold">Chiffre d'affaires</h5>
-      <h3 class="text-2xl font-bold mt-1">{{ total_revenu|floatformat:0 }} FCFA</h3>
+      <h3 class="text-2xl font-bold mt-1" id="stat-ca">{{ total_revenu|floatformat:0 }} FCFA</h3>
     </div>
     <div class="card bg-yellow-500 text-white p-5">
       <h5 class="font-semibold">Coût d'achat total</h5>
-      <h3 class="text-2xl font-bold mt-1">{{ total_cout|floatformat:0 }} FCFA</h3>
+      <h3 class="text-2xl font-bold mt-1" id="stat-cout">{{ total_cout|floatformat:0 }} FCFA</h3>
     </div>
     <div class="card bg-green-600 text-white p-5">
       <h5 class="font-semibold">Bénéfice net</h5>
-      <h3 class="text-2xl font-bold mt-1">{{ total_benefice|floatformat:0 }} FCFA</h3>
+      <h3 class="text-2xl font-bold mt-1" id="stat-benefice">{{ total_benefice|floatformat:0 }} FCFA</h3>
     </div>
     <div class="card bg-red-600 text-white p-5">
       <h5 class="font-semibold">Produit le plus vendu</h5>
       {% if produit_plus_vendu %}
-        <p class="mt-1 font-medium truncate">{{ produit_plus_vendu.produit__nom }}</p>
-        <small>{{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</small>
+        <p class="mt-1 font-medium truncate" id="prod-plus-nom">{{ produit_plus_vendu.produit__nom }}</p>
+        <small id="prod-plus-qte">{{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</small>
       {% else %}
-        <p class="mt-1">Aucune vente.</p>
+        <p class="mt-1" id="prod-plus-nom">Aucune vente.</p>
+        <small id="prod-plus-qte"></small>
       {% endif %}
     </div>
   </div>
@@ -71,21 +72,25 @@
     <div class="card">
       <h5 class="font-semibold mb-3">Produit le plus vendu</h5>
       {% if produit_plus_vendu %}
-        <p><strong>{{ produit_plus_vendu.produit__nom }}</strong></p>
-        <p>Quantité totale : {{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</p>
-        <p>Revenu total : {{ produit_plus_vendu.revenu_total|floatformat:0 }} FCFA</p>
+        <p><strong id="pp-nom">{{ produit_plus_vendu.produit__nom }}</strong></p>
+        <p id="pp-qte">Quantité totale : {{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</p>
+        <p id="pp-revenu">Revenu total : {{ produit_plus_vendu.revenu_total|floatformat:0 }} FCFA</p>
       {% else %}
-        <p>Aucune vente trouvée.</p>
+        <p id="pp-nom">Aucune vente trouvée.</p>
+        <p id="pp-qte"></p>
+        <p id="pp-revenu"></p>
       {% endif %}
     </div>
     <div class="card">
       <h5 class="font-semibold mb-3">Produit le moins vendu</h5>
       {% if produit_moins_vendu %}
-        <p><strong>{{ produit_moins_vendu.produit__nom }}</strong></p>
-        <p>Quantité totale : {{ produit_moins_vendu.quantite_totale|floatformat:2 }} casiers</p>
-        <p>Revenu total : {{ produit_moins_vendu.revenu_total|floatformat:0 }} FCFA</p>
+        <p><strong id="pm-nom">{{ produit_moins_vendu.produit__nom }}</strong></p>
+        <p id="pm-qte">Quantité totale : {{ produit_moins_vendu.quantite_totale|floatformat:2 }} casiers</p>
+        <p id="pm-revenu">Revenu total : {{ produit_moins_vendu.revenu_total|floatformat:0 }} FCFA</p>
       {% else %}
-        <p>Aucune vente trouvée.</p>
+        <p id="pm-nom">Aucune vente trouvée.</p>
+        <p id="pm-qte"></p>
+        <p id="pm-revenu"></p>
       {% endif %}
     </div>
   </div>
@@ -102,7 +107,7 @@
           <th>Vendeur</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="lignes-tbody">
         {% for ligne in lignes %}
           <tr>
             <td>{{ ligne.bon.date_vente|date:"d/m/Y" }}</td>
@@ -134,7 +139,7 @@
           <th>Ventes</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="stats-tbody">
         {% for stat in stats_produits %}
           <tr>
             <td>{{ stat.produit__nom }}</td>
@@ -171,7 +176,7 @@
           <th>Statut</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="inventaire-tbody">
         {% for item in inventaire %}
           <tr>
             <td>{{ item.nom }}</td>
@@ -201,41 +206,144 @@
   <!-- Chart.js en local (pas de CDN) -->
   <script src="{% static 'js/chart.umd.min.js' %}"></script>
   <script>
-    const ctx = document.getElementById('ventesChart').getContext('2d');
-    const labels = JSON.parse('{{ labels_jours|safe }}');
-    const data = JSON.parse('{{ data_ventes|safe }}');
+    document.addEventListener('DOMContentLoaded', function () {
+      var ctx = document.getElementById('ventesChart').getContext('2d');
+      var ventesChart = null;
 
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Ventes (FCFA)',
-          data: data,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderWidth: 2,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'top',
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return value.toLocaleString() + ' FCFA';
+      function formatFCFA(n) {
+        return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 }) + ' FCFA';
+      }
+
+      function formatQte(n) {
+        return Number(n || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+      }
+
+      function updateChart(labels, data) {
+        if (ventesChart) ventesChart.destroy();
+        ventesChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Ventes (FCFA)',
+              data: data,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderWidth: 2,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function (value) { return value.toLocaleString() + ' FCFA'; }
+                }
               }
             }
           }
-        }
+        });
       }
+
+      function currentParams() {
+        return new URLSearchParams({
+          date_debut: document.getElementById('filter-date-debut').value,
+          date_fin: document.getElementById('filter-date-fin').value,
+          periode: document.getElementById('filter-periode').value
+        });
+      }
+
+      function renderRapport(d) {
+        document.getElementById('total-revenu-summary').textContent = formatFCFA(d.total_revenu);
+        document.getElementById('stat-ca').textContent = formatFCFA(d.total_revenu);
+        document.getElementById('stat-cout').textContent = formatFCFA(d.total_cout);
+        document.getElementById('stat-benefice').textContent = formatFCFA(d.total_benefice);
+
+        var plus = d.produit_plus_vendu;
+        document.getElementById('prod-plus-nom').textContent = plus ? plus.nom : 'Aucune vente.';
+        document.getElementById('prod-plus-qte').textContent = plus ? formatQte(plus.quantite_totale) + ' casiers' : '';
+        document.getElementById('pp-nom').textContent = plus ? plus.nom : 'Aucune vente trouvée.';
+        document.getElementById('pp-qte').textContent = plus ? 'Quantité totale : ' + formatQte(plus.quantite_totale) + ' casiers' : '';
+        document.getElementById('pp-revenu').textContent = plus ? 'Revenu total : ' + formatFCFA(plus.revenu_total) : '';
+
+        var moins = d.produit_moins_vendu;
+        document.getElementById('pm-nom').textContent = moins ? moins.nom : 'Aucune vente trouvée.';
+        document.getElementById('pm-qte').textContent = moins ? 'Quantité totale : ' + formatQte(moins.quantite_totale) + ' casiers' : '';
+        document.getElementById('pm-revenu').textContent = moins ? 'Revenu total : ' + formatFCFA(moins.revenu_total) : '';
+
+        var lignesTbody = document.getElementById('lignes-tbody');
+        lignesTbody.innerHTML = '';
+        if (d.lignes.length === 0) {
+          lignesTbody.innerHTML = '<tr><td colspan="6" class="text-center py-6">Aucune vente.</td></tr>';
+        } else {
+          d.lignes.forEach(function (l) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td>' + l.date + '</td><td>' + l.produit + '</td><td>' + formatQte(l.quantite_totale) +
+              '</td><td>' + formatFCFA(l.ca) + '</td><td>' + formatFCFA(l.benefice) + '</td><td>' + l.vendeur + '</td>';
+            lignesTbody.appendChild(tr);
+          });
+        }
+
+        var statsTbody = document.getElementById('stats-tbody');
+        statsTbody.innerHTML = '';
+        d.stats_produits.forEach(function (s) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>' + s.nom + '</td><td>' + formatQte(s.quantite_totale) + '</td><td>' + formatFCFA(s.revenu_total) +
+            '</td><td>' + formatFCFA(s.cout_total) + '</td><td>' + formatFCFA(s.benefice_total) + '</td><td>' + s.nombre_ventes + '</td>';
+          statsTbody.appendChild(tr);
+        });
+        var totalTr = document.createElement('tr');
+        totalTr.className = 'bg-green-100 dark:bg-green-900 font-semibold';
+        totalTr.innerHTML = '<th>TOTAL</th><th></th><th>' + formatFCFA(d.total_revenu) + '</th><th>' +
+          formatFCFA(d.total_cout) + '</th><th>' + formatFCFA(d.total_benefice) + '</th><th></th>';
+        statsTbody.appendChild(totalTr);
+
+        var invTbody = document.getElementById('inventaire-tbody');
+        invTbody.innerHTML = '';
+        if (d.inventaire.length === 0) {
+          invTbody.innerHTML = '<tr><td colspan="4" class="text-center py-6">Aucun produit trouvé.</td></tr>';
+        } else {
+          d.inventaire.forEach(function (it) {
+            var tr = document.createElement('tr');
+            var badge = it.en_alerte ? 'badge-warning' : 'badge-success';
+            var label = it.en_alerte ? 'Stock bas' : 'OK';
+            tr.innerHTML = '<td>' + it.nom + '</td><td>' + formatQte(it.stock) + '</td><td>' + it.seuil_alerte +
+              '</td><td><span class="badge ' + badge + '">' + label + '</span></td>';
+            invTbody.appendChild(tr);
+          });
+        }
+
+        updateChart(d.labels_jours, d.data_ventes);
+
+        var exportLink = document.getElementById('export-excel');
+        var p = currentParams();
+        exportLink.href = "{% url 'gestion_depot:rapport_ventes' %}?export=excel&" + p.toString();
+      }
+
+      function loadRapport() {
+        fetch("{% url 'gestion_depot:rapport_ventes_ajax' %}?" + currentParams().toString())
+          .then(function (r) { return r.json(); })
+          .then(renderRapport)
+          .catch(function () {});
+      }
+
+      document.getElementById('filter-form').addEventListener('submit', function (e) { e.preventDefault(); });
+      document.getElementById('filter-date-debut').addEventListener('change', loadRapport);
+      document.getElementById('filter-date-fin').addEventListener('change', loadRapport);
+      document.getElementById('filter-periode').addEventListener('change', loadRapport);
+      document.getElementById('reset-filters').addEventListener('click', function () {
+        document.getElementById('filter-date-debut').value = '';
+        document.getElementById('filter-date-fin').value = '';
+        document.getElementById('filter-periode').value = '';
+        loadRapport();
+      });
+
+      updateChart(JSON.parse('{{ labels_jours|safe }}'), JSON.parse('{{ data_ventes|safe }}'));
     });
   </script>
 

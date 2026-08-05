@@ -2,7 +2,7 @@
 from django.urls import path
 from gestion_depot.views import(
     dashboard_views,
-    rapport_ventes,
+    rapport_views,
     produit_views,
     fournisseur_views,
     bonVente_views,
@@ -21,7 +21,8 @@ app_name = 'gestion_depot'
 urlpatterns = [
     path('', dashboard_views.dashboard, name='dashboard'),
 
-    path('rapport/', rapport_ventes, name='rapport_ventes'),
+    path('rapport/', rapport_views.rapport_ventes, name='rapport_ventes'),
+    path('rapport/ventes/ajax/', rapport_views.rapport_ventes_ajax, name='rapport_ventes_ajax'),
 
     # Produits
     path('produits/', produit_views.liste_produits_avec_stock, name='liste_produits'),
