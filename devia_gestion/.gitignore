@@ -29,6 +29,7 @@ media/factures/
 media/photos/
 media/cartes_id/
 media/rapports/
+media/entreprise/
 staticfiles/
 
 # Environnement
