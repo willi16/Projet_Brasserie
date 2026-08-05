@@ -29,25 +29,14 @@
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0.4pt}
 \rhead{\footnotesize \textcolor{primary}{Facture \# {{ bon.reference }}}}
-\lhead{\footnotesize \textcolor{primary}{Dépôt Boissons}}
-% Pied de page répété sur TOUTES les pages : logo DEIVA + pagination
+\lhead{\footnotesize \textcolor{primary}{Dépôt {{ entreprise.nom }}}}
+% Pied de page répété sur TOUTES les pages : logo entreprise + pagination
 \lfoot{\includegraphics[height=0.7cm]{logo.png}}
 \cfoot{\footnotesize Page \thepage/\pageref{LastPage}}
 
-{% raw %}
-% Filigrane "Deiva" répété en horizontal sur toutes les pages
-\newcommand{\DeivaFiligrane}{%
-  \AddToShipoutPictureBG{%
-    \setlength{\unitlength}{1cm}%
-    \multiput(1,1)(5,0){5}{%
-      \multiput(0,0)(0,4.5){5}{%
-        \put(0,0){\textcolor[gray]{0.93}{\bfseries\LARGE Deiva}}%
-      }%
-    }%
-  }%
-}
-\DeivaFiligrane
-{% endraw %}
+% Filigrane "{{ entreprise.nom }}" répété en horizontal sur toutes les pages
+\newcommand{\FiligraneEntreprise}{\AddToShipoutPictureBG{\setlength{\unitlength}{1cm}\multiput(1,1)(5,0){5}{\multiput(0,0)(0,4.5){5}{\put(0,0){\textcolor[gray]{0.93}{\bfseries\LARGE {{ entreprise.nom }}}}}}}}
+\FiligraneEntreprise
 % Utiliser TeX Gyre Termes comme police principale (déjà activée par \usepackage{tgtermes})
 % Pas besoin de \setmainfont ici
 
@@ -56,13 +45,12 @@
 % En-tête : informations de l'entreprise alignées au même niveau que le logo
 \noindent
 \begin{minipage}[t]{0.65\linewidth}
- \textbf{\Huge DEIVA} \\
- \textbf{Commerce Général} \\
- Vente en Gros et en Détails de Boissons,\\
- Eaux Minérales et Divers \\
- \small Tél: +22890695391 / 98888642\\
- \small Email : etsdeivtg@gmail.com\\
- Lomé - TOGO
+ \textbf{\Huge {{ entreprise.nom }}} \\
+ \textbf{ {{ entreprise.sous_titre }} } \\
+ {{ entreprise.description_lignes | join(' \\\\ ') }}\\
+ \small Tél: {{ entreprise.telephone }}\\
+ \small Email : {{ entreprise.email }}\\
+ {{ entreprise.adresse }}
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.28\linewidth}
@@ -130,8 +118,8 @@
  {{ ligne.quantite_casiers }} &
  {{ ligne.produit_nom }} &
  {{ ligne.fraction_display }} &
- {{ ligne.prix_unitaire }} F &
- {{ ligne.montant }} F \\
+ {{ ligne.prix_unitaire }} {{ entreprise.devise }} &
+ {{ ligne.montant }} {{ entreprise.devise }} \\
  \hline 
 {% endfor %}  
 
@@ -141,7 +129,7 @@
 
 % Total
 \begin{flushright}
- \textbf{TOTAL :} \textcolor{primary}{\textbf{{ total_facture }} FCFA}
+ \textbf{TOTAL :} \textcolor{primary}{\textbf{ {{ total_facture }} } {{ entreprise.devise }}}
 \end{flushright}
 
 \vspace{0.05cm}

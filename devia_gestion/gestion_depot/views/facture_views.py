@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden
 from django.conf import settings
-from gestion_depot.models import BonVente
+from gestion_depot.models import BonVente, ParametresEntreprise
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -68,6 +68,16 @@ def _lignes_facture(bon):
     return lignes, total
 
 
+def _chemin_image(fichier_field, defaut):
+    """Retourne le chemin d'un fichier média (upload entreprise) sinon le défaut statique."""
+    try:
+        if fichier_field and getattr(fichier_field, 'path', None) and os.path.exists(fichier_field.path):
+            return fichier_field.path
+    except (ValueError, OSError):
+        pass
+    return defaut
+
+
 @login_required
 def generer_facture(request, id):
     bon = get_object_or_404(
@@ -102,20 +112,32 @@ def generer_facture(request, id):
         'vendeur': latex_escape(bon.vendeur.username),
     }
 
+    entreprise = ParametresEntreprise.get_singleton()
+    safe_entreprise = {
+        'nom': latex_escape(entreprise.nom),
+        'sous_titre': latex_escape(entreprise.sous_titre),
+        'description_lignes': [latex_escape(l) for l in entreprise.description_lignes()],
+        'telephone': latex_escape(entreprise.telephone),
+        'email': latex_escape(entreprise.email),
+        'adresse': latex_escape(entreprise.adresse),
+        'devise': latex_escape(entreprise.devise or 'F'),
+    }
+
     latex_content = template.render(
         bon=safe_bon,
         lignes=lignes_tex,
         total_facture=format_decimal(total_facture),
         date_str=date_str,
+        entreprise=safe_entreprise,
     )
 
     # Créer un dossier temporaire dans /app pour éviter les problèmes de permissions
     with tempfile.TemporaryDirectory() as tmp_dir:
         tex_path = os.path.join(tmp_dir, f"facture_{bon.id}.tex")
         pdf_path = os.path.join(tmp_dir, f"facture_{bon.id}.pdf")
-        logo_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png')
+        logo_src = _chemin_image(entreprise.logo, os.path.join(settings.BASE_DIR, 'static', 'images', 'logo.png'))
         logo_dst = os.path.join(tmp_dir, "logo.png")
-        cachet_src = os.path.join(settings.BASE_DIR, 'static', 'images', 'cachet.jpeg')
+        cachet_src = _chemin_image(entreprise.cachet, os.path.join(settings.BASE_DIR, 'static', 'images', 'cachet.jpeg'))
         cachet_dst = os.path.join(tmp_dir, "cachet.jpeg")
 
         # Écrire le .tex

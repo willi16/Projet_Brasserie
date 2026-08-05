@@ -14,6 +14,7 @@ from gestion_depot.views import(
     auth_views,
     casier_views,
     datatable_views,
+    parametres_views,
 )
 
 app_name = 'gestion_depot'
@@ -54,6 +55,7 @@ urlpatterns = [
     path('casiers/bon/<int:bon_id>/enregistrer/', casier_views.enregistrer_casiers_bon, name='enregistrer_casiers_bon'),
     path('casiers/<int:id>/retour/', casier_views.enregistrer_retour_casiers, name='enregistrer_retour_casiers'),
     path('parametres/sanction/', casier_views.configurer_sanction, name='configurer_sanction'),
+    path('parametres/entreprise/', parametres_views.configurer_entreprise, name='configurer_entreprise'),
 
     path('profil/', profil_views.profil_utilisateur, name='profil_utilisateur'),
     path('profil/modifier/', profil_views.modifier_profil, name='modifier_profil'),

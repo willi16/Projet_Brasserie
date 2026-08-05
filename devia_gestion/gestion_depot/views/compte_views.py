@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib import messages
 from gestion_depot.forms import CreerCompteEmployeForm
+from gestion_depot.models import ParametresEntreprise
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -18,12 +19,13 @@ def creer_compte_employe(request):
             user = form.save()
             # Envoyer email (ne bloque pas la création si l'envoi échoue)
             try:
+                entreprise = ParametresEntreprise.get_singleton()
                 send_mail(
-                    subject="Bienvenue sur la plateforme DEIVA !",
+                    subject=f"Bienvenue sur la plateforme {entreprise.nom} !",
                     message=f"""
 Bonjour {user.username},
 
-Votre compte a été créé avec succès sur la plateforme de gestion du dépôt DEIVA.
+Votre compte a été créé avec succès sur la plateforme de gestion du dépôt {entreprise.nom}.
 
 Identifiants :
 - Nom d'utilisateur : {user.username}
@@ -31,7 +33,7 @@ Identifiants :
 
 Veuillez vous connecter dès maintenant : http://devia
 
-L'équipe DEIVA
+L'équipe {entreprise.nom}
 """,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],

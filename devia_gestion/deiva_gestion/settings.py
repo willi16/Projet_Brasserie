@@ -87,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'gestion_depot.context_processors.user_role',
+                'gestion_depot.context_processors.entreprise',
             ],
         },
     },
