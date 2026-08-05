@@ -226,6 +226,58 @@ class ProduitsMultiCreateTests(BaseTest):
         self.assertRedirects(response, reverse('gestion_depot:liste_produits'))
 
 
+class RapportTests(BaseTest):
+    def _creer_bon_valide(self, jours=0):
+        bon = BonVente.objects.create(
+            vendeur=self.caissier, client=self.client_test,
+            type_paiement='especes', statut='valide',
+        )
+        LigneVente.objects.create(
+            bon=bon, produit=self.produit,
+            fraction=Decimal('1.00'), quantite_casiers=Decimal('2'),
+        )
+        if jours:
+            BonVente.objects.filter(pk=bon.pk).update(
+                date_vente=timezone.now() - timedelta(days=jours),
+            )
+        return bon
+
+    def test_page_rapport_rendue(self):
+        self._creer_bon_valide()
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:rapport_ventes'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Rapport des ventes')
+
+    def test_ajax_renvoie_les_indicateurs(self):
+        self._creer_bon_valide()
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:rapport_ventes_ajax'))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertGreater(payload['total_revenu'], 0)
+        self.assertEqual(len(payload['lignes']), 1)
+        self.assertEqual(payload['lignes'][0]['produit'], self.produit.nom)
+        self.assertIsNotNone(payload['produit_plus_vendu'])
+        self.assertIn('labels_jours', payload)
+
+    def test_ajax_filtre_periode_journalier(self):
+        self._creer_bon_valide(jours=30)
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(
+            reverse('gestion_depot:rapport_ventes_ajax'),
+            {'periode': 'journalier'},
+        )
+        payload = response.json()
+        self.assertEqual(payload['total_revenu'], 0)
+        self.assertEqual(len(payload['lignes']), 0)
+
+    def test_ajax_403_pour_caissier(self):
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:rapport_ventes_ajax'))
+        self.assertEqual(response.status_code, 403)
+
+
 class DocumentTests(BaseTest):
     def test_traversal_bloque(self):
         self.http_client.login(username='admin1', password='pass12345')

@@ -3,7 +3,12 @@
 {% block title %}Détail de la livraison {{ bon.reference }}{% endblock %}
 
 {% block content %}
-  <h2 class="text-2xl font-semibold mb-4">Détail de la livraison {{ bon.reference }}</h2>
+
+  <div class="flex gap-2 flex-wrap justify-between">
+    <h2 class="text-2xl font-semibold mb-4">Détail de la livraison {{ bon.reference }}</h2>
+
+    <a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Retour à la liste</a>
+  </div>
 
   <div class="card mb-4">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -44,5 +49,5 @@
     </table>
   </div>
 
-  <a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Retour à la liste</a>
+  
 {% endblock %}

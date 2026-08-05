@@ -14,8 +14,9 @@
       {% csrf_token %}
       {% crispy form %}
       <div class="flex gap-2 mt-4">
-        <button type="submit" class="btn btn-success flex-1">Créer le compte</button>
         <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary flex-1">Annuler</a>
+        <button type="submit" class="btn btn-success flex-1">Créer le compte</button>
+        
       </div>
     </form>
   </div>

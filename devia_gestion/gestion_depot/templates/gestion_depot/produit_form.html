@@ -17,9 +17,10 @@
         en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong> et les <strong>sucreries</strong>
         n'ont pas de casier. Il sert au calcul de la sanction des casiers emportés.
       </p>
-      <div class="flex gap-2 mt-4">
-        <button type="submit" class="btn btn-primary">{{ action }}</button>
+      <div class="flex gap-2 mt-4 justify-center">
         <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">{{ action }}</button>
+
       </div>
     </form>
   </div>

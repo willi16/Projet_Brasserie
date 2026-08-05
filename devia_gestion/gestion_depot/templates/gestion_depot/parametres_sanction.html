@@ -23,9 +23,10 @@
       <input type="number" name="montant" id="montant" class="form-input" min="0" step="100"
              value="{{ param.valeur }}" required>
     </div>
-    <div class="flex gap-2">
-      <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <div class="flex gap-2 justify-center">
       <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary">Annuler</a>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+
     </div>
   </form>
 </div>

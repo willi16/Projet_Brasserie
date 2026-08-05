@@ -37,7 +37,6 @@
     </div>
     {% endif %}
     <div class="flex gap-2">
-      <button type="submit" class="btn btn-primary">Filtrer</button>
       <a href="{% url 'gestion_depot:liste_bons_vente' %}" id="reset-filters" class="btn btn-secondary">Réinitialiser</a>
     </div>
   </div>
@@ -110,6 +109,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   $('#filter-form').on('submit', function (e) {
     e.preventDefault();
+    table.ajax.reload();
+  });
+
+  $('#filter-date-debut, #filter-date-fin, #filter-statut, #filter-vendeur').on('change', function () {
     table.ajax.reload();
   });
 

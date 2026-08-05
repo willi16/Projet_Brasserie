@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Aperçu facture {{ bon.reference }}{% endblock %}
 
@@ -47,30 +48,31 @@
   .header { display: flex; justify-content: space-between; align-items: flex-start; }
   .brand .name { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
   .brand .subtitle { font-weight: 700; font-size: 12px; margin-top: 2px; }
-  .brand .details { margin-top: 6px; font-size: 9.5px; line-height: 1.4; }
+  .brand .details { margin-top: 4px; font-size: 9.5px; line-height: 1.3; }
   .doc-info { text-align: right; }
+  .doc-info .header-logo { height: 14mm; margin-bottom: 3px; }
   .doc-info .facture { font-size: 16px; font-weight: 800; letter-spacing: 2px; }
-  .doc-info .ref { font-weight: 700; margin-top: 6px; }
-  hr.sep { border: none; border-top: 1.2px solid #111; margin: 7px 0; }
-  .meta { display: flex; justify-content: space-between; margin-top: 8px; }
+  .doc-info .ref { font-weight: 700; margin-top: 4px; }
+  hr.sep { border: none; border-top: 1.2px solid #111; margin: 4px 0; }
+  .meta { display: flex; justify-content: space-between; margin-top: 5px; }
   .meta strong { font-weight: 700; }
   table.items {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 6px;
     font-size: 10.5px;
   }
   table.items thead th {
     background: #111;
     color: #fff;
     font-weight: 700;
-    padding: 5px 6px;
+    padding: 3px 6px;
     text-align: center;
     border: 0.5px solid #111;
   }
   table.items thead th.left, table.items tbody td.left { text-align: left; }
   table.items tbody td {
-    padding: 5px 6px;
+    padding: 2px 6px;
     text-align: center;
     border: 0.5px solid #9ca3af;
   }
@@ -78,17 +80,19 @@
   .total {
     display: flex;
     justify-content: flex-end;
-    margin-top: 12px;
+    margin-top: 4px;
     font-size: 13px;
     font-weight: 800;
   }
   .signature {
-    margin-top: 22px;
+    margin-top: 8px;
     display: flex;
     justify-content: flex-end;
   }
   .signature .block { text-align: center; }
-  .signature .line { width: 44mm; border-top: 0.6px solid #111; margin-bottom: 4px; }
+  .signature .line { width: 44mm; border-top: 0.6px solid #111; margin-bottom: 2px; }
+  .facture-footer { display: none; }
+  .watermark { display: none; }
 
   @media print {
     @page { size: A5 portrait; margin: 8mm; }
@@ -103,6 +107,47 @@
       margin: 0;
       padding: 0;
       box-shadow: none;
+    }
+    .facture-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2mm 4mm;
+      border-top: 0.4px solid #111;
+      font-size: 9px;
+      color: #111;
+      background: #fff;
+      z-index: 2;
+    }
+    .facture-footer .foot-logo { height: 8mm; }
+    .facture-footer .foot-pages { font-weight: 700; }
+    .facture-footer .foot-pages::before { content: "Page " counter(page); }
+    .facture-footer .foot-pages::after { content: " / " counter(pages); }
+    .watermark {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .watermark .wm-row {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 10px;
+      white-space: nowrap;
+      text-align: center;
+      color: #000;
+      opacity: 0.06;
     }
   }
 </style>
@@ -128,6 +173,7 @@
       </div>
     </div>
     <div class="doc-info">
+      <img class="header-logo" src="{% static 'images/logo.png' %}" alt="DEIVA">
       <div class="facture">FACTURE</div>
       <div class="ref">Réf : {{ bon.reference }}</div>
       <div>Lomé, le {{ date_str }}</div>
@@ -161,7 +207,7 @@
           <td class="left">{{ ligne.quantite_casiers|floatformat:2 }}</td>
           <td class="left">{{ ligne.produit_nom }}</td>
           <td>{{ ligne.fraction|floatformat:2 }}</td>
-          <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} FCFA</td>
+          <td class="right">{{ ligne.prix_unitaire|floatformat:2 }} F</td>
           <td class="right">{{ ligne.montant|floatformat:2 }} FCFA</td>
         </tr>
       {% empty %}
@@ -180,5 +226,19 @@
       <strong>La direction</strong>
     </div>
   </div>
+</div>
+
+<div class="facture-footer">
+  <img class="foot-logo" src="{% static 'images/logo.png' %}" alt="DEIVA">
+  <span class="foot-pages"></span>
+</div>
+
+<div class="watermark" aria-hidden="true">
+  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">Devia Devia Devia Devia</div>
+  <div class="wm-row">Devia Devia Devia Devia</div>
 </div>
 {% endblock %}

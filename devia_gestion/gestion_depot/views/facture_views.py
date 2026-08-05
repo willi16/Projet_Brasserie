@@ -131,30 +131,32 @@ def generer_facture(request, id):
             return HttpResponse(f"Cachet non trouvé : {cachet_src}", status=500)
         shutil.copy(cachet_src, cachet_dst)
 
-        # Compiler LaTeX
-        result = subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', f"facture_{bon.id}.tex"],
-            cwd=tmp_dir,
-            capture_output=True,
-            text=True,
-            errors='replace',
-        )
+        # Compiler LaTeX (deux passes : la seconde résout \pageref{LastPage} du pied de page)
+        compile_cmd = ['pdflatex', '-interaction=nonstopmode', f"facture_{bon.id}.tex"]
+        for _ in range(2):
+            result = subprocess.run(
+                compile_cmd,
+                cwd=tmp_dir,
+                capture_output=True,
+                text=True,
+                errors='replace',
+            )
 
-        if result.returncode != 0:
-            log_path = os.path.join(tmp_dir, f"facture_{bon.id}.log")
-            if os.path.exists(log_path):
-                try:
-                    with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
-                        log_content = f.read()
-                except Exception:
-                    with open(log_path, 'rb') as f:
-                        log_content = f.read().decode('utf-8', errors='replace')
-                return HttpResponse(
-                    f"Erreur LaTeX :\n{log_content}",
-                    status=500,
-                    content_type="text/plain"
-                )
-            return HttpResponse("Compilation LaTeX échouée sans log.", status=500)
+            if result.returncode != 0:
+                log_path = os.path.join(tmp_dir, f"facture_{bon.id}.log")
+                if os.path.exists(log_path):
+                    try:
+                        with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
+                            log_content = f.read()
+                    except Exception:
+                        with open(log_path, 'rb') as f:
+                            log_content = f.read().decode('utf-8', errors='replace')
+                    return HttpResponse(
+                        f"Erreur LaTeX :\n{log_content}",
+                        status=500,
+                        content_type="text/plain"
+                    )
+                return HttpResponse("Compilation LaTeX échouée sans log.", status=500)
 
         if not os.path.exists(pdf_path):
             return HttpResponse("PDF non généré.", status=500)

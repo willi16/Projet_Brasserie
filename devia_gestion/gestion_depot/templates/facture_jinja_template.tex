@@ -15,6 +15,7 @@
 \usepackage{eso-pic} 
 \usepackage{ragged2e}
 \usepackage{tabularx}
+\linespread{0.95}
 
 
 
@@ -26,28 +27,44 @@
 \pagestyle{fancy}
 \fancyhf{}
 \renewcommand{\headrulewidth}{0pt}
-\renewcommand{\footrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.4pt}
 \rhead{\footnotesize \textcolor{primary}{Facture \# {{ bon.reference }}}}
 \lhead{\footnotesize \textcolor{primary}{Dépôt Boissons}}
+% Pied de page répété sur TOUTES les pages : logo DEIVA + pagination
+\lfoot{\includegraphics[height=0.7cm]{logo.png}}
+\cfoot{\footnotesize Page \thepage/\pageref{LastPage}}
+
+{% raw %}
+% Filigrane "Deiva" répété en horizontal sur toutes les pages
+\newcommand{\DeivaFiligrane}{%
+  \AddToShipoutPictureBG{%
+    \setlength{\unitlength}{1cm}%
+    \multiput(1,1)(5,0){5}{%
+      \multiput(0,0)(0,4.5){5}{%
+        \put(0,0){\textcolor[gray]{0.93}{\bfseries\LARGE Deiva}}%
+      }%
+    }%
+  }%
+}
+\DeivaFiligrane
+{% endraw %}
 % Utiliser TeX Gyre Termes comme police principale (déjà activée par \usepackage{tgtermes})
 % Pas besoin de \setmainfont ici
 
 \begin{document}
 
-% En-tête
-\vspace{0.2cm}
+% En-tête : informations de l'entreprise alignées au même niveau que le logo
 \noindent
 \begin{minipage}[t]{0.65\linewidth}
  \textbf{\Huge DEIVA} \\
  \textbf{Commerce Général} \\
  Vente en Gros et en Détails de Boissons,\\
  Eaux Minérales et Divers \\
- \small Tél: +22890695391 /98888642/etsdeivtg@gmail.com\\
+ \small Tél: +22890695391 / 98888642\\
+ \small Email : etsdeivtg@gmail.com\\
  Lomé - TOGO
-\end{minipage}
-\vspace{0.2cm}
+\end{minipage}%
 \hfill
-\vspace{0.2cm}
 \begin{minipage}[t]{0.28\linewidth}
  \raggedleft 
  \includegraphics[width=2.0cm]{logo.png}
@@ -68,7 +85,7 @@
  \textbf{Référence :} {{ bon.reference }}
 \end{minipage}
 
-\vspace{0.2cm}
+\vspace{0.1cm}
 
 % Client et vendeur
 \noindent
@@ -77,10 +94,10 @@
  \textbf{Vendeur :} & {{ bon.vendeur }}
 \end{tabular}
 
-\vspace{0.3cm}
+\vspace{0.15cm}
 
 % Tableau des produits
-\renewcommand{\arraystretch}{1.4}
+\renewcommand{\arraystretch}{1.15}
 \begin{longtable}{|>{\centering\arraybackslash}p{1.4cm}|p{2.4cm}|>{\centering\arraybackslash}p{1.8cm}|>{\centering\arraybackslash}p{1.8cm}|>{\centering\arraybackslash}p{1.8cm}|}
  \hline
  \rowcolor{primary}
@@ -113,21 +130,21 @@
  {{ ligne.quantite_casiers }} &
  {{ ligne.produit_nom }} &
  {{ ligne.fraction_display }} &
- {{ ligne.prix_unitaire }} FCFA &
- {{ ligne.montant }} FCFA \\
+ {{ ligne.prix_unitaire }} F &
+ {{ ligne.montant }} F \\
  \hline 
 {% endfor %}  
 
 \end{longtable}
 
-\vspace{0.2cm}
+\vspace{0.05cm}
 
 % Total
 \begin{flushright}
  \textbf{TOTAL :} \textcolor{primary}{\textbf{{ total_facture }} FCFA}
 \end{flushright}
 
-\vspace{0.6cm}
+\vspace{0.05cm}
 
 % Signature
 \noindent
@@ -135,9 +152,9 @@
 \begin{minipage}[t]{0.35\linewidth}
  \centering 
     \includegraphics[width=1.5cm]{cachet.jpeg}
-    \vspace{0.5em}
+    \vspace{0.1em}
     \rule{5cm}{0.4pt} 
-    \vspace{3em}        
+    \vspace{0.1em}        
  \textbf{La direction}
 \end{minipage}
 
