@@ -32,6 +32,10 @@ USER appuser
 # Copier TOUT le code (y compris start.sh)
 COPY --chown=appuser:appuser . .
 
+# Robustesse Windows : si le projet est cloné avec des fins de ligne CRLF
+# (git autocrlf), le shebang #!/bin/sh échoue. On normalise + droits.
+RUN sed -i 's/\r$//' start.sh cron_rapport.sh && chmod +x start.sh cron_rapport.sh
+
 # → PAS de collectstatic ici !
 # → On le fera dans start.sh au démarrage
 
