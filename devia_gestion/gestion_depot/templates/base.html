@@ -70,6 +70,77 @@
     #sidebar .sidebar-nav a {
       white-space: nowrap;
     }
+    /* Boutons d'action SVG : icône seule + infobulle au survol */
+    .action-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 9999px;
+      color: #6b7280;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .action-btn:hover {
+      background-color: rgba(0, 0, 0, 0.06);
+      color: #111827;
+    }
+    .dark .action-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #f9fafb;
+    }
+    .action-btn .action-svg {
+      width: 17px;
+      height: 17px;
+    }
+    .action-btn .action-tip {
+      position: absolute;
+      top: calc(100% + 7px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1;
+      padding: 5px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.12s ease, visibility 0.12s ease;
+      z-index: 60;
+      pointer-events: none;
+    }
+    .action-btn .action-tip::after {
+      content: "";
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-bottom-color: #111827;
+    }
+    .action-btn:hover .action-tip {
+      opacity: 1;
+      visibility: visible;
+    }
+    .action-btn.action-view { color: #2563eb; }
+    .action-btn.action-view:hover { background-color: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+    .action-btn.action-edit { color: #d97706; }
+    .action-btn.action-edit:hover { background-color: rgba(217, 119, 6, 0.12); color: #b45309; }
+    .action-btn.action-delete { color: #dc2626; }
+    .action-btn.action-delete:hover { background-color: rgba(220, 38, 38, 0.1); color: #b91c1c; }
+    .action-btn.action-validate { color: #16a34a; }
+    .action-btn.action-validate:hover { background-color: rgba(22, 163, 74, 0.12); color: #15803d; }
+    .action-btn.action-cancel { color: #dc2626; }
+    .action-btn.action-cancel:hover { background-color: rgba(220, 38, 38, 0.1); color: #b91c1c; }
+    .action-btn.action-doc { color: #d97706; }
+    .action-btn.action-doc:hover { background-color: rgba(217, 119, 6, 0.12); color: #b45309; }
+    .action-btn.action-back { color: #6b7280; }
+    .action-btn.action-back:hover { background-color: rgba(107, 114, 128, 0.1); color: #374151; }
+    .dark .action-btn.action-back:hover { color: #d1d5db; }
   </style>
 </head>
 <body class="flex flex-col min-h-screen" id="body-root">
