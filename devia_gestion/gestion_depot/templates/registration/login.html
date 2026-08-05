@@ -11,9 +11,9 @@
     <link rel="stylesheet" href="{% static 'css/tailwind.css' %}">
 
     <style>
-      /* Photo de fond : affichée en entier, part conséquente sur desktop */
+      /* Photo de fond : remplit toute la zone réservée, sans espace vide */
       .login-photo {
-        background-size: contain;
+        background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-color: #0f172a;
