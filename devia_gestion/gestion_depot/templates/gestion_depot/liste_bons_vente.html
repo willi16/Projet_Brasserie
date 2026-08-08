@@ -52,6 +52,7 @@
         <th>Vendeur</th>
         <th>Total (FCFA)</th>
         <th>Statut</th>
+        <th>Motif d'annulation</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -83,6 +84,7 @@ document.addEventListener('DOMContentLoaded', function () {
       { data: 'vendeur_nom' },
       { data: 'montant_total', searchable: false, render: function (d) { return Number(d || 0).toLocaleString('fr-FR') + ' FCFA'; } },
       { data: 'statut_html', orderable: false, searchable: false },
+      { data: 'motif_annulation', orderable: false, searchable: true },
       { data: 'actions_html', orderable: false, searchable: false }
     ],
     order: [[1, 'desc']],
@@ -120,6 +122,38 @@ document.addEventListener('DOMContentLoaded', function () {
     e.preventDefault();
     $('#filter-form')[0].reset();
     table.ajax.reload();
+  });
+
+  // Annulation d'une vente : saisie obligatoire du motif avant soumission
+  document.addEventListener('submit', function (e) {
+    const form = e.target.closest('form.cancel-bon-form');
+    if (!form || form.dataset.confirmed === 'true') return;
+    e.preventDefault();
+    Swal.fire({
+      title: form.dataset.title || 'Annuler le bon de vente',
+      text: form.dataset.text || 'Confirmer l\'annulation ?',
+      input: 'textarea',
+      inputLabel: 'Motif d\'annulation *',
+      inputPlaceholder: 'Précisez le motif de l\'annulation...',
+      inputAttributes: { required: true, maxlength: 1000 },
+      showCancelButton: true,
+      confirmButtonText: form.dataset.confirmText || 'Oui, annuler',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#d33',
+      preConfirm: function (val) {
+        if (!val || !String(val).trim()) {
+          Swal.showValidationMessage('Le motif d\'annulation est obligatoire');
+          return false;
+        }
+        return val;
+      }
+    }).then(function (result) {
+      if (result.isConfirmed) {
+        form.querySelector('input[name="motif_annulation"]').value = String(result.value).trim();
+        form.dataset.confirmed = 'true';
+        form.submit();
+      }
+    });
   });
 });
 </script>

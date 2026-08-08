@@ -4,7 +4,7 @@
 {% block title %}Ajout multiple de produits{% endblock %}
 
 {% block content %}
-<div>
+<div class="max-w-6xl mx-auto">
   <h2 class="text-2xl font-semibold mb-4">Ajout multiple de produits ({{ nb_forms }} produits)</h2>
 
   <div class="card p-4">
@@ -19,19 +19,17 @@
               <th>Nom</th>
               <th>Catégorie</th>
               <th>Contenu casier</th>
-              <th>Prix achat (FCFA)</th>
-              <th>Prix vente (FCFA)</th>
+              <th>% prix de vente</th>
               <th>Seuil d'alerte</th>
             </tr>
           </thead>
           <tbody>
             {% for form in formset %}
-            <tr>
+            <tr class="produit-row">
               <td>{{ form.nom|as_crispy_field }}</td>
               <td>{{ form.categorie|as_crispy_field }}</td>
               <td>{{ form.casier_contenu|as_crispy_field }}</td>
-              <td>{{ form.prix_achat_casier|as_crispy_field }}</td>
-              <td>{{ form.prix_vente_casier|as_crispy_field }}</td>
+              <td>{{ form.pourcentage_prix_vente|as_crispy_field }}</td>
               <td>{{ form.seuil_alerte|as_crispy_field }}</td>
             </tr>
             {% endfor %}
@@ -48,15 +46,54 @@
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
         Le modèle de casier est déduit de la capacité indiquée dans le <strong>nom</strong> du produit :
         boisson/bière de <strong>50cl ou plus = grand modèle</strong> (GM12 ou GM20 selon le nombre de bouteilles),
-        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong> et les <strong>sucreries</strong>
-        n'ont pas de casier.
+        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong>, les <strong>sucreries</strong> et les
+        <strong>canettes</strong> n'ont pas de suivi de casier.
+      </p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+        Le <strong>pourcentage de prix de vente</strong> sert à calculer le prix de vente à partir du
+        <strong>prix d'achat</strong> renseigné à la livraison : prix de vente = prix d'achat × (1 + pourcentage / 100).
       </p>
 
       <div class="flex gap-2 mt-4">
-        <button type="submit" class="btn btn-primary">Enregistrer les produits</button>
         <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">Enregistrer les produits</button>
+
       </div>
     </form>
   </div>
 </div>
+
+{{ casiers_par_categorie|json_script:"casiers-par-categorie" }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const casiersParCategorie = JSON.parse(document.getElementById('casiers-par-categorie').textContent);
+
+    function updateCasierOptions(catSelect) {
+      const row = catSelect.closest('tr');
+      if (!row) return;
+      const casierSelect = row.querySelector('select[name$="-casier_contenu"]');
+      if (!casierSelect) return;
+      const values = casiersParCategorie[catSelect.value] || [];
+      const current = casierSelect.value;
+      casierSelect.innerHTML = '';
+      if (!values.length) {
+        casierSelect.innerHTML = '<option value="">-- Aucun casier --</option>';
+        return;
+      }
+      values.forEach(function (v) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v + ' bouteilles';
+        if (String(v) === current) opt.selected = true;
+        casierSelect.appendChild(opt);
+      });
+      if (!casierSelect.value && values.length) casierSelect.value = values[0];
+    }
+
+    document.querySelectorAll('select[name$="-categorie"]').forEach(function (select) {
+      select.addEventListener('change', function () { updateCasierOptions(select); });
+      updateCasierOptions(select);
+    });
+  });
+</script>
 {% endblock %}

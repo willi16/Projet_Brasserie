@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from gestion_depot.models import ProfilUtilisateur
+from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.forms import ProfilForm
 
 
@@ -21,6 +22,10 @@ def modifier_profil(request):
         form = ProfilForm(request.POST, request.FILES, instance=profil)
         if form.is_valid():
             form.save()
+            UserActionLog.log_action(
+                request.user, 'modification_profil', module='profil',
+                details="Mise à jour du profil", request=request,
+            )
             messages.success(request, "Profil mis à jour avec succès !")
             return redirect('gestion_depot:profil_utilisateur')
     else:

@@ -4,6 +4,7 @@ from django.contrib import messages
 from ..models import Fournisseur
 from ..decorators import group_required
 from ..forms import FournisseurForm
+from ..models.userActionLog import UserActionLog
 
 @group_required('Gérant', 'Admin')
 def liste_fournisseurs(request):
@@ -16,6 +17,10 @@ def ajouter_fournisseur(request):
         form = FournisseurForm(request.POST)
         if form.is_valid():
             fournisseur = form.save()
+            UserActionLog.log_action(
+                request.user, 'création_fournisseur', module='fournisseurs',
+                details=f"Création du fournisseur « {fournisseur.nom} »", request=request,
+            )
             messages.success(request, f"Fournisseur '{fournisseur.nom}' ajouté.")
             return redirect('gestion_depot:liste_fournisseurs')
     else:
@@ -34,6 +39,10 @@ def modifier_fournisseur(request, pk):
         form = FournisseurForm(request.POST, instance=fournisseur)
         if form.is_valid():
             form.save()
+            UserActionLog.log_action(
+                request.user, 'modification_fournisseur', module='fournisseurs',
+                details=f"Modification du fournisseur « {fournisseur.nom} »", request=request,
+            )
             messages.success(request, f"Fournisseur '{fournisseur.nom}' mis à jour.")
             return redirect('gestion_depot:liste_fournisseurs')
     else:
@@ -50,5 +59,9 @@ def supprimer_fournisseur(request, pk):
     fournisseur = get_object_or_404(Fournisseur, pk=pk)
     nom = fournisseur.nom
     fournisseur.delete()
+    UserActionLog.log_action(
+        request.user, 'suppression_fournisseur', module='fournisseurs',
+        details=f"Suppression du fournisseur « {nom} »", request=request,
+    )
     messages.success(request, f"Fournisseur '{nom}' supprimé.")
     return redirect('gestion_depot:liste_fournisseurs')

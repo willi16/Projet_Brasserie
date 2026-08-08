@@ -14,8 +14,14 @@
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
         Le modèle de casier est déduit de la capacité indiquée dans le <strong>nom</strong> du produit :
         boisson/bière de <strong>50cl ou plus = grand modèle</strong> (GM12 ou GM20 selon le nombre de bouteilles),
-        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong> et les <strong>sucreries</strong>
-        n'ont pas de casier. Il sert au calcul de la sanction des casiers emportés.
+        en dessous = <strong>petit modèle</strong> (PM24). L'<strong>eau</strong>, les <strong>sucreries</strong> et les
+        <strong>canettes</strong> n'ont pas de suivi de casier.
+      </p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        Le <strong>pourcentage de prix de vente</strong> sert à calculer le prix de vente à partir du
+        <strong>prix d'achat</strong> renseigné à la livraison : prix de vente = prix d'achat × (1 + pourcentage / 100).
+        Les champs <strong>prix d'achat</strong> et <strong>prix de vente</strong> sont renseignés automatiquement
+        lors de la première livraison du produit.
       </p>
       <div class="flex gap-2 mt-4 justify-center">
         <a href="{% url 'gestion_depot:liste_produits' %}" class="btn btn-secondary">Annuler</a>
@@ -25,4 +31,35 @@
     </form>
   </div>
 </div>
+
+{{ casiers_par_categorie|json_script:"casiers-par-categorie" }}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const casiersParCategorie = JSON.parse(document.getElementById('casiers-par-categorie').textContent);
+    const catSelect = document.getElementById('id_categorie');
+    const casierSelect = document.getElementById('id_casier_contenu');
+    if (!catSelect || !casierSelect) return;
+
+    function updateCasierOptions() {
+      const values = casiersParCategorie[catSelect.value] || [];
+      const current = casierSelect.value;
+      casierSelect.innerHTML = '';
+      if (!values.length) {
+        casierSelect.innerHTML = '<option value="">-- Aucun casier --</option>';
+        return;
+      }
+      values.forEach(function (v) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v + ' bouteilles';
+        if (String(v) === current) opt.selected = true;
+        casierSelect.appendChild(opt);
+      });
+      if (!casierSelect.value && values.length) casierSelect.value = values[0];
+    }
+
+    catSelect.addEventListener('change', updateCasierOptions);
+    updateCasierOptions();
+  });
+</script>
 {% endblock %}

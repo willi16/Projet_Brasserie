@@ -24,6 +24,7 @@ urlpatterns = [
 
     path('rapport/', rapport_views.rapport_ventes, name='rapport_ventes'),
     path('rapport/ventes/ajax/', rapport_views.rapport_ventes_ajax, name='rapport_ventes_ajax'),
+    path('rapport/casiers-restants/', rapport_views.detail_casiers_restants, name='rapport_casiers_restants'),
 
     # Produits
     path('produits/', produit_views.liste_produits_avec_stock, name='liste_produits'),

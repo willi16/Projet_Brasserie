@@ -163,13 +163,14 @@ def dt_bons_vente(request):
         request, qs,
         columns=[
             'reference', 'date_vente', 'client_nom', 'vendeur_nom',
-            'montant_total', 'statut_html', 'actions_html',
+            'montant_total', 'statut_html', 'motif_annulation', 'actions_html',
         ],
-        searchable=['reference', 'client__nom', 'vendeur__username'],
+        searchable=['reference', 'client__nom', 'vendeur__username', 'motif_annulation'],
         search_map={
             'client_nom': 'client__nom',
             'vendeur_nom': 'vendeur__username',
             'statut_html': 'statut',
+            'motif_annulation': 'motif_annulation',
         },
         order_map={
             'reference': 'reference',
@@ -178,6 +179,7 @@ def dt_bons_vente(request):
             'vendeur_nom': 'vendeur__username',
             'montant_total': 'montant_total',
             'statut_html': 'statut',
+            'motif_annulation': 'motif_annulation',
             'actions_html': None,
         },
         filter_fn=filtre,
@@ -280,20 +282,22 @@ def dt_logs(request):
     return dt_json(
         request, qs,
         columns=[
-            'timestamp', 'performed_by_nom', 'action_display',
-            'target_user_nom', 'details',
+            'timestamp', 'performed_by_nom', 'action',
+            'target_user_nom', 'module', 'details',
         ],
-        searchable=['performed_by__username', 'target_user__username', 'action', 'details'],
+        searchable=['performed_by__username', 'target_user__username', 'action', 'module', 'details'],
         search_map={
             'performed_by_nom': 'performed_by__username',
-            'action_display': 'action',
+            'action': 'action',
             'target_user_nom': 'target_user__username',
+            'module': 'module',
         },
         order_map={
             'timestamp': 'timestamp',
             'performed_by_nom': 'performed_by__username',
-            'action_display': 'action',
+            'action': 'action',
             'target_user_nom': 'target_user__username',
+            'module': 'module',
             'details': 'details',
         },
         serializer=UserLogSerializer,

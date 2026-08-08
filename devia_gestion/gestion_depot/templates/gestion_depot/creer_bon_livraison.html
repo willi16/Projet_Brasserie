@@ -3,6 +3,7 @@
 {% block title %}Créer un bon de livraison{% endblock %}
 
 {% block content %}
+  <div class="max-w-4xl mx-auto">
   <h2 class="text-2xl font-semibold mb-4">Créer un bon de livraison</h2>
 
   <form method="post" class="card confirm-form" data-title="Confirmer la livraison"
@@ -22,7 +23,7 @@
     <div id="lignes-container" class="space-y-3">
       <div class="ligne border border-gray-200 dark:border-gray-700 rounded-lg p-3">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-          <div class="md:col-span-3">
+          <div class="md:col-span-4">
             <label class="form-label">Produit</label>
             <select name="produit" class="form-select" required>
               {% for produit in produits %}
@@ -39,7 +40,7 @@
               <option value="24">24 bouteilles</option>
             </select>
           </div>
-          <div class="md:col-span-2">
+          <div class="md:col-span-3">
             <label class="form-label">Prix d'achat (par casier)</label>
             <input type="number" name="prix_achat_casier" class="form-input" min="0" step="0.01" required>
           </div>
@@ -47,7 +48,7 @@
             <label class="form-label">Quantité (casiers)</label>
             <input type="number" name="quantite" class="form-input" min="0.01" step="0.01" required>
           </div>
-          <div class="md:col-span-3 flex items-center justify-end">
+          <div class="md:col-span-1 flex items-end justify-end">
             <button type="button" class="action-btn action-delete remove-ligne" aria-label="Supprimer la ligne">
               <svg xmlns="http://www.w3.org/2000/svg" class="action-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
               <span class="action-tip">Supprimer la ligne</span>
@@ -57,14 +58,28 @@
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-2 mt-4">
-      <button type="button" id="add-ligne" class="btn btn-secondary">Ajouter une ligne</button>
-      <button type="submit" class="btn btn-primary">Enregistrer la livraison</button>
+    <div class="flex flex-wrap items-center justify-between gap-2 mt-4">
       <a href="{% url 'gestion_depot:liste_livraisons' %}" class="btn btn-secondary">Annuler</a>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" id="add-ligne" class="btn btn-secondary">Ajouter une ligne</button>
+        <button type="submit" class="btn btn-primary">Enregistrer la livraison</button>
+      </div>
     </div>
   </form>
+  </div>
 
   <script>
+    // Select2 sur la liste déroulante produit
+    function initProductSelect2(row) {
+      const select = row.querySelector('select[name="produit"]');
+      if (!select || select.classList.contains('select2-hidden-accessible')) return;
+      $(select).select2({
+        placeholder: '-- Sélectionner --',
+        allowClear: false,
+        width: '100%'
+      });
+    }
+
     const ligneMaster = document.querySelector('.ligne');
     document.getElementById('add-ligne').addEventListener('click', function () {
       const container = document.getElementById('lignes-container');
@@ -72,6 +87,7 @@
       newLigne.querySelector('select[name="produit"]').value = '';
       newLigne.querySelector('input[name="quantite"]').value = '';
       container.appendChild(newLigne);
+      initProductSelect2(newLigne);
 
       newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
         newLigne.remove();
@@ -81,6 +97,12 @@
     document.querySelectorAll('.remove-ligne').forEach(btn => {
       btn.addEventListener('click', function () {
         this.closest('.ligne').remove();
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.ligne').forEach(row => {
+        initProductSelect2(row);
       });
     });
   </script>

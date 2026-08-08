@@ -7,7 +7,7 @@ from django.db.models import Sum, Count, F, FloatField, Case, When, Value
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
 from datetime import datetime, timedelta, time
-from gestion_depot.models import BonVente, LigneVente, Produit
+from gestion_depot.models import BonVente, LigneVente, Produit, CasierEmporte
 from gestion_depot.decorators import group_required
 from collections import defaultdict
 from django.utils.dateformat import DateFormat
@@ -93,6 +93,13 @@ def _calculer_rapport(date_debut, date_fin, periode):
     produit_plus_vendu = max(stats_produits_list, key=lambda x: x['quantite_totale'], default=None)
     produit_moins_vendu = min(stats_produits_list, key=lambda x: x['quantite_totale'], default=None)
 
+    # Total de casiers non rendus (restants à retourner)
+    total_casiers_non_rendus = CasierEmporte.objects.filter(
+        nombre_casiers__gt=F('nombre_rendus')
+    ).annotate(restant=F('nombre_casiers') - F('nombre_rendus')).aggregate(
+        total=Sum('restant')
+    )['total'] or 0
+
     # Inventaire avec stock annoté
     produits_stock = Produit.objects.annotate(
         stock_actuel=Coalesce(
@@ -157,6 +164,7 @@ def _calculer_rapport(date_debut, date_fin, periode):
         'total_benefice': round(total_benefice, 2),
         'produit_plus_vendu': produit_plus_vendu,
         'produit_moins_vendu': produit_moins_vendu,
+        'total_casiers_non_rendus': total_casiers_non_rendus,
         'inventaire': inventaire,
         'date_debut': date_debut_obj,
         'date_fin': date_fin_obj,
@@ -255,6 +263,7 @@ def rapport_ventes_ajax(request):
         'total_revenu': context['total_revenu'],
         'total_cout': context['total_cout'],
         'total_benefice': context['total_benefice'],
+        'total_casiers_non_rendus': context['total_casiers_non_rendus'],
         'produit_plus_vendu': _produit_stat_json(context['produit_plus_vendu']),
         'produit_moins_vendu': _produit_stat_json(context['produit_moins_vendu']),
         'stats_produits': [_produit_stat_json(s) for s in context['stats_produits']],
@@ -274,3 +283,33 @@ def rapport_ventes_ajax(request):
         'data_ventes': json.loads(context['data_ventes']),
     }
     return JsonResponse(payload)
+
+
+@login_required
+@group_required('Gérant', 'Admin')
+def detail_casiers_restants(request):
+    """Liste des clients avec leurs casiers restants (non rendus), agrégés par client."""
+    casiers = CasierEmporte.objects.filter(
+        nombre_casiers__gt=F('nombre_rendus')
+    ).select_related('client', 'bon').order_by('client__nom', 'date_emport')
+
+    par_client = defaultdict(lambda: {
+        'client': None,
+        'total_casiers': 0,
+        'total_bouteilles': 0,
+        'items': [],
+    })
+    for c in casiers:
+        entry = par_client[c.client_id]
+        entry['client'] = c.client
+        entry['total_casiers'] += c.restant
+        entry['total_bouteilles'] += c.restant_bouteilles
+        entry['items'].append(c)
+
+    liste = sorted(par_client.values(), key=lambda e: e['client'].nom)
+    total_global_casiers = sum(e['total_casiers'] for e in liste)
+
+    return render(request, 'gestion_depot/detail_casiers_restants.html', {
+        'par_client': liste,
+        'total_global_casiers': total_global_casiers,
+    })

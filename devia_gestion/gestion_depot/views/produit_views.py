@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db.models import Func, Sum, Case, When, F, DecimalField
 from django.forms import modelformset_factory
 from gestion_depot.models import Produit
+from gestion_depot.models.produit import CASIERS_PAR_CATEGORIE
+from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.decorators import group_required
 from gestion_depot.forms import ProduitForm
 
@@ -37,6 +39,10 @@ def ajouter_produit(request):
         form = ProduitForm(request.POST)
         if form.is_valid():
             produit = form.save()
+            UserActionLog.log_action(
+                request.user, 'création_produit', module='produits',
+                details=f"Création du produit « {produit.nom} »", request=request,
+            )
             messages.success(request, f"Produit '{produit.nom}' ajouté avec succès.")
             return redirect('gestion_depot:liste_produits')
     else:
@@ -46,7 +52,8 @@ def ajouter_produit(request):
         'form': form,
         'action': 'Ajouter',
         'categories': Produit.CATEGORIE_CHOICES,
-        'casiers': [c for c, _ in Produit.CASIER_CHOICES],
+        'casiers_par_categorie': CASIERS_PAR_CATEGORIE,
+        'casiers_labels': dict(Produit.CASIER_CHOICES),
     })
 
 
@@ -74,6 +81,10 @@ def produits_multi_create(request, nb_forms):
             produits = formset.save(commit=False)
             for produit in produits:
                 produit.save()
+            UserActionLog.log_action(
+                request.user, 'création_multiple_produits', module='produits',
+                details=f"Ajout de {len(produits)} produit(s)", request=request,
+            )
             messages.success(request, f"{len(produits)} produit(s) ajouté(s) avec succès.")
             return redirect('gestion_depot:liste_produits')
     else:
@@ -83,7 +94,8 @@ def produits_multi_create(request, nb_forms):
         'formset': formset,
         'nb_forms': nb_forms,
         'categories': Produit.CATEGORIE_CHOICES,
-        'casiers': [c for c, _ in Produit.CASIER_CHOICES],
+        'casiers_par_categorie': CASIERS_PAR_CATEGORIE,
+        'casiers_labels': dict(Produit.CASIER_CHOICES),
     })
 
 
@@ -95,6 +107,10 @@ def modifier_produit(request, pk):
         form = ProduitForm(request.POST, instance=produit)
         if form.is_valid():
             form.save()
+            UserActionLog.log_action(
+                request.user, 'modification_produit', module='produits',
+                details=f"Modification du produit « {produit.nom} »", request=request,
+            )
             messages.success(request, f"Produit '{produit.nom}' mis à jour.")
             return redirect('gestion_depot:liste_produits')
     else:
@@ -105,7 +121,8 @@ def modifier_produit(request, pk):
         'action': 'Modifier',
         'produit': produit,
         'categories': Produit.CATEGORIE_CHOICES,
-        'casiers': [c for c, _ in Produit.CASIER_CHOICES],
+        'casiers_par_categorie': CASIERS_PAR_CATEGORIE,
+        'casiers_labels': dict(Produit.CASIER_CHOICES),
     })
 
 
@@ -114,5 +131,9 @@ def supprimer_produit(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
     nom = produit.nom
     produit.delete()
+    UserActionLog.log_action(
+        request.user, 'suppression_produit', module='produits',
+        details=f"Suppression du produit « {nom} »", request=request,
+    )
     messages.success(request, f"Produit '{nom}' supprimé.")
     return redirect('gestion_depot:liste_produits')

@@ -13,6 +13,7 @@ from gestion_depot.models import CasierEmporte, Parametre, BonVente
 from gestion_depot.models.parametre import SANCTION_CASIER
 from gestion_depot.models.casier_emporte import DELAI_RETOUR_JOURS
 from gestion_depot.models.produit import Produit, CATEGORIES_AVEC_CASIERS
+from gestion_depot.models.userActionLog import UserActionLog
 
 MODELE_VALIDES = {m[0] for m in Produit.MODELE_CHOICES} - {'NC'}
 
@@ -101,6 +102,12 @@ def enregistrer_retour_casiers(request, id):
         casier.date_retour_complet = timezone.now()
     casier.save(update_fields=['nombre_rendus', 'date_retour_complet'])
 
+    UserActionLog.log_action(
+        request.user, 'retour_casiers', module='casiers',
+        details=f"Retour de {quantite} casier(s) pour {casier.client.nom} "
+                f"(bon {casier.bon.reference}) — restant : {casier.restant}",
+        request=request,
+    )
     messages.success(request, f"{quantite} casier(s) retourné(s) enregistré(s).")
     return redirect('gestion_depot:liste_casiers_emportes')
 
@@ -127,6 +134,10 @@ def configurer_sanction(request):
             return redirect('gestion_depot:configurer_sanction')
         param.valeur = montant
         param.save()
+        UserActionLog.log_action(
+            request.user, 'modification_parametres', module='parametres',
+            details=f"Montant de la sanction des casiers mis à jour : {montant} FCFA", request=request,
+        )
         messages.success(request, f"Montant de la sanction mis à jour : {montant} FCFA.")
         return redirect('gestion_depot:configurer_sanction')
 
@@ -183,6 +194,11 @@ def enregistrer_casiers_bon(request, bon_id):
             casier.modele = modele
             casier.bouteilles_par_casier = bouteilles
             casier.save(update_fields=['modele', 'bouteilles_par_casier'])
+            UserActionLog.log_action(
+                request.user, 'enregistrement_casiers', module='casiers',
+                details=f"Enregistrement de {nombre} casier(s) pour {bon.client.nom} (bon {bon.reference})",
+                request=request,
+            )
             messages.success(request, f"{nombre} casier(s) à retourner enregistré(s) pour le bon {bon.reference}.")
         else:
             casier.client = bon.client
@@ -194,6 +210,11 @@ def enregistrer_casiers_bon(request, bon_id):
             if casier.nombre_rendus < nombre:
                 casier.date_retour_complet = None
             casier.save()
+            UserActionLog.log_action(
+                request.user, 'modification_casiers', module='casiers',
+                details=f"Mise à jour des casiers du bon {bon.reference} : {nombre} casier(s)",
+                request=request,
+            )
             messages.success(request, f"Casiers du bon {bon.reference} mis à jour ({nombre} casier(s)).")
         return redirect('gestion_depot:detail_bon_vente', id=bon.id)
 

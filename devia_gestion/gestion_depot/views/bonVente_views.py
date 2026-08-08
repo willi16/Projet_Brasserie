@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from datetime import datetime
 
 from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
+from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.views.casier_views import produit_casier_du_bon
 
 
@@ -141,6 +142,12 @@ def creer_bon_vente(request):
                 )
         LigneVente.objects.bulk_create(lignes)
 
+        UserActionLog.log_action(
+            request.user, 'création_vente', module='ventes',
+            details=f"Création du bon de vente {bon.reference} pour {client_obj.nom} "
+                    f"({type_paiement}, {len(lignes)} ligne(s))",
+            target_user=request.user, request=request,
+        )
         messages.success(request, f"Bon de vente {bon.reference} créé avec succès !")
         return redirect('gestion_depot:liste_bons_vente')
 
@@ -197,6 +204,10 @@ def valider_bon_vente(request, id):
             )
         bon.statut = 'valide'
         bon.save(update_fields=['statut'])
+        UserActionLog.log_action(
+            request.user, 'validation_vente', module='ventes',
+            details=f"Validation du bon de vente {bon.reference}", request=request,
+        )
         messages.success(request, f"Le bon de vente {bon.reference} a été validé.")
     else:
         messages.warning(request, "Ce bon est déjà validé.")
@@ -215,6 +226,10 @@ def annuler_bon_vente(request, id):
         return redirect('gestion_depot:liste_bons_vente')
 
     if bon.statut == 'valide':
+        motif = (request.POST.get('motif_annulation') or '').strip()
+        if not motif:
+            messages.error(request, "Le motif d'annulation est obligatoire.")
+            return redirect('gestion_depot:liste_bons_vente')
         # Créer des mouvements inverses (entrée)
         for ligne in bon.lignes.all():
             Mouvement.objects.create(
@@ -225,7 +240,12 @@ def annuler_bon_vente(request, id):
                 fournisseur=None,
             )
         bon.statut = 'annule'
-        bon.save(update_fields=['statut'])
+        bon.motif_annulation = motif
+        bon.save(update_fields=['statut', 'motif_annulation'])
+        UserActionLog.log_action(
+            request.user, 'annulation_vente', module='ventes',
+            details=f"Annulation du bon de vente {bon.reference} — motif : {motif}", request=request,
+        )
         messages.success(request, f"Le bon de vente {bon.reference} a été annulé et le stock restauré.")
     else:
         messages.warning(request, "Ce bon n’est pas encore validé ou est déjà annulé.")
