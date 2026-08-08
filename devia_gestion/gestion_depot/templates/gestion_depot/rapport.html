@@ -56,16 +56,11 @@
       <h5 class="font-semibold">Bénéfice net</h5>
       <h3 class="text-2xl font-bold mt-1" id="stat-benefice">{{ total_benefice|floatformat:0 }} FCFA</h3>
     </div>
-    <div class="card bg-red-600 text-white p-5">
-      <h5 class="font-semibold">Produit le plus vendu</h5>
-      {% if produit_plus_vendu %}
-        <p class="mt-1 font-medium truncate" id="prod-plus-nom">{{ produit_plus_vendu.produit__nom }}</p>
-        <small id="prod-plus-qte">{{ produit_plus_vendu.quantite_totale|floatformat:2 }} casiers</small>
-      {% else %}
-        <p class="mt-1" id="prod-plus-nom">Aucune vente.</p>
-        <small id="prod-plus-qte"></small>
-      {% endif %}
-    </div>
+    <a href="{% url 'gestion_depot:rapport_casiers_restants' %}" class="card bg-red-600 text-white p-5 hover:opacity-90">
+      <h5 class="font-semibold flex items-center gap-2">Casiers non rendus / dus</h5>
+      <h3 class="text-2xl font-bold mt-1" id="stat-casiers">{{ total_casiers_non_rendus|floatformat:0 }}</h3>
+      <small>casiers à retourner — cliquer pour voir le détail par client</small>
+    </a>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -265,8 +260,7 @@
         document.getElementById('stat-benefice').textContent = formatFCFA(d.total_benefice);
 
         var plus = d.produit_plus_vendu;
-        document.getElementById('prod-plus-nom').textContent = plus ? plus.nom : 'Aucune vente.';
-        document.getElementById('prod-plus-qte').textContent = plus ? formatQte(plus.quantite_totale) + ' casiers' : '';
+        document.getElementById('stat-casiers').textContent = formatQte(d.total_casiers_non_rendus);
         document.getElementById('pp-nom').textContent = plus ? plus.nom : 'Aucune vente trouvée.';
         document.getElementById('pp-qte').textContent = plus ? 'Quantité totale : ' + formatQte(plus.quantite_totale) + ' casiers' : '';
         document.getElementById('pp-revenu').textContent = plus ? 'Revenu total : ' + formatFCFA(plus.revenu_total) : '';

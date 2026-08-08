@@ -4,7 +4,7 @@
 {% block title %}{{ action }} un fournisseur{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl">
+<div class="max-w-2xl mx-auto">
   <h2 class="text-2xl font-semibold mb-4">{{ action }} un fournisseur</h2>
 
   <div class="card">
@@ -12,8 +12,9 @@
       {% csrf_token %}
       {% crispy form %}
       <div class="flex gap-2 mt-4">
-        <button type="submit" class="btn btn-primary">{{ action }}</button>
         <a href="{% url 'gestion_depot:liste_fournisseurs' %}" class="btn btn-secondary">Annuler</a>
+        <button type="submit" class="btn btn-primary">{{ action }}</button>
+
       </div>
     </form>
   </div>

@@ -16,6 +16,7 @@ class BonVente(models.Model):
     client = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
     type_paiement = models.CharField(max_length=20, choices=[('especes', 'Espèces'), ('credit', 'Crédit')])
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_cours')
+    motif_annulation = models.TextField(blank=True, null=True)
     facture_pdf = models.FileField(upload_to='factures/', blank=True, null=True)
     date_facture_generee = models.DateTimeField(blank=True, null=True)
 

@@ -191,13 +191,14 @@ class BonVenteSerializer(serializers.ModelSerializer):
     vendeur_nom = serializers.CharField(source='vendeur.username')
     statut_html = serializers.SerializerMethodField()
     montant_total = serializers.SerializerMethodField()
+    motif_annulation = serializers.SerializerMethodField()
     actions_html = serializers.SerializerMethodField()
 
     class Meta:
         model = BonVente
         fields = [
             'id', 'reference', 'date_vente', 'client_nom', 'vendeur_nom',
-            'montant_total', 'statut_html', 'actions_html',
+            'montant_total', 'statut_html', 'motif_annulation', 'actions_html',
         ]
 
     def get_date_vente(self, obj):
@@ -215,6 +216,11 @@ class BonVenteSerializer(serializers.ModelSerializer):
             'annule': 'badge-danger',
         }.get(obj.statut, 'badge-warning')
         return _badge(obj.get_statut_display(), cls)
+
+    def get_motif_annulation(self, obj):
+        if obj.statut == 'annule' and obj.motif_annulation:
+            return f'<span class="text-red-600 dark:text-red-400 text-xs">{escape(obj.motif_annulation)}</span>'
+        return '-'
 
     def get_actions_html(self, obj):
         user = self.context['request'].user
@@ -237,8 +243,12 @@ class BonVenteSerializer(serializers.ModelSerializer):
         elif obj.statut == 'valide':
             annuler_url = reverse('gestion_depot:annuler_bon_vente', args=[obj.id])
             data_text = f"Confirmer l'annulation du bon {escape(obj.reference)} ? Le stock sera restitué."
-            data = f'class="confirm-form" data-title="Annuler le bon de vente" data-text="{data_text}" data-confirm-text="Oui, annuler"'
-            buttons += _action_form(annuler_url, csrf, 'Annuler', 'cancel', _SVG_CANCEL, data=data)
+            data = (
+                f'class="cancel-bon-form" data-title="Annuler le bon de vente" '
+                f'data-text="{data_text}" data-confirm-text="Oui, annuler"'
+            )
+            extra_inputs = '<input type="hidden" name="motif_annulation" value="">'
+            buttons += _action_form(annuler_url, csrf, 'Annuler', 'cancel', _SVG_CANCEL, data=data, extra_inputs=extra_inputs)
         buttons += '</div>'
         return buttons
 
@@ -370,14 +380,15 @@ class UserSerializer(serializers.ModelSerializer):
 class UserLogSerializer(serializers.ModelSerializer):
     timestamp = serializers.SerializerMethodField()
     performed_by_nom = serializers.SerializerMethodField()
-    action_display = serializers.CharField(source='get_action_display')
-    target_user_nom = serializers.CharField(source='target_user.username')
+    action = serializers.CharField()
+    target_user_nom = serializers.SerializerMethodField()
+    module = serializers.CharField()
 
     class Meta:
         model = UserActionLog
         fields = [
-            'id', 'timestamp', 'performed_by_nom', 'action_display',
-            'target_user_nom', 'details',
+            'id', 'timestamp', 'performed_by_nom', 'action',
+            'target_user_nom', 'module', 'details', 'ip_address',
         ]
 
     def get_timestamp(self, obj):
@@ -385,3 +396,6 @@ class UserLogSerializer(serializers.ModelSerializer):
 
     def get_performed_by_nom(self, obj):
         return obj.performed_by.username if obj.performed_by else 'System'
+
+    def get_target_user_nom(self, obj):
+        return obj.target_user.username if obj.target_user else '-'

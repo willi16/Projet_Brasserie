@@ -55,10 +55,10 @@ def manage_users(request):
         if action == 'activate':
             user.is_active = True
             user.save()
-            UserActionLog.objects.create(
-                performed_by=request.user,
-                target_user=user,
-                action='activate'
+            UserActionLog.log_action(
+                request.user, 'activation_compte', module='comptes',
+                details=f"Activation du compte « {user.username} »",
+                target_user=user, request=request,
             )
             messages.success(request, f"Le compte {user.username} a été activé.")
         elif action == 'deactivate':
@@ -86,10 +86,10 @@ L'équipe Deiva""",
                     # Ne pas bloquer si l'email échoue
                     pass
 
-            UserActionLog.objects.create(
-                performed_by=request.user,
-                target_user=user,
-                action='deactivate'
+            UserActionLog.log_action(
+                request.user, 'désactivation_compte', module='comptes',
+                details=f"Désactivation du compte « {user.username} »",
+                target_user=user, request=request,
             )
             messages.success(request, f"Le compte {user.username} a été désactivé.")
 
@@ -115,12 +115,19 @@ def edit_user_roles(request, user_id):
     if request.method == "POST":
         # Récupérer les nouveaux rôles
         selected_groups = request.POST.getlist('groups')
+        anciens_roles = ' + '.join(user.groups.values_list('name', flat=True)) or 'Aucun'
         user.groups.clear()
         for group_id in selected_groups:
             group = Group.objects.get(id=group_id)
             user.groups.add(group)
+        nouveaux_roles = ' + '.join(user.groups.values_list('name', flat=True)) or 'Aucun'
+        UserActionLog.log_action(
+            request.user, 'modification_rôles', module='comptes',
+            details=f"Rôles de « {user.username} » modifiés : {anciens_roles} → {nouveaux_roles}",
+            target_user=user, request=request,
+        )
         messages.success(request, f"Rôles de {user.username} mis à jour.")
-        return redirect('manage_users')
+        return redirect('gestion_depot:manage_users')
 
     context = {
         'user': user,
@@ -141,24 +148,26 @@ def user_logs_full(request):
     if request.GET.get('export') == 'excel':
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Historique des actions"
+        ws.title = "Journal d'activité"
 
         # En-têtes
-        ws.append(['Date', 'Admin', 'Action', 'Utilisateur ciblé', 'Détails'])
+        ws.append(['Date', 'Utilisateur', 'Module', 'Action', 'Utilisateur ciblé', 'Détails', 'Adresse IP'])
 
         for log in logs:
             ws.append([
                 log.timestamp.strftime('%d/%m/%Y %H:%M'),
                 str(log.performed_by or 'System'),
-                log.get_action_display(),
-                log.target_user.username,
-                log.details or ''
+                log.module or '',
+                log.action,
+                log.target_user.username if log.target_user else '-',
+                log.details or '',
+                log.ip_address or '',
             ])
 
         response = HttpResponse(
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = 'attachment; filename=historique_actions_deiva.xlsx'
+        response['Content-Disposition'] = 'attachment; filename=journal_activite_deiva.xlsx'
         wb.save(response)
         return response
 

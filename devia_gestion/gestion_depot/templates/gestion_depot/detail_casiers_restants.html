@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Casiers restants par client{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+  <h2 class="text-2xl font-semibold">Casiers non rendus / dus — par client</h2>
+  <a href="{% url 'gestion_depot:rapport_ventes' %}" class="btn btn-secondary">Retour aux rapports</a>
+</div>
+
+<div class="card mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+  <div>
+    <h5 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Clients concernés</h5>
+    <p class="text-lg font-bold">{{ par_client|length }}</p>
+  </div>
+  <div>
+    <h5 class="font-semibold text-sm text-gray-500 dark:text-gray-400">Total casiers à retourner</h5>
+    <p class="text-lg font-bold">{{ total_global_casiers|floatformat:0 }}</p>
+  </div>
+</div>
+
+<div class="card p-0 overflow-x-auto">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Casiers restants</th>
+        <th>Bouteilles restantes</th>
+        <th>Bons concernés</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for groupe in par_client %}
+        <tr>
+          <td class="font-medium">{{ groupe.client.nom }}</td>
+          <td>{{ groupe.total_casiers|floatformat:0 }}</td>
+          <td>{{ groupe.total_bouteilles }}</td>
+          <td>
+            <div class="flex flex-wrap gap-1">
+              {% for c in groupe.items %}
+                <a href="{% url 'gestion_depot:detail_bon_vente' c.bon.id %}"
+                   class="badge badge-info hover:opacity-80"
+                   title="{{ c.bon.reference }} — {{ c.restant }} casier(s) restant(s)">
+                  {{ c.bon.reference }} ({{ c.restant }})
+                </a>
+              {% endfor %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="4" class="text-center py-6">Aucun casier en attente de retour.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

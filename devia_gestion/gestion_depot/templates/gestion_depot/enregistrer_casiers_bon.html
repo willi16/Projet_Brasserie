@@ -3,9 +3,9 @@
 {% block title %}Enregistrer des casiers - {{ bon.reference }}{% endblock %}
 
 {% block content %}
-<h2 class="text-2xl font-semibold mb-4">Enregistrer des casiers à retourner</h2>
+<h2 class="text-2xl font-semibold mb-4 text-center">Enregistrer des casiers à retourner</h2>
 
-<div class="card max-w-lg">
+<div class="card max-w-lg mx-auto">
   <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
     <strong>Bon :</strong> {{ bon.reference }}<br>
     <strong>Client :</strong> {{ bon.client.nom|default:"-" }}<br>

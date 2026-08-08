@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-{% load crispy_forms_tags %}
 
 {% block title %}Créer un compte employé{% endblock %}
 
@@ -10,15 +9,222 @@
       <h4 class="text-xl font-semibold">Créer un compte employé</h4>
     </div>
 
-    <form method="post" enctype="multipart/form-data">
+    <!-- Indicateur d'étapes -->
+    <ol class="flex items-center justify-between gap-2 mb-6" id="step-indicator">
+      <li class="step-ind-item flex-1 text-center" data-step="1">
+        <button type="button" class="step-ind-btn w-full" data-target="1">
+          <span class="step-num mx-auto flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-brand-600 text-white">1</span>
+          <span class="block text-xs mt-1 font-medium text-brand-700 dark:text-brand-400">Connexion</span>
+        </button>
+      </li>
+      <li class="step-ind-item flex-1 text-center" data-step="2">
+        <button type="button" class="step-ind-btn w-full" data-target="2">
+          <span class="step-num mx-auto flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">2</span>
+          <span class="block text-xs mt-1 font-medium text-gray-500 dark:text-gray-400">Informations personnelles</span>
+        </button>
+      </li>
+      <li class="step-ind-item flex-1 text-center" data-step="3">
+        <button type="button" class="step-ind-btn w-full" data-target="3">
+          <span class="step-num mx-auto flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">3</span>
+          <span class="block text-xs mt-1 font-medium text-gray-500 dark:text-gray-400">Rôle &amp; documents</span>
+        </button>
+      </li>
+    </ol>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-error mb-3">
+        {% for error in form.non_field_errors %}{{ error }}<br>{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="compte-step-form">
       {% csrf_token %}
-      {% crispy form %}
+
+      <!-- Étape 1 : connexion -->
+      <div class="form-step" data-step="1">
+        <div class="mb-3">
+          {{ form.username.label_tag }}
+          {{ form.username }}
+          {% for error in form.username.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+          {% if form.username.help_text %}<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.username.help_text|safe }}</p>{% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.email.label_tag }}
+          {{ form.email }}
+          {% for error in form.email.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.password1.label_tag }}
+          {{ form.password1 }}
+          {% for error in form.password1.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+          {% if form.password1.help_text %}<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ form.password1.help_text|safe }}</p>{% endif %}
+        </div>
+        <div class="mb-3">
+          {{ form.password2.label_tag }}
+          {{ form.password2 }}
+          {% for error in form.password2.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Étape 2 : informations personnelles -->
+      <div class="form-step hidden" data-step="2">
+        <div class="mb-3">
+          {{ form.nom_complet.label_tag }}
+          {{ form.nom_complet }}
+          {% for error in form.nom_complet.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.telephone.label_tag }}
+          {{ form.telephone }}
+          {% for error in form.telephone.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.adresse.label_tag }}
+          {{ form.adresse }}
+          {% for error in form.adresse.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.date_naissance.label_tag }}
+          {{ form.date_naissance }}
+          {% for error in form.date_naissance.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.statut_marital.label_tag }}
+          {{ form.statut_marital }}
+          {% for error in form.statut_marital.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Étape 3 : rôle & documents -->
+      <div class="form-step hidden" data-step="3">
+        <div class="mb-3">
+          {{ form.role.label_tag }}
+          {{ form.role }}
+          {% for error in form.role.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.photo.label_tag }}
+          {{ form.photo }}
+          {% for error in form.photo.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="mb-3">
+            {{ form.carte_id_recto.label_tag }}
+            {{ form.carte_id_recto }}
+            {% for error in form.carte_id_recto.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.carte_id_verso.label_tag }}
+            {{ form.carte_id_verso }}
+            {% for error in form.carte_id_verso.errors %}<p class="text-red-600 dark:text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Les deux faces de la carte d'identité (recto et verso) sont obligatoires.
+        </p>
+      </div>
+
+      <!-- Erreurs de validation serveur sur un champ (affichées si déjà rempli) -->
+      <div id="step-client-error" class="hidden alert alert-error mb-3"></div>
+
       <div class="flex gap-2 mt-4">
-        <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary flex-1">Annuler</a>
-        <button type="submit" class="btn btn-success flex-1">Créer le compte</button>
-        
+        <button type="button" id="btn-prev" class="btn btn-secondary flex-1 hidden">Précédent</button>
+        <button type="button" id="btn-next" class="btn btn-primary flex-1">Suivant</button>
+        <button type="submit" id="btn-submit" class="btn btn-success flex-1 hidden">Créer le compte</button>
+        <a href="{% url 'gestion_depot:dashboard' %}" class="btn btn-secondary">Annuler</a>
       </div>
     </form>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const steps = Array.from(document.querySelectorAll('.form-step'));
+  const form = document.getElementById('compte-step-form');
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnSubmit = document.getElementById('btn-submit');
+  const errBox = document.getElementById('step-client-error');
+  const MAX_STEP = steps.length;
+  let currentStep = 1;
+
+  function showStep(n) {
+    steps.forEach(s => s.classList.toggle('hidden', parseInt(s.dataset.step, 10) !== n));
+    btnPrev.classList.toggle('hidden', n === 1);
+    btnNext.classList.toggle('hidden', n === MAX_STEP);
+    btnSubmit.classList.toggle('hidden', n !== MAX_STEP);
+    document.querySelectorAll('.step-ind-item').forEach(item => {
+      const num = parseInt(item.dataset.step, 10);
+      const btn = item.querySelector('.step-ind-btn');
+      const circle = item.querySelector('.step-num');
+      const label = item.querySelector('.block');
+      const isCurrent = num === n;
+      const isDone = num < n;
+      circle.classList.remove('bg-brand-600', 'text-white', 'bg-gray-200', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300', 'bg-green-600');
+      label.classList.remove('text-brand-700', 'dark:text-brand-400', 'text-gray-500', 'dark:text-gray-400', 'text-green-700');
+      if (isDone) {
+        circle.classList.add('bg-green-600', 'text-white');
+        label.classList.add('text-green-700');
+      } else if (isCurrent) {
+        circle.classList.add('bg-brand-600', 'text-white');
+        label.classList.add('text-brand-700', 'dark:text-brand-400');
+      } else {
+        circle.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-600', 'dark:text-gray-300');
+        label.classList.add('text-gray-500', 'dark:text-gray-400');
+      }
+    });
+  }
+
+  function validateStep(n) {
+    const step = steps.find(s => parseInt(s.dataset.step, 10) === n);
+    errBox.classList.add('hidden');
+    let firstInvalid = null;
+    step.querySelectorAll('[required]').forEach(el => {
+      const value = (el.value || '').trim();
+      const valid = el.type === 'checkbox' ? el.checked : value !== '';
+      if (!valid) {
+        el.classList.add('border-red-500');
+        if (!firstInvalid) firstInvalid = el;
+      } else {
+        el.classList.remove('border-red-500');
+      }
+    });
+    if (firstInvalid) {
+      errBox.textContent = 'Veuillez remplir tous les champs obligatoires de cette étape avant de continuer.';
+      errBox.classList.remove('hidden');
+      firstInvalid.focus();
+      return false;
+    }
+    return true;
+  }
+
+  btnNext.addEventListener('click', function () {
+    if (!validateStep(currentStep)) return;
+    currentStep = Math.min(currentStep + 1, MAX_STEP);
+    showStep(currentStep);
+  });
+
+  btnPrev.addEventListener('click', function () {
+    currentStep = Math.max(currentStep - 1, 1);
+    showStep(currentStep);
+  });
+
+  document.querySelectorAll('.step-ind-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const target = parseInt(btn.dataset.target, 10);
+      if (target >= currentStep) {
+        if (!validateStep(currentStep)) return;
+      }
+      currentStep = target;
+      showStep(currentStep);
+    });
+  });
+
+  form.addEventListener('submit', function (e) {
+    if (!validateStep(MAX_STEP)) e.preventDefault();
+  });
+
+  showStep(1);
+});
+</script>
 {% endblock %}

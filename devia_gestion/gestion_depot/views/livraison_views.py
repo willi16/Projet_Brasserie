@@ -5,6 +5,7 @@ from django.db import transaction
 from gestion_depot.models import Produit, Fournisseur, Mouvement
 from gestion_depot.models.bon_livraison import BonLivraison
 from gestion_depot.models.ligne_livraison import LigneLivraison
+from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.decorators import group_required
 
 
@@ -82,7 +83,18 @@ def creer_bon_livraison(request):
                 fournisseur=fournisseur_obj,
                 utilisateur=request.user,
             )
+            # Mettre à jour les prix du produit : achat = prix renseigné, vente = achat × (1 + %)
+            pourcentage = prod.pourcentage_prix_vente or Decimal('0')
+            prod.prix_achat_casier = prix_achat
+            prod.prix_vente_casier = (prix_achat * (Decimal('1') + pourcentage / Decimal('100'))).quantize(Decimal('0.01'))
+            prod.save(update_fields=['prix_achat_casier', 'prix_vente_casier'])
 
+        UserActionLog.log_action(
+            request.user, 'création_livraison', module='livraisons',
+            details=f"Enregistrement de la livraison {bon.reference} "
+                    f"(fournisseur : {fournisseur_obj.nom}, {len(lignes_a_creer)} ligne(s))",
+            request=request,
+        )
         messages.success(request, f"Livraison {bon.reference} enregistrée avec succès !")
         return redirect('gestion_depot:liste_livraisons')
 

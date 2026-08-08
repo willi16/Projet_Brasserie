@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.core.exceptions import PermissionDenied
 from gestion_depot.models import ParametresEntreprise
+from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.forms import ParametresEntrepriseForm
 
 
@@ -20,6 +21,10 @@ def configurer_entreprise(request):
         form = ParametresEntrepriseForm(request.POST, request.FILES, instance=entreprise)
         if form.is_valid():
             form.save()
+            UserActionLog.log_action(
+                request.user, 'modification_entreprise', module='parametres',
+                details="Mise à jour des paramètres de l'entreprise", request=request,
+            )
             messages.success(request, "Paramètres de l'entreprise mis à jour.")
             return redirect('gestion_depot:configurer_entreprise')
         messages.error(request, "Veuillez corriger les erreurs du formulaire.")

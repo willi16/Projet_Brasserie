@@ -34,6 +34,11 @@
         <span class="badge {% if bon.statut == 'valide' %}badge-success{% elif bon.statut == 'en_cours' %}badge-warning{% else %}badge-danger{% endif %}">
           {{ bon.get_statut_display }}
         </span>
+        {% if bon.statut == 'annule' and bon.motif_annulation %}
+          <br>
+          <strong>Motif d'annulation :</strong>
+          <span class="text-red-600 dark:text-red-400">{{ bon.motif_annulation }}</span>
+        {% endif %}
       </div>
       <div class="flex items-center justify-start md:justify-end">
         <h4 class="text-xl font-semibold">Total : {{ bon.total }} FCFA</h4>

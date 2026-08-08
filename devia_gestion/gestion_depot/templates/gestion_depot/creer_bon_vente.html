@@ -3,6 +3,7 @@
 {% block title %}Créer un bon de vente{% endblock %}
 
 {% block content %}
+<div class="max-w-3xl mx-auto">
 <h2 class="text-2xl font-semibold mb-4">Créer un bon de vente</h2>
 
 <form method="post" id="bon-vente-form" class="card">
@@ -71,8 +72,24 @@
 <div id="preview-total" class="card mt-3 bg-sky-50 dark:bg-gray-800 hidden">
   <strong>Total estimé :</strong> <span id="total-amount">0</span> FCFA
 </div>
+</div>
 
 <script>
+  // Select2 sur la liste déroulante produit
+  function initProductSelect2(row) {
+    const select = row.querySelector('.produit-select');
+    if (!select || select.classList.contains('select2-hidden-accessible')) return;
+    $(select).select2({
+      placeholder: '-- Sélectionner --',
+      allowClear: false,
+      width: '100%'
+    });
+    $(select).on('change', function () {
+      updateStockDisplay(row);
+      updatePreview();
+    });
+  }
+
   // Stocker les données des produits
   const produitsData = {};
   document.querySelectorAll('.produit-select option[value]').forEach(opt => {
@@ -182,6 +199,7 @@
     });
 
     container.appendChild(newLigne);
+    initProductSelect2(newLigne);
   });
 
   // Suppression des lignes existantes
@@ -249,6 +267,7 @@
   // Initialisation
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.product-row').forEach(row => {
+      initProductSelect2(row);
       updateStockDisplay(row);
     });
     updatePreview();

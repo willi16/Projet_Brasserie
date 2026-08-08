@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from crispy_forms.helper import FormHelper
 from .models import ProfilUtilisateur, Produit, Fournisseur, ParametresEntreprise
+from .models.produit import CASIERS_PAR_CATEGORIE
 from django.contrib.auth.models import Group
 
 
@@ -46,6 +47,12 @@ class CreerCompteEmployeForm(UserCreationForm):
         for field in self.fields.values():
             if not field.widget.attrs.get('placeholder'):
                 field.widget.attrs['placeholder'] = field.label
+            css = 'form-select' if isinstance(field.widget, forms.Select) else 'form-input'
+            field.widget.attrs['class'] = css
+        for nom in ('username', 'email', 'password1', 'password2', 'nom_complet',
+                    'telephone', 'adresse', 'date_naissance', 'role',
+                    'carte_id_recto', 'carte_id_verso'):
+            self.fields[nom].widget.attrs['required'] = 'required'
 
     class Meta:
         model = User
@@ -113,19 +120,23 @@ class ProduitForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        prix_achat = cleaned_data.get('prix_achat_casier')
-        prix_vente = cleaned_data.get('prix_vente_casier')
-        if prix_achat is not None and prix_vente is not None and prix_vente < prix_achat:
-            raise forms.ValidationError("Le prix de vente doit être supérieur ou égal au prix d'achat.")
+        categorie = cleaned_data.get('categorie')
+        casier_contenu = cleaned_data.get('casier_contenu')
+        if categorie and casier_contenu is not None:
+            valeurs_autorisees = CASIERS_PAR_CATEGORIE.get(categorie, [])
+            if valeurs_autorisees and casier_contenu not in valeurs_autorisees:
+                raise forms.ValidationError(
+                    f"Le contenu du casier ({casier_contenu} bouteilles) n'est pas valide "
+                    f"pour la catégorie « {categorie} ». Valeurs autorisées : {', '.join(map(str, valeurs_autorisees))}."
+                )
         return cleaned_data
 
     class Meta:
         model = Produit
-        fields = ['nom', 'categorie', 'casier_contenu', 'prix_achat_casier', 'prix_vente_casier', 'seuil_alerte']
+        fields = ['nom', 'categorie', 'casier_contenu', 'pourcentage_prix_vente', 'seuil_alerte']
         widgets = {
             'nom': forms.TextInput(attrs={'placeholder': "Nom du produit"}),
-            'prix_achat_casier': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
-            'prix_vente_casier': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+            'pourcentage_prix_vente': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
             'seuil_alerte': forms.NumberInput(attrs={'min': '0'}),
         }
 

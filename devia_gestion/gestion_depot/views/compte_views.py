@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from gestion_depot.forms import CreerCompteEmployeForm
 from gestion_depot.models import ParametresEntreprise
+from gestion_depot.models.userActionLog import UserActionLog
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -17,6 +18,11 @@ def creer_compte_employe(request):
         form = CreerCompteEmployeForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
+            UserActionLog.log_action(
+                request.user, 'création_compte', module='comptes',
+                details=f"Création du compte « {user.username} » (rôle : {form.cleaned_data['role']})",
+                target_user=user, request=request,
+            )
             # Envoyer email (ne bloque pas la création si l'envoi échoue)
             try:
                 entreprise = ParametresEntreprise.get_singleton()

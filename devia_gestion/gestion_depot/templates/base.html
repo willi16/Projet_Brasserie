@@ -15,6 +15,9 @@
   <!-- DataTables local -->
   <link rel="stylesheet" href="{% static 'css/datatables.min.css' %}">
 
+  <!-- Select2 local -->
+  <link rel="stylesheet" href="{% static 'css/select2.min.css' %}">
+
   <style>
     /* Barre d'outils DataTables : recherche + filtres alignés en haut */
     .dataTables_wrapper .dt-topbar {
@@ -143,7 +146,7 @@
     .dark .action-btn.action-back:hover { color: #d1d5db; }
   </style>
 </head>
-<body class="flex flex-col min-h-screen" id="body-root">
+<body class="flex flex-col h-screen overflow-hidden" id="body-root">
 
   <!-- Topbar -->
   <nav class="bg-brand-600 text-white shadow-md sticky top-0 z-40">
@@ -203,11 +206,11 @@
   <!-- Mobile backdrop -->
   <div class="fixed inset-0 bg-black/50 z-30 hidden" id="mobile-backdrop"></div>
 
-  <div class="flex flex-1">
+  <div class="flex flex-1 min-h-0 overflow-hidden">
     <!-- Sidebar Desktop -->
     {% if user.is_authenticated %}
-    <aside id="sidebar" class="hidden lg:block w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
-      <nav class="sidebar-nav sticky top-16 p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-4rem)]">
+    <aside id="sidebar" class="hidden lg:block w-64 flex-shrink-0 h-full border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800">
+      <nav class="sidebar-nav p-3 space-y-1 overflow-y-auto max-h-full">
         <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'gestion_depot:dashboard' %}">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           <span>Dashboard</span>
@@ -310,7 +313,7 @@
     {% endif %}
 
     <!-- Main Content -->
-    <main class="flex-1 min-w-0 px-4 py-6 lg:px-8">
+    <main class="flex-1 min-w-0 overflow-y-auto px-4 py-6 lg:px-8">
       {% if messages %}
         <div id="django-messages" class="hidden">
           {% for message in messages %}
@@ -337,6 +340,9 @@
   <!-- jQuery + DataTables locaux -->
   <script src="{% static 'js/jquery.min.js' %}"></script>
   <script src="{% static 'js/datatables.min.js' %}"></script>
+
+  <!-- Select2 local -->
+  <script src="{% static 'js/select2.min.js' %}"></script>
 
   <script>
     // Sidebar link style

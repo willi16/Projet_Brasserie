@@ -1,9 +1,19 @@
 import re
+from decimal import Decimal
 from django.db import models
 from django.core.validators import MinValueValidator
 
 # Catégories dont les casiers peuvent être emportés et rendus
 CATEGORIES_AVEC_CASIERS = {'boisson', 'biere'}
+
+# Nombre de bouteilles par casier autorisé pour chaque catégorie de produit
+CASIERS_PAR_CATEGORIE = {
+    'boisson': [16, 20],
+    'biere': [12, 20, 24],
+    'eau': [6, 12, 15, 24],
+    'sucrerie': [12, 20, 24],
+    'canette': [24],
+}
 
 # Capacité (cl) à partir de laquelle on considère un "grand modèle"
 SEUIL_GRAND_MODELE_CL = 50
@@ -32,10 +42,13 @@ class Produit(models.Model):
         ('biere', 'Bière'),
         ('eau', 'Eau'),
         ('sucrerie', 'Sucrerie'),
+        ('canette', 'Canette'),
     ]
     CASIER_CHOICES = [
         (6, '6 bouteilles'),
         (12, '12 bouteilles'),
+        (15, '15 bouteilles'),
+        (16, '16 bouteilles'),
         (20, '20 bouteilles'),
         (24, '24 bouteilles'),
     ]
@@ -51,8 +64,13 @@ class Produit(models.Model):
     categorie = models.CharField(max_length=20, choices=CATEGORIE_CHOICES)
     casier_contenu = models.IntegerField(choices=CASIER_CHOICES)
     modele = models.CharField(max_length=10, choices=MODELE_CHOICES, default='GM12')
-    prix_achat_casier = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
-    prix_vente_casier = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    pourcentage_prix_vente = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal('25.00'),
+        validators=[MinValueValidator(0)],
+        help_text="Pourcentage de majoration appliqué sur le prix d'achat pour calculer le prix de vente.",
+    )
+    prix_achat_casier = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'), validators=[MinValueValidator(0)])
+    prix_vente_casier = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'), validators=[MinValueValidator(0)])
     seuil_alerte = models.IntegerField(default=5, validators=[MinValueValidator(0)])
 
     def save(self, *args, **kwargs):

@@ -52,22 +52,30 @@
 
     <!-- Produits disponibles -->
     <div class="mt-6">
-      <div class="card p-0">
+      <div class="card p-0 overflow-x-auto">
         <div class="px-5 py-3 border-b border-gray-200 dark:border-gray-700">
           <h5 class="font-semibold">Produits disponibles</h5>
         </div>
-        <div class="p-5">
-          <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produit disponible</th>
+              <th>Quantité</th>
+            </tr>
+          </thead>
+          <tbody>
             {% for produit in produits_disponibles %}
-              <li class="py-2 flex items-center justify-between gap-3">
-                <span>{{ produit.nom }}</span>
-                <span class="badge badge-info">{{ produit.stock_actuel|floatformat:0 }}</span>
-              </li>
+              <tr>
+                <td>{{ produit.nom }}</td>
+                <td><span class="badge badge-info">{{ produit.stock_actuel|floatformat:0 }}</span></td>
+              </tr>
             {% empty %}
-              <li class="py-2 text-gray-500 dark:text-gray-400">Aucun produit disponible.</li>
+              <tr>
+                <td colspan="2" class="text-center py-6">Aucun produit disponible.</td>
+              </tr>
             {% endfor %}
-          </ul>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
 
