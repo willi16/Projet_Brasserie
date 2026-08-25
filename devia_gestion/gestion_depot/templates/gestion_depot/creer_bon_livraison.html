@@ -69,10 +69,14 @@
   </div>
 
   <script>
-    // Select2 sur la liste déroulante produit
     function initProductSelect2(row) {
       const select = row.querySelector('select[name="produit"]');
-      if (!select || select.classList.contains('select2-hidden-accessible')) return;
+      if (!select) return;
+      if ($(select).data('select2')) {
+        $(select).select2('destroy');
+      }
+      row.querySelectorAll('.select2-container').forEach(el => el.remove());
+      select.classList.remove('select2-hidden-accessible');
       $(select).select2({
         placeholder: '-- Sélectionner --',
         allowClear: false,
@@ -83,10 +87,26 @@
     const ligneMaster = document.querySelector('.ligne');
     document.getElementById('add-ligne').addEventListener('click', function () {
       const container = document.getElementById('lignes-container');
-      const newLigne = (container.querySelector('.ligne') || ligneMaster).cloneNode(true);
-      newLigne.querySelector('select[name="produit"]').value = '';
+      const sourceLigne = container.querySelector('.ligne') || ligneMaster;
+
+      const sourceSelect = sourceLigne.querySelector('select[name="produit"]');
+      if ($(sourceSelect).data('select2')) {
+        $(sourceSelect).select2('destroy');
+      }
+      sourceLigne.querySelectorAll('.select2-container').forEach(el => el.remove());
+      sourceSelect.classList.remove('select2-hidden-accessible');
+
+      const newLigne = sourceLigne.cloneNode(true);
+
+      const clonedSelect = newLigne.querySelector('select[name="produit"]');
+      clonedSelect.value = '';
+      newLigne.querySelectorAll('.select2-container').forEach(el => el.remove());
+      clonedSelect.classList.remove('select2-hidden-accessible');
       newLigne.querySelector('input[name="quantite"]').value = '';
+
       container.appendChild(newLigne);
+
+      initProductSelect2(sourceLigne);
       initProductSelect2(newLigne);
 
       newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
