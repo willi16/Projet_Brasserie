@@ -120,16 +120,18 @@ class ProduitSerializer(serializers.ModelSerializer):
     def get_actions_html(self, obj):
         if not _can_edit(self.context['request'].user):
             return '-'
+        csrf = self.context['csrf']
         edit_url = reverse('gestion_depot:modifier_produit', args=[obj.id])
         del_url = reverse('gestion_depot:supprimer_produit', args=[obj.id])
         del_data = (
+            f'class="confirm-form" '
             f'data-title="Supprimer le produit" '
             f'data-text="Voulez-vous vraiment supprimer « {escape(obj.nom)} » ? Cette action est irréversible."'
         )
         return (
             f'<div class="flex items-center gap-0.5">'
             f'{_action_link(edit_url, "Modifier", "edit", _SVG_EDIT)}'
-            f'{_action_link(del_url, "Supprimer", "delete", _SVG_DELETE, cls="confirm-delete", data=del_data)}'
+            f'{_action_form(del_url, csrf, "Supprimer", "delete", _SVG_DELETE, data=del_data)}'
             f'</div>'
         )
 
@@ -142,16 +144,18 @@ class FournisseurSerializer(serializers.ModelSerializer):
         fields = ['id', 'nom', 'contact', 'adresse', 'actions_html']
 
     def get_actions_html(self, obj):
+        csrf = self.context['csrf']
         edit_url = reverse('gestion_depot:modifier_fournisseur', args=[obj.id])
         del_url = reverse('gestion_depot:supprimer_fournisseur', args=[obj.id])
         del_data = (
+            f'class="confirm-form" '
             f'data-title="Supprimer le fournisseur" '
             f'data-text="Voulez-vous vraiment supprimer « {escape(obj.nom)} » ? Cette action est irréversible."'
         )
         return (
             f'<div class="flex items-center gap-0.5">'
             f'{_action_link(edit_url, "Modifier", "edit", _SVG_EDIT)}'
-            f'{_action_link(del_url, "Supprimer", "delete", _SVG_DELETE, cls="confirm-delete", data=del_data)}'
+            f'{_action_form(del_url, csrf, "Supprimer", "delete", _SVG_DELETE, data=del_data)}'
             f'</div>'
         )
 
