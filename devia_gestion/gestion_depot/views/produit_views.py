@@ -1,7 +1,8 @@
 # gestion_depot/views/produit_views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.db.models import Func, Sum, Case, When, F, DecimalField
+from django.views.decorators.http import require_POST
+from django.db.models import ProtectedError, Func, Sum, Case, When, F, DecimalField
 from django.forms import modelformset_factory
 from gestion_depot.models import Produit
 from gestion_depot.models.produit import CASIERS_PAR_CATEGORIE
@@ -126,11 +127,19 @@ def modifier_produit(request, pk):
     })
 
 
+@require_POST
 @group_required('Gérant', 'Admin')
 def supprimer_produit(request, pk):
     produit = get_object_or_404(Produit, pk=pk)
     nom = produit.nom
-    produit.delete()
+    try:
+        produit.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Impossible de supprimer « {nom} » : ce produit est utilisé dans des ventes ou livraisons."
+        )
+        return redirect('gestion_depot:liste_produits')
     UserActionLog.log_action(
         request.user, 'suppression_produit', module='produits',
         details=f"Suppression du produit « {nom} »", request=request,

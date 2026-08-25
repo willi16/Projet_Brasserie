@@ -433,15 +433,25 @@
           const tag = cls.includes('alert-success') ? 'success'
             : (cls.includes('alert-error') || cls.includes('alert-danger')) ? 'error'
             : cls.includes('alert-warning') ? 'warning' : 'info';
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: tag,
-            title: alertEl.textContent.trim(),
-            showConfirmButton: false,
-            timer: 3500,
-            timerProgressBar: true
-          });
+          if (tag === 'error') {
+            Swal.fire({
+              icon: 'error',
+              title: 'Erreur',
+              text: alertEl.textContent.trim(),
+              confirmButtonColor: '#d33',
+              confirmButtonText: 'OK'
+            });
+          } else {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: tag,
+              title: alertEl.textContent.trim(),
+              showConfirmButton: false,
+              timer: 3500,
+              timerProgressBar: true
+            });
+          }
         });
         messagesEl.remove();
       }

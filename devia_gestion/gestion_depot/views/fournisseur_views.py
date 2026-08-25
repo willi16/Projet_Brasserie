@@ -1,6 +1,8 @@
 # gestion_depot/views/fournisseur_views.py
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 from django.contrib import messages
+from django.db.models import ProtectedError
 from ..models import Fournisseur
 from ..decorators import group_required
 from ..forms import FournisseurForm
@@ -54,11 +56,19 @@ def modifier_fournisseur(request, pk):
         'fournisseur': fournisseur,
     })
 
+@require_POST
 @group_required('Gérant', 'Admin')
 def supprimer_fournisseur(request, pk):
     fournisseur = get_object_or_404(Fournisseur, pk=pk)
     nom = fournisseur.nom
-    fournisseur.delete()
+    try:
+        fournisseur.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Impossible de supprimer « {nom} » : ce fournisseur est lié à des livraisons existantes."
+        )
+        return redirect('gestion_depot:liste_fournisseurs')
     UserActionLog.log_action(
         request.user, 'suppression_fournisseur', module='fournisseurs',
         details=f"Suppression du fournisseur « {nom} »", request=request,
