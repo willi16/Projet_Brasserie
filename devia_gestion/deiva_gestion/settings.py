@@ -26,7 +26,12 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-placeholder-change-me
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
+# Nettoyage robuste des ALLOWED_HOSTS (ignorer les entrées vides / espaces)
+ALLOWED_HOSTS = [
+    h.strip().lower()
+    for h in config('ALLOWED_HOSTS', default='localhost').split(',')
+    if h.strip()
+]
 
 
 # Application definition
@@ -183,6 +188,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 #MEDIA_ROOT = BASE_DIR / 'media'
 
 
+# === Limites des uploads (sécurité) ===
+# Taille maximale du corps d'une requête (formulaires multi-part) : 5 Mo
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+# Taille maximale d'un fichier uploadé en mémoire : 5 Mo
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+
+
 
 # settings.py
 
@@ -197,11 +209,25 @@ DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 
 
 # === Security settings (production only) ===
-if not DEBUG:
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'same-origin'
+
+# Activer uniquement si un proxy terminant le TLS (nginx/traefik/caddy) est en place.
+# Pour une exposition directe HTTP (LAN), laisser False.
+USE_HTTPS = config('USE_HTTPS', default=False, cast=bool)
+if USE_HTTPS:
     SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# CSRF : bloquer les origines tierces via le header Origin
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{host}'
+    for host in ALLOWED_HOSTS
+    if host not in {'localhost', '127.0.0.1', '0.0.0.0'}
+] + [f'http://{host}' for host in ALLOWED_HOSTS if host == 'localhost']

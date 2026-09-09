@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -11,6 +12,15 @@ from datetime import datetime
 from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
 from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.views.casier_views import produit_casier_du_bon
+
+
+def _purge_texte(value):
+    """Supprime les balises HTML et les caractères de contrôle."""
+    if not value:
+        return value
+    value = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', value)
+    value = re.sub(r'<\s*/?\s*[a-zA-Z][^>]*>', '', value)
+    return value.strip()
 
 
 FRACTION_MIN = Decimal('0.25')
@@ -38,7 +48,7 @@ def stocks_disponibles(produits):
 @transaction.atomic
 def creer_bon_vente(request):
     if request.method == 'POST':
-        client_nom = (request.POST.get('client_nom') or '').strip()
+        client_nom = _purge_texte(request.POST.get('client_nom') or '')
         type_paiement = request.POST.get('type_paiement')
 
         produits = request.POST.getlist('produit')
@@ -230,6 +240,10 @@ def annuler_bon_vente(request, id):
         if not motif:
             messages.error(request, "Le motif d'annulation est obligatoire.")
             return redirect('gestion_depot:liste_bons_vente')
+        if len(motif) > 1000:
+            messages.error(request, "Le motif d'annulation est trop long (1000 caractères maximum).")
+            return redirect('gestion_depot:liste_bons_vente')
+        motif = motif[:1000]
         # Créer des mouvements inverses (entrée)
         for ligne in bon.lignes.all():
             Mouvement.objects.create(

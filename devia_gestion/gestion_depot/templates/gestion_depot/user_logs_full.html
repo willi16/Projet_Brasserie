@@ -40,11 +40,21 @@ document.addEventListener('DOMContentLoaded', function () {
     },
     columns: [
       { data: 'timestamp', searchable: false },
-      { data: 'performed_by_nom' },
-      { data: 'module', render: function (d) { return d ? '<span class="badge badge-info">' + d + '</span>' : '—'; } },
-      { data: 'action' },
-      { data: 'target_user_nom' },
-      { data: 'details', render: function (d) { return '<small>' + (d || '—') + '</small>'; } }
+      { data: 'performed_by_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'module', render: function (d) {
+        if (!d) return '—';
+        var el = document.createElement('span');
+        el.textContent = d;
+        return '<span class="badge badge-info">' + el.innerHTML + '</span>';
+      } },
+      { data: 'action', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'target_user_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'details', render: function (d) {
+        if (!d) return '—';
+        var el = document.createElement('span');
+        el.textContent = d;
+        return '<small>' + el.innerHTML + '</small>';
+      } }
     ],
     order: [[0, 'desc']],
     pageLength: 10,

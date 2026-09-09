@@ -175,14 +175,13 @@ class ProduitsMultiCreateTests(BaseTest):
         }
         for i in range(nb):
             if produits:
-                nom, cat, casier, achat, vente = produits[i]
+                nom, cat, casier, pourcent = produits[i]
             else:
-                nom, cat, casier, achat, vente = f'Produit multi {i}', 'boisson', '24', '700', '750'
+                nom, cat, casier, pourcent = f'Produit multi {i}', 'boisson', '20', '10'
             data[f'form-{i}-nom'] = nom
             data[f'form-{i}-categorie'] = cat
             data[f'form-{i}-casier_contenu'] = casier
-            data[f'form-{i}-prix_achat_casier'] = achat
-            data[f'form-{i}-prix_vente_casier'] = vente
+            data[f'form-{i}-pourcentage_prix_vente'] = pourcent
             data[f'form-{i}-seuil_alerte'] = '5'
         return data
 
@@ -204,12 +203,12 @@ class ProduitsMultiCreateTests(BaseTest):
         self.assertTrue(Produit.objects.filter(nom='Produit multi 0').exists())
         self.assertTrue(Produit.objects.filter(nom='Produit multi 2').exists())
 
-    def test_prix_vente_inferieur_achat_rejete(self):
+    def test_pourcentage_negatif_rejete(self):
         self.http_client.login(username='gerant1', password='pass12345')
         nb_avant = Produit.objects.count()
         data = self._post_data(2, produits=[
-            ('Produit OK', 'eau', '24', '300', '350'),
-            ('Produit invalide', 'eau', '24', '1000', '900'),
+            ('Produit OK', 'eau', '24', '10'),
+            ('Produit invalide', 'eau', '24', '-5'),
         ])
         response = self.http_client.post(
             reverse('gestion_depot:produits_multi_create', args=[2]),

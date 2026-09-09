@@ -40,8 +40,8 @@ document.addEventListener('DOMContentLoaded', function () {
     columns: [
       { data: 'reference' },
       { data: 'date_livraison', searchable: false },
-      { data: 'fournisseur_nom' },
-      { data: 'utilisateur_nom' },
+      { data: 'fournisseur_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'utilisateur_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
       { data: 'total_quantite', searchable: false },
       { data: 'total_montant', searchable: false, render: function (d) { return d + ' FCFA'; } },
       { data: 'actions_html', orderable: false, searchable: false }

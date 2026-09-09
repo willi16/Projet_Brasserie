@@ -78,9 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     columns: [
-      { data: 'client_nom' },
+      { data: 'client_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
       { data: 'bon_reference' },
-      { data: 'modele_display', render: function (d) { return '<span class="badge badge-info">' + d + '</span>'; } },
+      { data: 'modele_display', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return '<span class="badge badge-info">' + el.innerHTML + '</span>'; } },
       { data: 'date_emport', searchable: false },
       { data: 'date_limite', orderable: false, searchable: false },
       { data: 'nombre_casiers', searchable: false },

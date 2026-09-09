@@ -117,9 +117,13 @@ def edit_user_roles(request, user_id):
         selected_groups = request.POST.getlist('groups')
         anciens_roles = ' + '.join(user.groups.values_list('name', flat=True)) or 'Aucun'
         user.groups.clear()
+        groupes_valides = []
         for group_id in selected_groups:
-            group = Group.objects.get(id=group_id)
-            user.groups.add(group)
+            try:
+                groupes_valides.append(Group.objects.get(pk=group_id))
+            except (ValueError, TypeError, Group.DoesNotExist):
+                continue
+        user.groups.add(*groupes_valides)
         nouveaux_roles = ' + '.join(user.groups.values_list('name', flat=True)) or 'Aucun'
         UserActionLog.log_action(
             request.user, 'modification_rôles', module='comptes',

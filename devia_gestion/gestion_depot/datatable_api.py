@@ -32,6 +32,9 @@ def dt_json(request, qs, columns, searchable, order_map, serializer,
         length = 10
     if length < 0:
         length = 10
+    # Borne supérieure : éviter les requêtes massives (DoS)
+    if length > 500:
+        length = 500
 
     if filter_fn:
         qs = filter_fn(qs, request)

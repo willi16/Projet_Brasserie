@@ -53,8 +53,8 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     columns: [
-      { data: 'username' },
-      { data: 'email', render: function (d) { return d || '-'; } },
+      { data: 'username', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'email', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML || '-'; } },
       { data: 'statut_html', orderable: false, searchable: false },
       { data: 'roles_html', orderable: false, searchable: false },
       { data: 'actions_html', orderable: false, searchable: false }

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from mimetypes import guess_type
 from django.http import HttpResponse, Http404
@@ -14,7 +15,9 @@ def serve_protected_document(request, path):
         raise Http404()
 
     content_type, _ = guess_type(full_path.name) or ("application/octet-stream",)
+    safe_name = re.sub(r'[^\w\-. ]', '_', full_path.name)
     with open(full_path, 'rb') as f:
         response = HttpResponse(f.read(), content_type=content_type)
-        response['Content-Disposition'] = f'inline; filename={full_path.name}'
+        response['Content-Disposition'] = f'inline; filename="{safe_name}"'
+        response['X-Content-Type-Options'] = 'nosniff'
         return response
