@@ -104,7 +104,9 @@
       width: '100%'
     });
     $(select).on('change', function () {
+      const row = this.closest('.product-row');
       updateStockDisplay(row);
+      rendreModele(row);
       updatePreview();
     });
   }
