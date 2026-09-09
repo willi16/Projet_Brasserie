@@ -343,7 +343,7 @@ class BonLivraisonTests(BaseTest):
         response = self.http_client.post(reverse('gestion_depot:creer_bon_livraison'), {
             'fournisseur': str(self.fournisseur.id),
             'produit': ['abc'],
-            'casier_contenu': ['24'],
+            'modele': ['PM24'],
             'prix_achat_casier': ['700'],
             'quantite': ['2'],
         })
@@ -367,7 +367,7 @@ class BonLivraisonTests(BaseTest):
         response = self.http_client.post(reverse('gestion_depot:creer_bon_livraison'), {
             'fournisseur': str(self.fournisseur.id),
             'produit': [str(p.id) for p in produits],
-            'casier_contenu': [str(p.casier_contenu) for p in produits],
+            'modele': ['PM24', 'GM20', 'GM12', ''],
             'prix_achat_casier': ['1000', '1000', '1000', '1000'],
             'quantite': ['2', '2', '2', '2'],
         })
@@ -377,6 +377,36 @@ class BonLivraisonTests(BaseTest):
             attendu = (Decimal('1000') * (Decimal('1') + pct / Decimal('100'))).quantize(Decimal('0.01'))
             self.assertEqual(p.prix_vente_casier, attendu, msg=nom)
             self.assertEqual(p.prix_achat_casier, Decimal('1000'), msg=nom)
+
+    def test_livraison_casier_impose_selon_contenance(self):
+        attentes = {'Castel 33cl': 24, 'Flag 65cl': 12, 'Sucrerie 55cl': 20, 'Eau Cristal': 12}
+        produits = [
+            Produit.objects.create(
+                nom=nom, categorie=cat, casier_contenu=contenu,
+                prix_achat_casier=Decimal('0'), prix_vente_casier=Decimal('0'),
+                pourcentage_prix_vente=Decimal('25'), seuil_alerte=5,
+            )
+            for nom, cat, contenu in [
+                ('Castel 33cl', 'biere', 24),
+                ('Flag 65cl', 'biere', 12),
+                ('Sucrerie 55cl', 'sucrerie', 20),
+                ('Eau Cristal', 'eau', 12),
+            ]
+        ]
+
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:creer_bon_livraison'), {
+            'fournisseur': str(self.fournisseur.id),
+            'produit': [str(p.id) for p in produits],
+            'modele': ['PM24', 'PM24', 'GM20', ''],
+            'prix_achat_casier': ['500', '500', '500', '500'],
+            'quantite': ['1', '1', '1', '1'],
+        })
+        self.assertRedirects(response, reverse('gestion_depot:liste_livraisons'))
+        bon = BonLivraison.objects.get()
+        self.assertEqual(bon.lignes.count(), 4)
+        for ligne in bon.lignes.all():
+            self.assertEqual(ligne.casier_contenu, attentes[ligne.produit.nom], msg=ligne.produit.nom)
 
 
 class ProduitsMultiCreateTests(BaseTest):

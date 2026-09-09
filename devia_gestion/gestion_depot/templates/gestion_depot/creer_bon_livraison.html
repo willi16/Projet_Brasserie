@@ -25,20 +25,28 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
           <div class="md:col-span-4">
             <label class="form-label">Produit</label>
-            <select name="produit" class="form-select" required>
-              {% for produit in produits %}
-                <option value="{{ produit.id }}">{{ produit.nom }}</option>
+            <select name="produit" class="form-select produit-select" required>
+              <option value="">-- Sélectionner --</option>
+              {% for p in produits_list %}
+                <option
+                  value="{{ p.id }}"
+                  data-nom="{{ p.nom }}"
+                  data-tracked="{{ p.tracked }}"
+                  data-casier="{{ p.casier }}"
+                  data-modeles="{{ p.modeles_json }}"
+                  data-modele-defaut="{{ p.modele_defaut }}"
+                  data-libelle="{{ p.libelle }}">
+                  {{ p.nom }}
+                </option>
               {% endfor %}
             </select>
           </div>
-          <div class="md:col-span-2">
-            <label class="form-label">Type de casier</label>
-            <select name="casier_contenu" class="form-select" required>
-              <option value="6">6 bouteilles</option>
-              <option value="12">12 bouteilles</option>
-              <option value="20">20 bouteilles</option>
-              <option value="24">24 bouteilles</option>
+          <div class="md:col-span-2" data-modele-wrap>
+            <label class="form-label">Modèle de casier</label>
+            <select name="modele" class="form-select modele-select">
+              <option value="">—</option>
             </select>
+            <small class="bottles-info text-gray-500 dark:text-gray-400 text-xs mt-1 block"></small>
           </div>
           <div class="md:col-span-3">
             <label class="form-label">Prix d'achat (par casier)</label>
@@ -69,8 +77,10 @@
   </div>
 
   <script>
+    const MODELE_BOUTEILLES = {'GM12': '12 bouteilles', 'GM20': '20 bouteilles', 'PM24': '24 bouteilles'};
+
     function initProductSelect2(row) {
-      const select = row.querySelector('select[name="produit"]');
+      const select = row.querySelector('.produit-select');
       if (!select) return;
       if ($(select).data('select2')) {
         $(select).select2('destroy');
@@ -82,6 +92,46 @@
         allowClear: false,
         width: '100%'
       });
+      $(select).on('change', function () {
+        rendreModele(row);
+      });
+    }
+
+    const produitsData = {};
+    document.querySelectorAll('.produit-select option[value]').forEach(opt => {
+      if (!opt.value) return;
+      produitsData[opt.value] = {
+        nom: opt.dataset.nom,
+        tracked: opt.dataset.tracked === '1',
+        casier: parseInt(opt.dataset.casier, 10) || 0,
+        modeles: opt.dataset.modeles ? JSON.parse(opt.dataset.modeles) : [],
+        modeleDefaut: opt.dataset.modeleDefaut,
+        libelle: opt.dataset.libelle
+      };
+    });
+
+    function rendreModele(row) {
+      const select = row.querySelector('.produit-select');
+      const modeleSelect = row.querySelector('.modele-select');
+      const bottlesInfo = row.querySelector('.bottles-info');
+      const p = produitsData[select.value];
+      if (!p) {
+        modeleSelect.innerHTML = '<option value="">—</option>';
+        bottlesInfo.textContent = '';
+        return;
+      }
+      if (!p.tracked) {
+        modeleSelect.innerHTML = '<option value="">—</option>';
+        bottlesInfo.textContent = p.libelle || '';
+        return;
+      }
+      let options = '';
+      p.modeles.forEach(m => {
+        options += `<option value="${m}">${MODELE_BOUTEILLES[m] || m}</option>`;
+      });
+      modeleSelect.innerHTML = options || '<option value="">—</option>';
+      modeleSelect.value = (p.modeles.includes(p.modeleDefaut) && p.modeleDefaut) ? p.modeleDefaut : (p.modeles[0] || '');
+      bottlesInfo.textContent = p.casier ? (MODELE_BOUTEILLES[modeleSelect.value] || '') : '';
     }
 
     const ligneMaster = document.querySelector('.ligne');
@@ -89,7 +139,7 @@
       const container = document.getElementById('lignes-container');
       const sourceLigne = container.querySelector('.ligne') || ligneMaster;
 
-      const sourceSelect = sourceLigne.querySelector('select[name="produit"]');
+      const sourceSelect = sourceLigne.querySelector('.produit-select');
       if ($(sourceSelect).data('select2')) {
         $(sourceSelect).select2('destroy');
       }
@@ -98,11 +148,13 @@
 
       const newLigne = sourceLigne.cloneNode(true);
 
-      const clonedSelect = newLigne.querySelector('select[name="produit"]');
+      const clonedSelect = newLigne.querySelector('.produit-select');
       clonedSelect.value = '';
       newLigne.querySelectorAll('.select2-container').forEach(el => el.remove());
       clonedSelect.classList.remove('select2-hidden-accessible');
       newLigne.querySelector('input[name="quantite"]').value = '';
+      newLigne.querySelector('.modele-select').innerHTML = '<option value="">—</option>';
+      newLigne.querySelector('.bottles-info').textContent = '';
 
       container.appendChild(newLigne);
 
@@ -120,9 +172,18 @@
       });
     });
 
+    document.querySelector('.ligne').addEventListener('change', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('modele-select')) {
+        const row = e.target.closest('.ligne');
+        const bottlesInfo = row.querySelector('.bottles-info');
+        bottlesInfo.textContent = MODELE_BOUTEILLES[e.target.value] || '';
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
       document.querySelectorAll('.ligne').forEach(row => {
         initProductSelect2(row);
+        rendreModele(row);
       });
     });
   </script>

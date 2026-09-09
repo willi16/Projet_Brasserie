@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -7,6 +8,7 @@ from gestion_depot.models.bon_livraison import BonLivraison
 from gestion_depot.models.ligne_livraison import LigneLivraison
 from gestion_depot.models.userActionLog import UserActionLog
 from gestion_depot.decorators import group_required
+from gestion_depot.models.produit import CATEGORIES_AVEC_CASIERS, BOUTEILLES_PAR_MODELE
 
 
 @group_required('Gérant', 'Admin')
@@ -15,7 +17,7 @@ def creer_bon_livraison(request):
     if request.method == 'POST':
         fournisseur_id = request.POST.get('fournisseur')
         produits = request.POST.getlist('produit')
-        casiers = request.POST.getlist('casier_contenu')
+        modeles = request.POST.getlist('modele')
         prix_achats = request.POST.getlist('prix_achat_casier')
         quantites = request.POST.getlist('quantite')
 
@@ -43,14 +45,14 @@ def creer_bon_livraison(request):
         produits_dict = Produit.objects.in_bulk(produit_ids)
 
         # Vérifier que les listes ont la même longueur (pas de troncature silencieuse)
-        longueurs = {len(produits), len(casiers), len(prix_achats), len(quantites)}
+        longueurs = {len(produits), len(modeles), len(prix_achats), len(quantites)}
         if len(longueurs) != 1:
             messages.error(request, "Données du formulaire incomplètes.")
             return redirect('gestion_depot:creer_bon_livraison')
 
         # Préparer toutes les lignes avant toute écriture en base
         lignes_a_creer = []
-        for p, c, pa, q in zip(produits, casiers, prix_achats, quantites):
+        for p, m, pa, q in zip(produits, modeles, prix_achats, quantites):
             try:
                 prod = produits_dict.get(int(p))
             except (ValueError, TypeError):
@@ -62,7 +64,6 @@ def creer_bon_livraison(request):
             try:
                 quantite = Decimal(q)
                 prix_achat = Decimal(pa)
-                casier_contenu = int(c)
             except (ValueError, TypeError, InvalidOperation):
                 messages.error(request, f"Données invalides pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
@@ -75,9 +76,16 @@ def creer_bon_livraison(request):
                 messages.error(request, f"Prix d'achat invalide pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
 
-            if casier_contenu <= 0 or casier_contenu > 100000:
-                messages.error(request, f"Le contenu du casier doit être positif et raisonnable pour {prod.nom}.")
-                return redirect('gestion_depot:creer_bon_livraison')
+            # Modèle de casier selon la contenance (< 50cl : 24 ; 50cl et plus : 12 ou 20),
+            # comme pour le bon de vente. Les produits non suivis (eau, boisson, canette)
+            # gardent le contenu de casier défini sur le produit (emballage / pas de casier).
+            if prod.categorie in CATEGORIES_AVEC_CASIERS:
+                if m in prod.modeles_possibles():
+                    casier_contenu = BOUTEILLES_PAR_MODELE[m]
+                else:
+                    casier_contenu = BOUTEILLES_PAR_MODELE[prod.modele_par_defaut()]
+            else:
+                casier_contenu = prod.casier_contenu
 
             lignes_a_creer.append((prod, quantite, casier_contenu, prix_achat))
 
@@ -117,10 +125,21 @@ def creer_bon_livraison(request):
         messages.success(request, f"Livraison {bon.reference} enregistrée avec succès !")
         return redirect('gestion_depot:liste_livraisons')
 
-    produits = Produit.objects.all()
+    produits_list = []
+    for p in Produit.objects.all():
+        categorie_casiers = p.categorie in CATEGORIES_AVEC_CASIERS
+        produits_list.append({
+            'id': p.id,
+            'nom': p.nom,
+            'casier': p.casier_contenu,
+            'tracked': 1 if categorie_casiers else 0,
+            'modeles_json': json.dumps(p.modeles_possibles()) if categorie_casiers else '[]',
+            'modele_defaut': p.modele_par_defaut() if categorie_casiers else '',
+            'libelle': p.libelle_modele,
+        })
     fournisseurs = Fournisseur.objects.all()
     return render(request, 'gestion_depot/creer_bon_livraison.html', {
-        'produits': produits,
+        'produits_list': produits_list,
         'fournisseurs': fournisseurs
     })
 
