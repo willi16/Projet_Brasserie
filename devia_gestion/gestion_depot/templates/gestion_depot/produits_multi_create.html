@@ -84,7 +84,7 @@
       const casierSelect = row.querySelector('select[name$="-casier_contenu"]');
       if (!catSelect || !casierSelect) return;
       let values = casiersParCategorie[catSelect.value] || [];
-      if (catSelect.value === 'sucrerie') {
+      if (catSelect.value === 'sucrerie' || catSelect.value === 'biere') {
         const cap = capaciteCl(nomInput ? nomInput.value : '');
         if (cap !== null && cap < 50) values = [24];
         else if (cap !== null && cap >= 50) values = [12, 20];

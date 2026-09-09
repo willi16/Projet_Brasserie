@@ -80,6 +80,27 @@ class ProduitTests(BaseTest):
         self.assertEqual(refus.status_code, 200)
         self.assertFalse(Produit.objects.filter(nom='Sucrerie 50cl interdit').exists())
 
+    def test_biere_33cl_oblige_24_bouteilles(self):
+        ok = self._post_produit('Castel 33cl', 'biere', 24)
+        self.assertRedirects(ok, reverse('gestion_depot:liste_produits'))
+        self.assertTrue(Produit.objects.filter(nom='Castel 33cl', casier_contenu=24).exists())
+
+        for casier in (12, 20):
+            refus = self._post_produit(f'Castel 33cl interdit {casier}', 'biere', casier)
+            self.assertEqual(refus.status_code, 200)
+            self.assertFalse(Produit.objects.filter(nom=f'Castel 33cl interdit {casier}').exists())
+
+    def test_biere_50cl_ou_65cl_oblige_12_ou_20(self):
+        self._post_produit('Beaufort 50cl', 'biere', 12)
+        ok = self._post_produit('Beaufort 65cl', 'biere', 20)
+        self.assertRedirects(ok, reverse('gestion_depot:liste_produits'))
+        self.assertTrue(Produit.objects.filter(nom='Beaufort 50cl', casier_contenu=12).exists())
+        self.assertTrue(Produit.objects.filter(nom='Beaufort 65cl', casier_contenu=20).exists())
+
+        refus = self._post_produit('Beaufort 50cl interdit', 'biere', 24)
+        self.assertEqual(refus.status_code, 200)
+        self.assertFalse(Produit.objects.filter(nom='Beaufort 50cl interdit').exists())
+
     def test_emballage_eau_boisson_accepte_12_bouteilles(self):
         for nom, cat in [('Eau Emballage 50cl', 'eau'), ('Soda Emballage 50cl', 'boisson')]:
             response = self._post_produit(nom, cat, 12)

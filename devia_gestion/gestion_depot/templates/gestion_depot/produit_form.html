@@ -54,7 +54,7 @@
     function casiersPourCategorie() {
       const cat = catSelect.value;
       let values = casiersParCategorie[cat] || [];
-      if (cat === 'sucrerie') {
+      if (cat === 'sucrerie' || cat === 'biere') {
         const cap = capaciteCl(nomInput ? nomInput.value : '');
         if (cap !== null && cap < 50) values = [24];
         else if (cap !== null && cap >= 50) values = [12, 20];
