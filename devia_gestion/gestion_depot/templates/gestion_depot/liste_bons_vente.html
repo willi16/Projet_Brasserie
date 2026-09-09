@@ -78,10 +78,10 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     columns: [
-      { data: 'reference' },
+      { data: 'reference', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
       { data: 'date_vente', searchable: false },
-      { data: 'client_nom' },
-      { data: 'vendeur_nom' },
+      { data: 'client_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'vendeur_nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
       { data: 'montant_total', searchable: false, render: function (d) { return Number(d || 0).toLocaleString('fr-FR') + ' FCFA'; } },
       { data: 'statut_html', orderable: false, searchable: false },
       { data: 'motif_annulation', orderable: false, searchable: true },

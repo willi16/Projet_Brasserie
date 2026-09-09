@@ -2,6 +2,24 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
+def _get_client_ip(request):
+    """Retourne l'IP du client de manière sûre (valide et propre)."""
+    if request is None:
+        return None
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    if xff:
+        candidate = xff.split(',')[0].strip()
+    else:
+        candidate = request.META.get('REMOTE_ADDR')
+    if not candidate:
+        return None
+    try:
+        import ipaddress
+        return str(ipaddress.ip_address(candidate))
+    except ValueError:
+        return None
+
+
 class UserActionLog(models.Model):
     performed_by = models.ForeignKey(
         User,
@@ -31,10 +49,7 @@ class UserActionLog(models.Model):
     @classmethod
     def log_action(cls, performed_by, action, details='', module='', target_user=None, request=None):
         """Enregistre une action utilisateur dans le journal d'activité."""
-        ip = None
-        if request is not None:
-            xff = request.META.get('HTTP_X_FORWARDED_FOR')
-            ip = xff.split(',')[0].strip() if xff else request.META.get('REMOTE_ADDR')
+        ip = _get_client_ip(request)
         return cls.objects.create(
             performed_by=performed_by if (performed_by and performed_by.is_authenticated) else None,
             target_user=target_user,

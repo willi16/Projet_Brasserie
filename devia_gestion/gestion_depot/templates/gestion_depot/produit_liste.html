@@ -43,10 +43,10 @@
 document.addEventListener('DOMContentLoaded', function () {
   var canEdit = {{ can_edit|yesno:"true,false" }};
   var columns = [
-    { data: 'nom' },
-    { data: 'categorie_display' },
+    { data: 'nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+    { data: 'categorie_display', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
     { data: 'casier_contenu', searchable: false, render: function (d) { return d + ' btl'; } },
-    { data: 'modele_display', render: function (d) { return '<span class="badge badge-info">' + d + '</span>'; } },
+    { data: 'modele_display', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return '<span class="badge badge-info">' + el.innerHTML + '</span>'; } },
     { data: 'prix_vente_casier', searchable: false, render: function (d) { return d + ' FCFA'; } },
     { data: 'stock_actuel', searchable: false, render: function (d) { return Number(d).toFixed(2); } },
     { data: 'seuil_alerte', searchable: false },

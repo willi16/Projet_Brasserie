@@ -201,6 +201,11 @@
   <!-- Chart.js en local (pas de CDN) -->
   <script src="{% static 'js/chart.umd.min.js' %}"></script>
   <script>
+    function escHtml(s) {
+      var el = document.createElement('span');
+      el.textContent = s;
+      return el.innerHTML;
+    }
     document.addEventListener('DOMContentLoaded', function () {
       var ctx = document.getElementById('ventesChart').getContext('2d');
       var ventesChart = null;
@@ -277,8 +282,8 @@
         } else {
           d.lignes.forEach(function (l) {
             var tr = document.createElement('tr');
-            tr.innerHTML = '<td>' + l.date + '</td><td>' + l.produit + '</td><td>' + formatQte(l.quantite_totale) +
-              '</td><td>' + formatFCFA(l.ca) + '</td><td>' + formatFCFA(l.benefice) + '</td><td>' + l.vendeur + '</td>';
+            tr.innerHTML = '<td>' + escHtml(l.date) + '</td><td>' + escHtml(l.produit) + '</td><td>' + formatQte(l.quantite_totale) +
+              '</td><td>' + formatFCFA(l.ca) + '</td><td>' + formatFCFA(l.benefice) + '</td><td>' + escHtml(l.vendeur) + '</td>';
             lignesTbody.appendChild(tr);
           });
         }
@@ -287,7 +292,7 @@
         statsTbody.innerHTML = '';
         d.stats_produits.forEach(function (s) {
           var tr = document.createElement('tr');
-          tr.innerHTML = '<td>' + s.nom + '</td><td>' + formatQte(s.quantite_totale) + '</td><td>' + formatFCFA(s.revenu_total) +
+          tr.innerHTML = '<td>' + escHtml(s.nom) + '</td><td>' + formatQte(s.quantite_totale) + '</td><td>' + formatFCFA(s.revenu_total) +
             '</td><td>' + formatFCFA(s.cout_total) + '</td><td>' + formatFCFA(s.benefice_total) + '</td><td>' + s.nombre_ventes + '</td>';
           statsTbody.appendChild(tr);
         });
@@ -306,7 +311,7 @@
             var tr = document.createElement('tr');
             var badge = it.en_alerte ? 'badge-warning' : 'badge-success';
             var label = it.en_alerte ? 'Stock bas' : 'OK';
-            tr.innerHTML = '<td>' + it.nom + '</td><td>' + formatQte(it.stock) + '</td><td>' + it.seuil_alerte +
+            tr.innerHTML = '<td>' + escHtml(it.nom) + '</td><td>' + formatQte(it.stock) + '</td><td>' + it.seuil_alerte +
               '</td><td><span class="badge ' + badge + '">' + label + '</span></td>';
             invTbody.appendChild(tr);
           });

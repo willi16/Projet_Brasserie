@@ -129,8 +129,8 @@ def configurer_sanction(request):
         except (InvalidOperation, TypeError, ValueError):
             messages.error(request, "Le montant est invalide.")
             return redirect('gestion_depot:configurer_sanction')
-        if montant < 0:
-            messages.error(request, "Le montant ne peut pas être négatif.")
+        if montant < 0 or montant > Decimal('10000000'):
+            messages.error(request, "Le montant doit être compris entre 0 et 10 000 000 FCFA.")
             return redirect('gestion_depot:configurer_sanction')
         param.valeur = montant
         param.save()

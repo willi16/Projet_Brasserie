@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', function () {
       type: 'GET'
     },
     columns: [
-      { data: 'nom' },
-      { data: 'contact', render: function (d) { return d || '-'; } },
-      { data: 'adresse', render: function (d) { return d || '-'; } },
+      { data: 'nom', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML; } },
+      { data: 'contact', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML || '-'; } },
+      { data: 'adresse', render: function (d) { var el = document.createElement('span'); el.textContent = d || ''; return el.innerHTML || '-'; } },
       { data: 'actions_html', orderable: false, searchable: false }
     ],
     order: [[0, 'asc']],

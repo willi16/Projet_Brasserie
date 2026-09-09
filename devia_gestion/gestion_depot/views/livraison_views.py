@@ -24,7 +24,13 @@ def creer_bon_livraison(request):
             return redirect('gestion_depot:creer_bon_livraison')
 
         try:
-            fournisseur_obj = Fournisseur.objects.get(id=fournisseur_id)
+            fournisseur_id_int = int(fournisseur_id)
+        except (TypeError, ValueError):
+            messages.error(request, "Fournisseur invalide.")
+            return redirect('gestion_depot:creer_bon_livraison')
+
+        try:
+            fournisseur_obj = Fournisseur.objects.get(id=fournisseur_id_int)
         except Fournisseur.DoesNotExist:
             messages.error(request, "Fournisseur introuvable.")
             return redirect('gestion_depot:creer_bon_livraison')
@@ -36,11 +42,20 @@ def creer_bon_livraison(request):
             return redirect('gestion_depot:creer_bon_livraison')
         produits_dict = Produit.objects.in_bulk(produit_ids)
 
+        # Vérifier que les listes ont la même longueur (pas de troncature silencieuse)
+        longueurs = {len(produits), len(casiers), len(prix_achats), len(quantites)}
+        if len(longueurs) != 1:
+            messages.error(request, "Données du formulaire incomplètes.")
+            return redirect('gestion_depot:creer_bon_livraison')
+
         # Préparer toutes les lignes avant toute écriture en base
         lignes_a_creer = []
-        mouvements_a_creer = []
         for p, c, pa, q in zip(produits, casiers, prix_achats, quantites):
-            prod = produits_dict.get(int(p))
+            try:
+                prod = produits_dict.get(int(p))
+            except (ValueError, TypeError):
+                messages.error(request, "Produit invalide.")
+                return redirect('gestion_depot:creer_bon_livraison')
             if not prod:
                 messages.error(request, "Produit introuvable.")
                 return redirect('gestion_depot:creer_bon_livraison')
@@ -52,12 +67,16 @@ def creer_bon_livraison(request):
                 messages.error(request, f"Données invalides pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
 
-            if quantite <= 0 or prix_achat < 0:
-                messages.error(request, f"Quantité ou prix invalide pour {prod.nom}.")
+            if quantite <= 0 or quantite > Decimal('999.99'):
+                messages.error(request, f"Quantité invalide pour {prod.nom} (1 à 999,99 casiers).")
                 return redirect('gestion_depot:creer_bon_livraison')
 
-            if casier_contenu <= 0:
-                messages.error(request, f"Le contenu du casier doit être positif pour {prod.nom}.")
+            if prix_achat < 0 or prix_achat > Decimal('99999999.99'):
+                messages.error(request, f"Prix d'achat invalide pour {prod.nom}.")
+                return redirect('gestion_depot:creer_bon_livraison')
+
+            if casier_contenu <= 0 or casier_contenu > 100000:
+                messages.error(request, f"Le contenu du casier doit être positif et raisonnable pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
 
             lignes_a_creer.append((prod, quantite, casier_contenu, prix_achat))
