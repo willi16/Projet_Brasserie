@@ -12,14 +12,14 @@ from datetime import timedelta
 from gestion_depot.models import CasierEmporte, Parametre, BonVente
 from gestion_depot.models.parametre import SANCTION_CASIER
 from gestion_depot.models.casier_emporte import DELAI_RETOUR_JOURS
-from gestion_depot.models.produit import Produit, CATEGORIES_AVEC_CASIERS
+from gestion_depot.models.produit import Produit, CATEGORIES_AVEC_CASIERS, BOUTEILLES_PAR_MODELE
 from gestion_depot.models.userActionLog import UserActionLog
 
-MODELE_VALIDES = {m[0] for m in Produit.MODELE_CHOICES} - {'NC'}
+MODELE_VALIDES = {m[0] for m in Produit.MODELE_CHOICES} - {'NC', 'EMB'}
 
 
 def produit_casier_du_bon(bon):
-    """Retourne le premier produit du bon pouvant donner lieu à un suivi de casier (boisson/bière), sinon None."""
+    """Retourne le premier produit du bon pouvant donner lieu à un suivi de casier (bière/sucrerie), sinon None."""
     for ligne in bon.lignes.select_related('produit'):
         if ligne.produit.categorie in CATEGORIES_AVEC_CASIERS:
             return ligne.produit
@@ -159,14 +159,23 @@ def enregistrer_casiers_bon(request, bon_id):
         BonVente.objects.select_related('client', 'vendeur').prefetch_related('lignes__produit'),
         id=bon_id,
     )
-    produit_casier = produit_casier_du_bon(bon)
+    tracked_ligne = None
+    for ligne in bon.lignes.select_related('produit'):
+        if ligne.produit.categorie in CATEGORIES_AVEC_CASIERS:
+            tracked_ligne = ligne
+            break
 
-    if not produit_casier:
-        messages.error(request, "Ce bon ne comporte pas de produit à casier (boisson ou bière).")
+    if tracked_ligne is None:
+        messages.error(request, "Ce bon ne comporte pas de produit à casier (bière ou sucrerie).")
         return redirect('gestion_depot:detail_bon_vente', id=bon.id)
 
-    modele_par_defaut = produit_casier.modele if produit_casier.modele != 'NC' else 'GM12'
-    bouteilles = produit_casier.casier_contenu
+    produit_casier = tracked_ligne.produit
+    modeles_autorises = produit_casier.modeles_possibles()
+
+    if tracked_ligne.modele in modeles_autorises:
+        modele_par_defaut = tracked_ligne.modele
+    else:
+        modele_par_defaut = produit_casier.modele_par_defaut()
 
     if request.method == 'POST':
         try:
@@ -182,9 +191,11 @@ def enregistrer_casiers_bon(request, bon_id):
         if nombre > 10000:
             messages.error(request, "Le nombre de casiers est trop élevé.")
             return redirect('gestion_depot:enregistrer_casiers_bon', bon_id=bon.id)
-        if modele not in MODELE_VALIDES:
-            messages.error(request, "Le modèle de casier est invalide.")
+        if modele not in modeles_autorises:
+            messages.error(request, "Le modèle de casier est invalide pour ce produit.")
             return redirect('gestion_depot:enregistrer_casiers_bon', bon_id=bon.id)
+
+        bouteilles = BOUTEILLES_PAR_MODELE[modele]
 
         casier, cree = CasierEmporte.objects.get_or_create(
             bon=bon,
@@ -218,9 +229,11 @@ def enregistrer_casiers_bon(request, bon_id):
             messages.success(request, f"Casiers du bon {bon.reference} mis à jour ({nombre} casier(s)).")
         return redirect('gestion_depot:detail_bon_vente', id=bon.id)
 
+    labels_modele = {v: l for v, l in Produit.MODELE_CHOICES}
+    modeles = [(m, labels_modele[m]) for m in modeles_autorises]
     return render(request, 'gestion_depot/enregistrer_casiers_bon.html', {
         'bon': bon,
         'produit_casier': produit_casier,
         'modele_par_defaut': modele_par_defaut,
-        'modeles': [m for m in Produit.MODELE_CHOICES if m[0] in MODELE_VALIDES],
+        'modeles': modeles,
     })

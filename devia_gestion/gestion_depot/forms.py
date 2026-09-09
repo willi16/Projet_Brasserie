@@ -6,7 +6,7 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from .models import ProfilUtilisateur, Produit, Fournisseur, ParametresEntreprise
-from .models.produit import CASIERS_PAR_CATEGORIE
+from .models.produit import CASIERS_PAR_CATEGORIE, capacite_cl, SEUIL_GRAND_MODELE_CL
 
 
 def _valider_extensions_image(fichier):
@@ -203,6 +203,21 @@ class ProduitForm(forms.ModelForm):
         seuil = cleaned_data.get('seuil_alerte')
         if seuil is not None and seuil < 0:
             self.add_error('seuil_alerte', 'Le seuil d’alerte doit être positif ou nul.')
+
+        nom = cleaned_data.get('nom')
+        if cleaned_data.get('categorie') == 'sucrerie' and cleaned_data.get('casier_contenu'):
+            capacite = capacite_cl(nom)
+            casier = cleaned_data.get('casier_contenu')
+            if capacite is not None and capacite < SEUIL_GRAND_MODELE_CL and casier != 24:
+                self.add_error(
+                    'casier_contenu',
+                    "Une sucrerie de moins de 50cl doit avoir un casier de 24 bouteilles.",
+                )
+            elif capacite is not None and capacite >= SEUIL_GRAND_MODELE_CL and casier not in (12, 20):
+                self.add_error(
+                    'casier_contenu',
+                    "Une sucrerie de 50cl ou plus doit avoir un casier de 12 ou 20 bouteilles.",
+                )
 
         return cleaned_data
 

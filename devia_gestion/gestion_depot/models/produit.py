@@ -8,7 +8,7 @@ CATEGORIES_AVEC_CASIERS = {'biere', 'sucrerie'}
 
 # Nombre de bouteilles par casier autorisé pour chaque catégorie de produit
 CASIERS_PAR_CATEGORIE = {
-    'boisson': [16, 20],
+    'boisson': [12, 16, 20],
     'biere': [12, 20, 24],
     'eau': [6, 12, 15, 24],
     'sucrerie': [12, 20, 24],
@@ -17,6 +17,9 @@ CASIERS_PAR_CATEGORIE = {
 
 # Capacité (cl) à partir de laquelle on considère un "grand modèle"
 SEUIL_GRAND_MODELE_CL = 50
+
+# Bouteilles par casier selon le modèle
+BOUTEILLES_PAR_MODELE = {'GM12': 12, 'GM20': 20, 'PM24': 24}
 
 
 def capacite_cl(nom):
@@ -57,6 +60,7 @@ class Produit(models.Model):
         ('GM12', 'Grand modèle - 12 bouteilles'),
         ('GM20', 'Grand modèle - 20 bouteilles'),
         ('PM24', 'Petit modèle - 24 bouteilles'),
+        ('EMB', 'Emballage'),
         ('NC', 'Pas de casier'),
     ]
 
@@ -78,13 +82,40 @@ class Produit(models.Model):
         super().save(*args, **kwargs)
 
     def get_modele(self):
-        """Grand modèle (GM12/GM20) si bière/sucrerie >= 50cl, petit modèle (PM24) si < 50cl, pas de casier pour le reste (boisson gazeuse, eau, canette)."""
+        """Emballage pour l'eau et la boisson gazeuse, pas de casier pour les canettes,
+        petit modèle (< 50cl) ou grand modèle (>= 50cl) pour la bière et la sucrerie."""
+        if self.categorie in ('eau', 'boisson'):
+            return 'EMB'
         if self.categorie not in CATEGORIES_AVEC_CASIERS:
             return 'NC'
         capacite = capacite_cl(self.nom)
         if capacite is not None and capacite < SEUIL_GRAND_MODELE_CL:
             return 'PM24'
         return 'GM12' if self.casier_contenu == 12 else 'GM20'
+
+    @property
+    def libelle_modele(self):
+        """Libellé affiché : « Emballage N bouteilles » pour l'eau/la boisson gazeuse."""
+        if self.modele == 'EMB':
+            return f"Emballage {self.casier_contenu} bouteilles"
+        return self.get_modele_display()
+
+    def modeles_possibles(self):
+        """Modèles de casier proposables selon la contenance (50cl : 12 ou 20, 65cl+ : 12, < 50cl : 24)."""
+        capacite = capacite_cl(self.nom)
+        if capacite is None:
+            return list(BOUTEILLES_PAR_MODELE)
+        if capacite < SEUIL_GRAND_MODELE_CL:
+            return ['PM24']
+        if capacite == SEUIL_GRAND_MODELE_CL:
+            return ['GM12', 'GM20']
+        return ['GM12']
+
+    def modele_par_defaut(self):
+        possibles = self.modeles_possibles()
+        if self.modele in possibles:
+            return self.modele
+        return possibles[0]
 
     
     def stock_disponible(self):

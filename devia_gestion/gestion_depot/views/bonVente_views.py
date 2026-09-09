@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal, InvalidOperation
 import re
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,6 +12,7 @@ from datetime import datetime
 
 from gestion_depot.models import BonVente, Client, LigneVente, Produit, Mouvement
 from gestion_depot.models.userActionLog import UserActionLog
+from gestion_depot.models.produit import CATEGORIES_AVEC_CASIERS
 from gestion_depot.views.casier_views import produit_casier_du_bon
 
 
@@ -54,6 +56,7 @@ def creer_bon_vente(request):
         produits = request.POST.getlist('produit')
         fractions = request.POST.getlist('fraction')
         quantites = request.POST.getlist('quantite')
+        modeles = request.POST.getlist('modele')
 
         # Vérifier que les listes ne sont pas vides
         if not produits or not all(quantites):
@@ -139,17 +142,24 @@ def creer_bon_vente(request):
 
         # Créer les lignes de vente
         lignes = []
-        for p_id, f, q in zip(produit_ids, fractions_dec, quantites_dec):
+        for i, p_id in enumerate(produit_ids):
             prod = produits_dict.get(p_id)
-            if prod:
-                lignes.append(
-                    LigneVente(
-                        bon=bon,
-                        produit=prod,
-                        fraction=f,
-                        quantite_casiers=q,
-                    )
+            if not prod:
+                continue
+            if prod.categorie in CATEGORIES_AVEC_CASIERS:
+                modele_submis = modeles[i] if i < len(modeles) else ''
+                modele = modele_submis if modele_submis in prod.modeles_possibles() else prod.modele_par_defaut()
+            else:
+                modele = None
+            lignes.append(
+                LigneVente(
+                    bon=bon,
+                    produit=prod,
+                    fraction=fractions_dec[i],
+                    quantite_casiers=quantites_dec[i],
+                    modele=modele,
                 )
+            )
         LigneVente.objects.bulk_create(lignes)
 
         UserActionLog.log_action(
@@ -172,7 +182,20 @@ def creer_bon_vente(request):
             )
         )
     )
-    return render(request, 'gestion_depot/creer_bon_vente.html', {'produits': produits})
+    produits_list = []
+    for p in produits:
+        produits_list.append({
+            'id': p.id,
+            'nom': p.nom,
+            'prix': float(p.prix_vente_casier),
+            'stock': round(float(p.stock_actuel or 0), 2),
+            'casier': p.casier_contenu,
+            'tracked': 1 if p.categorie in CATEGORIES_AVEC_CASIERS else 0,
+            'modeles_json': json.dumps(p.modeles_possibles()) if p.categorie in CATEGORIES_AVEC_CASIERS else '[]',
+            'modele_defaut': p.modele_par_defaut() if p.categorie in CATEGORIES_AVEC_CASIERS else '',
+            'libelle': p.libelle_modele,
+        })
+    return render(request, 'gestion_depot/creer_bon_vente.html', {'produits_list': produits_list})
 
 
 def user_can_manage_bon(user, bon):

@@ -25,29 +25,41 @@
   <div id="lignes-container" class="space-y-3">
     <div class="ligne product-row border border-gray-200 dark:border-gray-700 rounded-lg p-3">
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
           <label class="form-label">Produit</label>
           <select name="produit" class="form-select produit-select" required>
             <option value="">-- Sélectionner --</option>
-            {% for produit in produits %}
+            {% for p in produits_list %}
               <option
-                value="{{ produit.id }}"
-                data-price="{{ produit.prix_vente_casier }}"
-                data-stock="{{ produit.stock_actuel|default:0 }}"
-                data-nom="{{ produit.nom }}">
-                {{ produit.nom }} ({{ produit.prix_vente_casier }} FCFA)
+                value="{{ p.id }}"
+                data-prix="{{ p.prix }}"
+                data-stock="{{ p.stock }}"
+                data-nom="{{ p.nom }}"
+                data-tracked="{{ p.tracked }}"
+                data-casier="{{ p.casier }}"
+                data-modeles="{{ p.modeles_json }}"
+                data-modele-defaut="{{ p.modele_defaut }}"
+                data-libelle="{{ p.libelle }}">
+                {{ p.nom }} ({{ p.prix }} FCFA)
               </option>
             {% endfor %}
           </select>
           <small class="stock-info text-gray-500 dark:text-gray-400 text-xs mt-1 block">Stock: <span class="stock-value">0</span> casiers</small>
           <small class="error-stock text-red-600 dark:text-red-400 text-xs mt-1 block hidden">Stock insuffisant</small>
         </div>
-        <div class="md:col-span-3">
+        <div class="md:col-span-3" data-modele-wrap>
+          <label class="form-label">Modèle de casier</label>
+          <select name="modele" class="form-select modele-select">
+            <option value="">—</option>
+          </select>
+          <small class="bottles-info text-gray-500 dark:text-gray-400 text-xs mt-1 block"></small>
+        </div>
+        <div class="md:col-span-2">
           <label class="form-label">Fraction</label>
           <input type="number" name="fraction" class="form-input" min="0.25" step="0.25" max="9.99" value="1.00" required>
           <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">Ex. 1.00 = casier complet, 0.50 = demi-casier</small>
         </div>
-        <div class="md:col-span-3">
+        <div class="md:col-span-2">
           <label class="form-label">Quantité</label>
           <input type="number" name="quantite" class="form-input" min="0.01" step="0.01" required>
           <small class="text-gray-500 dark:text-gray-400 text-xs mt-1 block">&nbsp;</small>
@@ -99,14 +111,45 @@
 
   // Stocker les données des produits
   const produitsData = {};
+  const MODELE_BOUTEILLES = {'GM12': '12 bouteilles', 'GM20': '20 bouteilles', 'PM24': '24 bouteilles'};
   document.querySelectorAll('.produit-select option[value]').forEach(opt => {
-    const id = opt.value;
-    produitsData[id] = {
+    if (!opt.value) return;
+    produitsData[opt.value] = {
       nom: opt.dataset.nom,
-      prix: parseFloat(opt.dataset.price),
-      stock: parseFloat(opt.dataset.stock)
+      prix: parseFloat(opt.dataset.prix),
+      stock: parseFloat(opt.dataset.stock),
+      tracked: opt.dataset.tracked === '1',
+      casier: parseInt(opt.dataset.casier, 10) || 0,
+      modeles: opt.dataset.modeles ? JSON.parse(opt.dataset.modeles) : [],
+      modeleDefaut: opt.dataset.modeleDefaut,
+      libelle: opt.dataset.libelle
     };
   });
+
+  // Remplit la liste des modèles de casier de la ligne selon le produit choisi
+  function rendreModele(row) {
+    const select = row.querySelector('.produit-select');
+    const modeleSelect = row.querySelector('.modele-select');
+    const bottlesInfo = row.querySelector('.bottles-info');
+    const p = produitsData[select.value];
+    if (!p) {
+      modeleSelect.innerHTML = '<option value="">—</option>';
+      bottlesInfo.textContent = '';
+      return;
+    }
+    if (!p.tracked) {
+      modeleSelect.innerHTML = '<option value="">—</option>';
+      bottlesInfo.textContent = p.libelle || '';
+      return;
+    }
+    let options = '';
+    p.modeles.forEach(m => {
+      options += `<option value="${m}">${MODELE_BOUTEILLES[m] || m}</option>`;
+    });
+    modeleSelect.innerHTML = options || '<option value="">—</option>';
+    modeleSelect.value = (p.modeles.includes(p.modeleDefaut) && p.modeleDefaut) ? p.modeleDefaut : (p.modeles[0] || '');
+    bottlesInfo.textContent = p.casier ? (MODELE_BOUTEILLES[modeleSelect.value] || '') : '';
+  }
 
   // Mettre à jour le stock affiché
   function updateStockDisplay(row) {
@@ -199,6 +242,7 @@
     newLigne.querySelector('input[name="quantite"]').value = '';
     newLigne.querySelector('input[name="quantite"]').classList.remove('border-red-500');
     newLigne.querySelector('.error-stock').classList.add('hidden');
+    rendreModele(newLigne);
 
     // Attacher suppression
     newLigne.querySelector('.remove-ligne').addEventListener('click', function () {
@@ -226,8 +270,18 @@
     select.addEventListener('change', function() {
       const row = this.closest('.product-row');
       updateStockDisplay(row);
+      rendreModele(row);
       updatePreview();
     });
+  });
+
+  // Mise à jour de l'info bouteilles quand le modèle de casier change (lignes dynamiques incluses)
+  document.getElementById('bon-vente-form').addEventListener('change', function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains('modele-select')) {
+      const row = e.target.closest('.product-row');
+      const bottlesInfo = row.querySelector('.bottles-info');
+      bottlesInfo.textContent = MODELE_BOUTEILLES[e.target.value] || '';
+    }
   });
 
   // Mise à jour quand quantité ou fraction change
@@ -280,6 +334,7 @@
     document.querySelectorAll('.product-row').forEach(row => {
       initProductSelect2(row);
       updateStockDisplay(row);
+      rendreModele(row);
     });
     updatePreview();
   });

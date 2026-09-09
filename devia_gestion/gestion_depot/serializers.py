@@ -96,7 +96,7 @@ def _action_form(url, csrf, label, kind, path, data='', extra_inputs=''):
 
 class ProduitSerializer(serializers.ModelSerializer):
     categorie_display = serializers.CharField(source='get_categorie_display')
-    modele_display = serializers.CharField(source='get_modele_display')
+    modele_display = serializers.CharField(source='libelle_modele')
     stock_actuel = serializers.FloatField()
     statut_html = serializers.SerializerMethodField()
     actions_html = serializers.SerializerMethodField()

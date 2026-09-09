@@ -125,7 +125,7 @@ class Command(BaseCommand):
             ("Fanta Orange 50cl", "boisson", 20, 650, 700),
             ("Sprite 50cl", "boisson", 20, 650, 700),
             ("Pepsi 50cl", "boisson", 20, 650, 700),
-            # Boissons gazeuses -> pas de suivi de casier
+            # Boissons gazeuses -> emballage, pas de suivi de casier
             ("Coca-Cola 33cl", "boisson", 24, 600, 650),
             ("Fanta Orange 33cl", "boisson", 24, 550, 600),
             # Bières -> grand modèle (GM)

@@ -46,8 +46,8 @@
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
         Le modèle de casier est déduit de la capacité indiquée dans le <strong>nom</strong> du produit :
         bière/sucrerie de <strong>50cl ou plus = grand modèle</strong> (GM12 ou GM20 selon le nombre de bouteilles),
-        en dessous = <strong>petit modèle</strong> (PM24). La <strong>boisson gazeuse</strong>, l'<strong>eau</strong> et les
-        <strong>canettes</strong> n'ont pas de suivi de casier.
+        en dessous = <strong>petit modèle</strong> (PM24). La <strong>boisson gazeuse</strong> et l'<strong>eau</strong>
+        affichent un <strong>emballage</strong> (avec le contenu correspondant) ; les <strong>canettes</strong> n'ont pas de casier.
       </p>
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
         Le <strong>pourcentage de prix de vente</strong> sert à calculer le prix de vente à partir du
@@ -68,12 +68,27 @@
   document.addEventListener('DOMContentLoaded', function () {
     const casiersParCategorie = JSON.parse(document.getElementById('casiers-par-categorie').textContent);
 
-    function updateCasierOptions(catSelect) {
-      const row = catSelect.closest('tr');
-      if (!row) return;
+    function capaciteCl(nom) {
+      const m = String(nom || '').match(/([\d.,]+)\s*(ml|cl|l)/i);
+      if (!m) return null;
+      const valeur = parseFloat(m[1].replace(',', '.'));
+      if (isNaN(valeur)) return null;
+      if (m[2].toLowerCase() === 'ml') return valeur / 10;
+      if (m[2].toLowerCase() === 'l') return valeur * 100;
+      return valeur;
+    }
+
+    function updateCasierOptions(row) {
+      const catSelect = row.querySelector('select[name$="-categorie"]');
+      const nomInput = row.querySelector('input[name$="-nom"]');
       const casierSelect = row.querySelector('select[name$="-casier_contenu"]');
-      if (!casierSelect) return;
-      const values = casiersParCategorie[catSelect.value] || [];
+      if (!catSelect || !casierSelect) return;
+      let values = casiersParCategorie[catSelect.value] || [];
+      if (catSelect.value === 'sucrerie') {
+        const cap = capaciteCl(nomInput ? nomInput.value : '');
+        if (cap !== null && cap < 50) values = [24];
+        else if (cap !== null && cap >= 50) values = [12, 20];
+      }
       const current = casierSelect.value;
       casierSelect.innerHTML = '';
       if (!values.length) {
@@ -91,8 +106,11 @@
     }
 
     document.querySelectorAll('select[name$="-categorie"]').forEach(function (select) {
-      select.addEventListener('change', function () { updateCasierOptions(select); });
-      updateCasierOptions(select);
+      select.addEventListener('change', function () { updateCasierOptions(select.closest('tr')); });
+      updateCasierOptions(select.closest('tr'));
+    });
+    document.querySelectorAll('input[name$="-nom"]').forEach(function (input) {
+      input.addEventListener('input', function () { updateCasierOptions(input.closest('tr')); });
     });
   });
 </script>
