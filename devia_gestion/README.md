@@ -393,12 +393,12 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 
 ### Suivre les casiers emportés
 
-1. Après avoir **créé le bon de vente**, ouvrez le **détail du bon** : un bouton **Enregistrer des casiers** apparaît si le bon contient une boisson ou une bière.
-2. Le **modèle** est rempli automatiquement : **boisson/bière de 50cl ou plus = grand modèle** (GM12 ou GM20), **en dessous de 50cl = petit modèle** (PM24). Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »).
+1. Après avoir **créé le bon de vente**, ouvrez le **détail du bon** : un bouton **Enregistrer des casiers** apparaît si le bon contient une bière ou une sucrerie.
+2. Le **modèle** est rempli automatiquement : **bière/sucrerie de 50cl ou plus = grand modèle** (GM12 ou GM20), **en dessous de 50cl = petit modèle** (PM24). Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »).
 3. Menu **Casiers emportés** : la liste des casiers partis avec les clients. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
 4. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
 5. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier est celui du produit (12, 20 ou 24).
-6. **Eau et sucreries** : pas de casier à suivre, tout est emporté.
+6. **Boisson gazeuse, eau et canettes** : pas de casier à suivre, tout est emporté.
 
 ### Enregistrer une livraison (tâche du gérant/admin)
 
@@ -428,7 +428,7 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 ### Produits
 - Ajouter, modifier, supprimer un produit.
 - Champs : nom (avec la capacité, ex. « Coca-Cola 50cl »), catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
-- Le **modèle de casier** est déduit automatiquement : boisson/bière de 50cl ou plus = grand modèle (GM12/GM20), en dessous = petit modèle (PM24) ; eau et sucrerie = pas de casier.
+- Le **modèle de casier** est déduit automatiquement : bière/sucrerie de 50cl ou plus = grand modèle (GM12/GM20), en dessous = petit modèle (PM24) ; boisson gazeuse, eau et canette = pas de casier.
 - Le stock est calculé automatiquement à partir des mouvements (entrées – sorties).
 
 ### Ventes

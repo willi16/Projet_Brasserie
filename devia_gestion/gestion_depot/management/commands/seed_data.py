@@ -125,7 +125,7 @@ class Command(BaseCommand):
             ("Fanta Orange 50cl", "boisson", 20, 650, 700),
             ("Sprite 50cl", "boisson", 20, 650, 700),
             ("Pepsi 50cl", "boisson", 20, 650, 700),
-            # Boissons en dessous de 50cl -> petit modèle (PM)
+            # Boissons gazeuses -> pas de suivi de casier
             ("Coca-Cola 33cl", "boisson", 24, 600, 650),
             ("Fanta Orange 33cl", "boisson", 24, 550, 600),
             # Bières -> grand modèle (GM)
@@ -136,9 +136,9 @@ class Command(BaseCommand):
             ("Eau Cristal 1.5L", "eau", 12, 500, 550),
             ("Eau Volvic 1.5L", "eau", 12, 550, 600),
             ("Eau Source 50cl", "eau", 24, 300, 350),
-            # Sucreries -> pas de casier
-            ("Chips Sel 100g", "sucrerie", 24, 400, 450),
-            ("Chips Fromage 100g", "sucrerie", 24, 400, 450),
+            # Sucreries (sodas) -> en dessous de 50cl petit modèle (PM24), sinon grand modèle (GM)
+            ("Coca-Cola 30cl", "sucrerie", 24, 500, 650),
+            ("Fanta Orange 30cl", "sucrerie", 24, 450, 600),
         ]
 
         for nom, cat, casier, prix_achat, prix_vente in produits_data:

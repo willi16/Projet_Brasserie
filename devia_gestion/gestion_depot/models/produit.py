@@ -4,7 +4,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 
 # Catégories dont les casiers peuvent être emportés et rendus
-CATEGORIES_AVEC_CASIERS = {'boisson', 'biere'}
+CATEGORIES_AVEC_CASIERS = {'biere', 'sucrerie'}
 
 # Nombre de bouteilles par casier autorisé pour chaque catégorie de produit
 CASIERS_PAR_CATEGORIE = {
@@ -78,7 +78,7 @@ class Produit(models.Model):
         super().save(*args, **kwargs)
 
     def get_modele(self):
-        """Grand modèle (GM12/GM20) si boisson/bière >= 50cl, petit modèle (PM24) sinon, pas de casier pour le reste."""
+        """Grand modèle (GM12/GM20) si bière/sucrerie >= 50cl, petit modèle (PM24) si < 50cl, pas de casier pour le reste (boisson gazeuse, eau, canette)."""
         if self.categorie not in CATEGORIES_AVEC_CASIERS:
             return 'NC'
         capacite = capacite_cl(self.nom)

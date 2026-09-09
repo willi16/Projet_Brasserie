@@ -425,13 +425,29 @@ class CasierEmporteTests(BaseTest):
         self.assertEqual(grand.modele, 'GM12')
         self.assertEqual(grand.get_modele_display(), 'Grand modèle - 12 bouteilles')
 
+        grand_20 = Produit.objects.create(
+            nom='Sucrerie 50cl', categorie='sucrerie', casier_contenu=20,
+            prix_achat_casier=Decimal('600'), prix_vente_casier=Decimal('650'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(grand_20.modele, 'GM20')
+        self.assertEqual(grand_20.get_modele_display(), 'Grand modèle - 20 bouteilles')
+
         petit = Produit.objects.create(
-            nom='Coca-Cola 33cl', categorie='boisson', casier_contenu=24,
+            nom='Coca-Cola 30cl', categorie='sucrerie', casier_contenu=24,
             prix_achat_casier=Decimal('600'), prix_vente_casier=Decimal('650'),
             seuil_alerte=5,
         )
         self.assertEqual(petit.modele, 'PM24')
         self.assertEqual(petit.get_modele_display(), 'Petit modèle - 24 bouteilles')
+
+        boisson = Produit.objects.create(
+            nom='Coca-Cola 50cl', categorie='boisson', casier_contenu=24,
+            prix_achat_casier=Decimal('600'), prix_vente_casier=Decimal('650'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(boisson.modele, 'NC')
+        self.assertEqual(boisson.get_modele_display(), 'Pas de casier')
 
         eau = Produit.objects.create(
             nom='Eau Source 50cl', categorie='eau', casier_contenu=24,
