@@ -115,6 +115,14 @@ class Produit(models.Model):
             return self.modele
         return possibles[0]
 
+    def modele_livraison(self):
+        """Modèle de casier attendu à la livraison : petit modèle (< 50cl) → 24 ;
+        grand modèle (>= 50cl) → casier du produit (12 ou 20 bouteilles)."""
+        capacite = capacite_cl(self.nom)
+        if capacite is not None and capacite < SEUIL_GRAND_MODELE_CL:
+            return 'PM24'
+        return 'GM12' if self.casier_contenu == 12 else 'GM20'
+
     
     def stock_disponible(self):
         entrees = self.mouvement_set.filter(type_mouvement='entree').aggregate(total=models.Sum('quantite_casiers'))['total'] or 0

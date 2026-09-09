@@ -1,3 +1,4 @@
+import json
 from decimal import Decimal
 from django.test import TestCase, override_settings
 from django.test import Client as DjangoClient
@@ -377,6 +378,19 @@ class BonLivraisonTests(BaseTest):
             attendu = (Decimal('1000') * (Decimal('1') + pct / Decimal('100'))).quantize(Decimal('0.01'))
             self.assertEqual(p.prix_vente_casier, attendu, msg=nom)
             self.assertEqual(p.prix_achat_casier, Decimal('1000'), msg=nom)
+
+    def test_livraison_page_propose_un_seul_modele_selon_casier_produit(self):
+        for nom, contenu in [('Beaufort 50cl', 12), ('Pils 50cl', 20)]:
+            Produit.objects.create(
+                nom=nom, categorie='biere', casier_contenu=contenu,
+                prix_achat_casier=Decimal('0'), prix_vente_casier=Decimal('0'),
+                pourcentage_prix_vente=Decimal('25'), seuil_alerte=5,
+            )
+        self.http_client.login(username='gerant1', password='pass12345')
+        response = self.http_client.get(reverse('gestion_depot:creer_bon_livraison'))
+        contenus = {p['nom']: p['modeles_json'] for p in response.context['produits_list']}
+        self.assertEqual(json.loads(contenus['Beaufort 50cl']), ['GM12'])
+        self.assertEqual(json.loads(contenus['Pils 50cl']), ['GM20'])
 
     def test_livraison_casier_impose_selon_contenance(self):
         attentes = {'Castel 33cl': 24, 'Flag 65cl': 12, 'Sucrerie 55cl': 20, 'Eau Cristal': 12}

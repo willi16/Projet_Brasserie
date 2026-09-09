@@ -76,14 +76,13 @@ def creer_bon_livraison(request):
                 messages.error(request, f"Prix d'achat invalide pour {prod.nom}.")
                 return redirect('gestion_depot:creer_bon_livraison')
 
-            # Modèle de casier selon la contenance (< 50cl : 24 ; 50cl et plus : 12 ou 20),
-            # comme pour le bon de vente. Les produits non suivis (eau, boisson, canette)
-            # gardent le contenu de casier défini sur le produit (emballage / pas de casier).
+            # Modèle de casier attendu : petit modèle (< 50cl) → 24 bouteilles ;
+            # grand modèle (>= 50cl) → casier du produit (12 ou 20 bouteilles).
+            # Les produits non suivis (eau, boisson, canette) gardent le contenu
+            # de casier défini sur le produit (emballage / pas de casier).
             if prod.categorie in CATEGORIES_AVEC_CASIERS:
-                if m in prod.modeles_possibles():
-                    casier_contenu = BOUTEILLES_PAR_MODELE[m]
-                else:
-                    casier_contenu = BOUTEILLES_PAR_MODELE[prod.modele_par_defaut()]
+                modele_attendu = prod.modele_livraison()
+                casier_contenu = BOUTEILLES_PAR_MODELE.get(modele_attendu, prod.casier_contenu)
             else:
                 casier_contenu = prod.casier_contenu
 
@@ -128,13 +127,14 @@ def creer_bon_livraison(request):
     produits_list = []
     for p in Produit.objects.all():
         categorie_casiers = p.categorie in CATEGORIES_AVEC_CASIERS
+        modele_livraison = p.modele_livraison() if categorie_casiers else ''
         produits_list.append({
             'id': p.id,
             'nom': p.nom,
             'casier': p.casier_contenu,
             'tracked': 1 if categorie_casiers else 0,
-            'modeles_json': json.dumps(p.modeles_possibles()) if categorie_casiers else '[]',
-            'modele_defaut': p.modele_par_defaut() if categorie_casiers else '',
+            'modeles_json': json.dumps([modele_livraison]) if categorie_casiers else '[]',
+            'modele_defaut': modele_livraison,
             'libelle': p.libelle_modele,
         })
     fournisseurs = Fournisseur.objects.all()
