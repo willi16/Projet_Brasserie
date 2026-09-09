@@ -101,15 +101,13 @@ class Produit(models.Model):
         return self.get_modele_display()
 
     def modeles_possibles(self):
-        """Modèles de casier proposables selon la contenance (50cl : 12 ou 20, 65cl+ : 12, < 50cl : 24)."""
+        """Modèles de casier proposables selon la contenance (< 50cl : 24 ; 50cl et plus : 12 ou 20)."""
         capacite = capacite_cl(self.nom)
         if capacite is None:
             return list(BOUTEILLES_PAR_MODELE)
         if capacite < SEUIL_GRAND_MODELE_CL:
             return ['PM24']
-        if capacite == SEUIL_GRAND_MODELE_CL:
-            return ['GM12', 'GM20']
-        return ['GM12']
+        return ['GM12', 'GM20']
 
     def modele_par_defaut(self):
         possibles = self.modeles_possibles()

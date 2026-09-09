@@ -394,7 +394,7 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 ### Suivre les casiers emportés
 
 1. Après avoir **créé le bon de vente**, ouvrez le **détail du bon** : un bouton **Enregistrer des casiers** apparaît si le bon contient une bière ou une sucrerie.
-2. Le **modèle** est rempli automatiquement **selon la contenance** : **50cl = casier de 12 ou 20 bouteilles** (GM12/GM20), **65cl et plus = 12 bouteilles** (GM12, casier unique), **en dessous de 50cl = 24 bouteilles** (PM24). Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »). Le nombre de bouteilles du casier enregistré suit le modèle choisi.
+2. Le **modèle** est rempli automatiquement **selon la contenance** : **produit de moins de 50cl = 24 bouteilles** (PM24, imposé), **50cl et plus = casier de 12 ou 20 bouteilles** (GM12/GM20) à choisir à la vente. Il est déduit de la capacité indiquée dans le nom du produit (ex. « 50cl »). Le nombre de bouteilles du casier enregistré suit le modèle choisi.
 3. Menu **Casiers emportés** : la liste des casiers partis avec les clients. Colonnes utiles : **Date limite** (date d'emport + 3 jours), **Restant**, **Statut** (*En attente*, *En retard*, *Retourné*) et **Sanction** (montant calculé automatiquement dès le dépassement du délai).
 4. Quand le client rend des casiers, saisissez la **quantité rendue** et cliquez sur **Retour**. Le retour peut être **partiel** (le restant continue à être suivi) ; un retour complet marque la ligne *Retourné*.
 5. **Sanction :** le montant par bouteille non rendue (par défaut 500 FCFA) se règle dans le menu **Paramètres** (gérant/admin). Il est appliqué automatiquement : *bouteilles non rendues × montant* une fois le délai de 3 jours dépassé. Le nombre de bouteilles par casier est celui du modèle choisi (12, 20 ou 24).
@@ -428,7 +428,7 @@ Après `python manage.py seed_data` (ou `seed_data` via Docker) :
 ### Produits
 - Ajouter, modifier, supprimer un produit.
 - Champs : nom (avec la capacité, ex. « Coca-Cola 50cl »), catégorie (boisson, bière, eau, sucrerie), nombre de bouteilles par casier, prix d'achat, prix de vente, seuil d'alerte.
-- Le **modèle de casier** est déduit automatiquement : **50cl = casier de 12 ou 20 bouteilles**, **65cl et plus = 12 bouteilles**, **en dessous de 50cl = 24 bouteilles** ; l'eau et la boisson gazeuse affichent un modèle **« Emballage »** et la canette « Pas de casier ».
+- Le **modèle de casier** est déduit automatiquement : **moins de 50cl = 24 bouteilles** (imposé), **50cl et plus = 12 ou 20 bouteilles** au choix ; l'eau et la boisson gazeuse affichent un modèle **« Emballage »** et la canette « Pas de casier ».
 - Le stock est calculé automatiquement à partir des mouvements (entrées – sorties).
 
 ### Ventes

@@ -257,6 +257,55 @@ class BonVenteTests(BaseTest):
         ligne = LigneVente.objects.latest('id')
         self.assertEqual(ligne.modele, 'GM12')
 
+    def test_vente_65cl_propose_12_ou_20(self):
+        produit = Produit.objects.create(
+            nom='Flag 65cl', categorie='biere', casier_contenu=12,
+            prix_achat_casier=Decimal('900'), prix_vente_casier=Decimal('950'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(produit.modeles_possibles(), ['GM12', 'GM20'])
+        Mouvement.objects.create(
+            produit=produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+        self.http_client.login(username='caissier1', password='pass12345')
+        for modele in ('GM12', 'GM20'):
+            response = self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+                'client_nom': 'Client 65cl',
+                'type_paiement': 'especes',
+                'produit': [str(produit.id)],
+                'fraction': ['1.00'],
+                'quantite': ['1'],
+                'modele': [modele],
+            })
+            self.assertRedirects(response, reverse('gestion_depot:liste_bons_vente'))
+            ligne = LigneVente.objects.latest('id')
+            self.assertEqual(ligne.modele, modele)
+
+    def test_vente_moins_de_50cl_modele_24_impose(self):
+        produit = Produit.objects.create(
+            nom='Castel 33cl', categorie='biere', casier_contenu=24,
+            prix_achat_casier=Decimal('600'), prix_vente_casier=Decimal('650'),
+            seuil_alerte=5,
+        )
+        self.assertEqual(produit.modeles_possibles(), ['PM24'])
+        Mouvement.objects.create(
+            produit=produit, type_mouvement='entree',
+            quantite_casiers=Decimal('10'), utilisateur=self.admin,
+        )
+        self.http_client.login(username='caissier1', password='pass12345')
+        response = self.http_client.post(reverse('gestion_depot:creer_bon_vente'), {
+            'client_nom': 'Client 33cl',
+            'type_paiement': 'especes',
+            'produit': [str(produit.id)],
+            'fraction': ['1.00'],
+            'quantite': ['1'],
+            'modele': ['PM24'],
+        })
+        self.assertRedirects(response, reverse('gestion_depot:liste_bons_vente'))
+        ligne = LigneVente.objects.latest('id')
+        self.assertEqual(ligne.modele, 'PM24')
+
     def test_vente_emballage_pas_de_modele(self):
         Mouvement.objects.create(
             produit=self.produit, type_mouvement='entree',
