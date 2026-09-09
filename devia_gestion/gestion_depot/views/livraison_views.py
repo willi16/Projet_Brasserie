@@ -131,6 +131,7 @@ def creer_bon_livraison(request):
         produits_list.append({
             'id': p.id,
             'nom': p.nom,
+            'prix_achat': f"{float(p.prix_achat_casier):.2f}",
             'casier': p.casier_contenu,
             'tracked': 1 if categorie_casiers else 0,
             'modeles_json': json.dumps([modele_livraison]) if categorie_casiers else '[]',
