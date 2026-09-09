@@ -28,11 +28,12 @@ Ce guide est écrit pour que **même une personne qui n'est pas programmeur** pu
 
 ## Ce dont vous avez besoin
 
-- **Un ordinateur** sous Windows, Linux ou macOS.
-- **Python 3.10 ou plus récent** : c'est le langage de l'application. Vérifiez en ouvrant un terminal : `python --version` (ou `python3 --version`).
-- **(Optionnel) Node.js et npm** : uniquement si vous devez modifier les styles (Tailwind CSS).
-- **(Optionnel) Docker Desktop** : pour démarrer tout le système (application + base de données PostgreSQL) en une seule commande, comme en production.
-- **(Optionnel) pdflatex (LaTeX)** : uniquement si vous voulez générer les factures au format PDF. Docker l'installe automatiquement. En local, installez le paquet `texlive-latex-*` de votre système.
+- **Un ordinateur** sous **Windows 10/11**, **Linux** (Debian/Ubuntu recommandé) ou **macOS**.
+- **Python 3.10, 3.11 ou 3.12** : le langage de l'application. Vérifiez en ouvrant un terminal : `python --version` (Windows) ou `python3 --version` (Linux/macOS).
+- **(Optionnel) Node.js et npm** : uniquement pour modifier les styles (Tailwind CSS). Le CSS final est **déjà fourni** dans `static/` : pas besoin de Node pour installer et démarrer.
+- **(Optionnel) Docker Desktop / Docker Engine** : pour démarrer tout le système (application + base PostgreSQL + rapport automatique du soir) en une seule commande, comme en production.
+- **(Optionnel) LaTeX (pdflatex)** : uniquement pour télécharger les factures en **PDF**. Docker l'installe automatiquement ; en local la commande à installer dépend de votre système (voir plus bas).
+- **Connexion internet** uniquement au premier téléchargement des dépendances : une fois installées, l'application et toutes ses bibliothèques sont servies **localement**.
 
 ---
 
@@ -61,15 +62,45 @@ Les utilisateurs ont des **rôles** :
 
 ## Installation en local (sans Docker)
 
-Suivez ces étapes **dans l'ordre**. Ouvrez un terminal dans le dossier du projet :
+### Lancement en une seule commande (recommandé)
+
+Un script est fourni pour faire **tout automatiquement** : vérifier Python, créer l'environnement virtuel, installer les dépendances, créer le fichier `.env` (avec une clé `SECRET_KEY` générée aléatoirement), appliquer les migrations, créer un compte administrateur (au choix) et démarrer le serveur.
+
+- **Windows** : double-cliquez sur `setup_local.bat` (ou dans l'invite de commandes : `setup_local.bat`).
+- **Linux / macOS** : dans un terminal, à la racine du projet : `bash setup_local.sh`
+
+Le script vous pose 2 questions (compte administrateur, serveur local ou réseau) puis lance l'application. **Si un fichier `.env` existe déjà, il est conservé intact** (le script ne l'écrase jamais).
+
+> Les instructions détaillées étape par étape (si vous préférez tout faire à la main) sont données ci-dessous.
+
+Les étapes sont **les mêmes sur tous les systèmes** ; seule la **commande à taper** change selon que vous êtes sous **Windows**, **Linux** ou **macOS**. Pour chaque étape, utilisez le bloc de votre système.
+
+> **Au choix : Windows avec `py`/`venv\Scripts`, Linux/macOS avec `python3`/`venv/bin`.** Les deux autres commandes (`pip`, `python manage.py`) sont identiques partout une fois l'environnement activé.
+
+### Étape 1 — Récupérer le code et entrer dans le dossier
 
 ```bash
+git clone <adresse-du-dépôt>
 cd devia_gestion
 ```
 
-### 1. Créer un environnement Python isolé (recommandé)
+(ou copiez simplement le dossier du projet, puis `cd devia_gestion`).
 
-Cela évite de mélanger les outils de ce projet avec ceux de votre ordinateur.
+### Étape 2 — Vérifier (ou installer) Python
+
+Ouvrez un terminal et vérifiez la version de votre système :
+
+| Système | Vérifier | Si absent, installer |
+|---|---|---|
+| **Windows** | `py --version` (ou `python --version`) | https://www.python.org/downloads/ — pendant l'installation, **cochez « Add Python to PATH »** |
+| **Linux** (Debian/Ubuntu) | `python3 --version` | `sudo apt update && sudo apt install -y python3 python3-venv python3-pip git` |
+| **macOS** | `python3 --version` | `xcode-select --install` puis Python depuis https://www.python.org/downloads/ ou `brew install python@3.12` |
+
+La version affichée doit être **3.10, 3.11 ou 3.12** (le projet est développé et testé avec Django 5.2).
+
+### Étape 3 — Créer un environnement Python isolé (recommandé)
+
+Cela évite de mélanger les dépendances du projet avec celles de votre ordinateur.
 
 **Windows :**
 ```bash
@@ -83,23 +114,39 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Vous devriez voir `(venv)` au début de la ligne du terminal.
+Une fois activé, le terminal affiche `(venv)` au début de la ligne.
 
-### 2. Installer les dépendances
+> **Linux** : si la commande échoue avec « ensurepip is not available », installez d'abord `sudo apt install python3-venv`.
+
+### Étape 4 — Installer les dépendances Python
+
+**Toujours dans l'environnement activé** :
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Créer le fichier de configuration
+ou, si `pip` n'est pas reconnu :
 
-Le projet lit ses réglages dans un fichier nommé `.env`. **Il n'est pas fourni par défaut** (il contient des mots de passe). Créez-le à la racine du projet (`devia_gestion/.env`) et copiez-y ceci :
+```bash
+python -m pip install -r requirements.txt
+```
+
+> Le fichier `requirements.txt` contient tout le nécessaire (Django 5.2, API REST, rapports Excel, traitement des images…). Tous ces paquets sont distribués en **fichiers binaires précompilés** : aucune compilation n'est nécessaire sur aucun système.
+
+### Étape 5 — Créer le fichier de configuration (.env)
+
+Le projet lit ses réglages dans un fichier nommé **`.env`** à la racine du projet (`devia_gestion/.env`). **Il n'est pas fourni par défaut** car il contient des secrets. Créez-le et copiez-y le contenu ci-dessous.
+
+- **Windows** : dans l'Explorateur créez un fichier nommé `env` puis renommez-le en `.env`, ou lancez `notepad .env` dans le terminal.
+- **Linux / macOS** : lancez `nano .env` (ou `code .env`) dans le terminal.
 
 ```env
 # ===== Django =====
 DEBUG=True
 SECRET_KEY=changez-moi-par-une-longue-chaine-aléatoire
 ALLOWED_HOSTS=localhost,127.0.0.1
+USE_HTTPS=False
 
 # ===== Base de données (local = SQLite, rien d'autre à configurer) =====
 DB_ENGINE=sqlite
@@ -113,26 +160,32 @@ EMAIL_HOST_PASSWORD=votre-mot-de-passe
 DEFAULT_FROM_EMAIL=votre@email.com
 ```
 
-> **Important :** les lignes `EMAIL_HOST_USER` et `EMAIL_HOST_PASSWORD` sont **obligatoires** pour que l'application démarre, même si vous n'envoyez jamais d'email. Mettez n'importe quelle valeur correctement formée au début.
+> **Important :** les lignes `EMAIL_HOST_USER` et `EMAIL_HOST_PASSWORD` sont **obligatoires** pour que l'application démarre, même si vous n'envoyez jamais d'email. Avec Gmail, utilisez un **mot de passe d'application** (voir « Problèmes fréquents »).
 >
-> Si vous utilisez Gmail, le mot de passe doit être un **mot de passe d'application** (voir la rubrique « Problèmes fréquents »).
+> `DEBUG=True` est le bon réglage **en local** (erreurs détaillées + fichiers statiques servis automatiquement). Gardez `False` en production.
 
-### 4. Créer la base de données
+### Étape 6 — Créer la base de données
 
 ```bash
 python manage.py migrate
 ```
 
-### 5. Créer un compte administrateur
+### Étape 7 — Créer un compte administrateur
 
-**Option A — données de démonstration (rapide)** : crée des produits, clients, fournisseurs, livraisons, ventes et 3 comptes de test.
+**Option A — données de démonstration (rapide)** : crée produits, clients, fournisseurs, livraisons, ventes et 3 comptes de test.
 > Attention : cette commande **supprime toutes les données existantes** avant de générer les données de test.
 
 ```bash
 python manage.py seed_data
 ```
 
-**Option B — compte vide, sans données** :
+**Option B — créer seulement les rôles (sans données, sans compte)** :
+
+```bash
+python manage.py create_groups
+```
+
+**Option C — compte vide, sans données** :
 
 ```bash
 python manage.py createsuperuser
@@ -140,7 +193,7 @@ python manage.py createsuperuser
 
 Suivez les questions (nom d'utilisateur, email, mot de passe).
 
-### 6. Démarrer l'application
+### Étape 8 — Démarrer l'application
 
 ```bash
 python manage.py runserver
@@ -148,13 +201,75 @@ python manage.py runserver
 
 Ouvrez votre navigateur à l'adresse : **http://127.0.0.1:8000**
 
-Vous arrivez sur la page de connexion. Connectez-vous avec le compte créé à l'étape 5 (ex. `admin` / `admin123` avec `seed_data`).
+Vous arrivez sur la page de connexion. Connectez-vous avec le compte créé à l'étape 7 (ex. `admin` / `admin123` avec `seed_data`).
 
-> Pour rendre l'application accessible depuis un autre appareil sur le même réseau (tablette, téléphone du caissier) :
-> ```bash
-> python manage.py runserver 0.0.0.0:8000
-> ```
-> Puis ajoutez l'adresse IP de l'ordinateur dans `ALLOWED_HOSTS` du fichier `.env` et ouvrez `http://IP-DE-LORDINATEUR:8000` depuis l'autre appareil.
+> **Accès depuis un autre appareil sur le même réseau** (tablette, téléphone du caissier) :
+> 1. Démarrez avec : `python manage.py runserver 0.0.0.0:8000`
+> 2. Ajoutez l'adresse IP de l'ordinateur (ex. `192.168.43.25`) dans `ALLOWED_HOSTS` du fichier `.env`.
+> 3. Autorisez le port **8000** dans le **pare-feu** (nécessaire pour être visible des autres appareils) :
+>    - **Windows** : Pare-feu Windows Defender → « Autoriser une application » → autoriser Python (réseaux privés).
+>    - **Linux** : `sudo ufw allow 8000/tcp` (ou `sudo firewall-cmd --permanent --add-port=8000/tcp && sudo firewall-cmd --reload`).
+>    - **macOS** : Réglages Système → Réseau → Pare-feu → autoriser les connexions entrantes pour Python.
+> 4. Depuis l'autre appareil, ouvrez : `http://IP-DE-LORDINATEUR:8000`
+
+---
+
+### (Optionnel) Reconstruire le CSS Tailwind
+
+Le fichier `static/css/tailwind.css` est **déjà fourni** : rien à faire pour démarrer. Si vous modifiez les styles (`tailwind/input.css` ou les templates), reconstruisez (les mêmes commandes sous Windows, Linux et macOS, avec Node.js et npm installés) :
+
+```bash
+npm install
+npm run build:css
+python manage.py collectstatic
+```
+
+---
+
+### (Optionnel) Utiliser PostgreSQL en local
+
+Par défaut, l'application utilise **SQLite** (un simple fichier `db.sqlite3`, zéro configuration) — parfait pour démarrer. Pour travailler **comme en production** avec PostgreSQL :
+
+| Système | Installation |
+|---|---|
+| **Windows** | Installez PostgreSQL depuis https://www.postgresql.org/download/windows/ (assistant EDB, port 5432) |
+| **Linux** (Debian/Ubuntu) | `sudo apt install -y postgresql && sudo systemctl start postgresql` |
+| **macOS** | `brew install postgresql@16 && brew services start postgresql@16` |
+
+Créez ensuite un utilisateur et une base (une seule fois) :
+
+**Linux :**
+```bash
+sudo -u postgres createuser --pwprompt gestion_user
+sudo -u postgres createdb -O gestion_user gestion_db
+```
+
+**Windows / macOS** : faites de même via **pgAdmin** (ou `psql`) : rôle `gestion_user` avec mot de passe, base `gestion_db` possédée par ce rôle.
+
+Puis basculez la configuration dans `.env` :
+
+```env
+DB_ENGINE=postgres
+DB_NAME=gestion_db
+DB_USER=gestion_user
+DB_PASSWORD=un-mot-de-passe-ici
+DB_HOST=127.0.0.1
+DB_PORT=5432
+```
+
+Et rejouez : `python manage.py migrate`.
+
+---
+
+### (Optionnel) Générer les factures PDF (LaTeX)
+
+Le téléchargement PDF utilise **pdflatex**. Tant qu'il n'est pas installé, **l'aperçu à l'écran et l'impression** fonctionnent toujours ; seul le fichier PDF ne se télécharge pas.
+
+- **Windows** : installez **MiKTeX** (https://miktex.org).
+- **Linux** (Debian/Ubuntu) : `sudo apt install -y texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-lang-french texlive-latex-extra`
+- **macOS** : installez **MacTeX** (`brew install --cask mactex`).
+
+Vérifiez avec `pdflatex --version`. Dans Docker, tout est déjà installé.
 
 ---
 
@@ -236,6 +351,7 @@ docker compose down -v     # arrête ET efface les données de la base (attentio
 | `DEBUG` | `True` : mode développement (erreurs détaillées, statiques servies automatiquement). `False` : production. | `True` en local, `False` en prod |
 | `SECRET_KEY` | Clé de sécurité. **Doit être secrète et unique.** | chaîne aléatoire |
 | `ALLOWED_HOSTS` | Adresses autorisées à ouvrir l'application (séparées par des virgules). | `localhost,127.0.0.1` |
+| `USE_HTTPS` | `True` uniquement si un proxy terminant le TLS (nginx/traefik/caddy) est en place. En HTTP direct (local, LAN) laisser `False`. | `False` |
 | `DB_ENGINE` | `sqlite` (local, simple) ou `postgres` (production). | `sqlite` en local |
 | `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Connexion à PostgreSQL (ignoré avec SQLite). | non utilisées en local |
 | `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, ... | Serveur d'envoi d'emails. | voir plus haut |
@@ -349,12 +465,7 @@ Depuis le **détail d'un bon de vente**, deux boutons :
 1. **Aperçu de la facture** — ouvre la facture **dans l'application** (même onglet, format A5). Cliquez sur **Imprimer** pour l'imprimer (la barre de navigation disparaît automatiquement à l'impression). Un bouton **Télécharger le PDF** y est aussi disponible.
 2. **Télécharger le PDF** — génère et télécharge directement le PDF officiel.
 
-**En local, si le PDF ne se génère pas**, c'est que LaTeX (pdflatex) n'est pas installé :
-- Windows : installez MiKTeX (https://miktex.org) ou TeX Live.
-- Linux : `sudo apt install texlive-latex-base texlive-latex-recommended texlive-fonts-recommended texlive-lang-french`
-- macOS : installez MacTeX.
-
-Dans Docker, tout est déjà installé.
+**En local, si le PDF ne se génère pas**, c'est que LaTeX (pdflatex) n'est pas installé — voir la section « (Optionnel) Générer les factures PDF (LaTeX) » de l'[installation locale](#installation-en-local-sans-docker) pour la commande selon votre système. Dans Docker, tout est déjà installé.
 
 ---
 
@@ -368,7 +479,7 @@ Dans Docker, tout est déjà installé.
 | `python manage.py seed_data` | Charge des données de test (supprime d'abord les données existantes). |
 | `python manage.py create_groups` | Crée les rôles (Caissier, Gérant, Admin) sans les données de test. |
 | `python manage.py runserver` | Démarre le serveur local. |
-| `python manage.py test gestion_depot` | Lance les tests automatisés (24 tests). |
+| `python manage.py test gestion_depot` | Lance les tests automatisés (55 tests). |
 | `python manage.py check` | Vérifie que le projet est cohérent. |
 | `python manage.py collectstatic` | Regroupe les fichiers statiques (CSS/JS) dans `staticfiles/`. |
 | `npm run build:css` | Reconstruit le CSS Tailwind (après modification de `tailwind/input.css` ou des templates). |
@@ -409,6 +520,21 @@ python manage.py shell -c "from django.contrib.auth.models import User; u=User.o
 ### Envoi d'email Gmail échoue
 Gmail exige un **mot de passe d'application** (compte Google → Sécurité → Vérification en 2 étapes → Mots de passe des applications). Utilisez-le dans `EMAIL_HOST_PASSWORD`.
 
+### Problèmes selon le système d'exploitation
+
+**Windows**
+- **`py` ou `python` n'est pas reconnu** : relancez l'installateur Python et cochez **« Add Python to PATH »**, puis ouvrez un **nouveau** terminal.
+- **Activation impossible** `venv\Scripts\activate` : vérifiez que vous êtes dans le dossier du projet. Si la politique d'exécution PowerShell bloque le script, tapez `Set-ExecutionPolicy -Scope Process RemoteSigned` puis réessayez.
+
+**Linux**
+- **« ensurepip is not available »** lors de la création du venv : `sudo apt install python3-venv`.
+- **`pip` ou `pip3` introuvable** : `sudo apt install python3-pip`, puis utilisez `python3 -m pip`.
+- **« Command 'python' not found »** : sur la plupart des distributions, la commande est `python3`.
+
+**macOS**
+- **`xcrun: error: invalid active developer path`** : lancez `xcode-select --install`.
+- **`python3` non installé** : `xcode-select --install` puis installez Python depuis https://www.python.org/downloads/ ou `brew install python@3.12`.
+
 ---
 
 ## Structure du projet
@@ -417,6 +543,8 @@ Gmail exige un **mot de passe d'application** (compte Google → Sécurité → 
 devia_gestion/
 ├── manage.py                  # Point d'entrée des commandes Django
 ├── requirements.txt           # Dépendances Python
+├── setup_local.sh             # Lancement local automatique (Linux/macOS)
+├── setup_local.bat            # Lancement local automatique (Windows)
 ├── .env                       # Configuration locale (secret, jamais commité)
 ├── docker-compose.yml         # Orchestration Docker (web + cron + db)
 ├── Dockerfile                 # Image Docker de l'application
