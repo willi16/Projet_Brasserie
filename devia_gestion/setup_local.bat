@@ -104,15 +104,14 @@ rem --- 8/8 Lancement du serveur ---------------------------
 echo.
 echo [8/8] Lancement du serveur :
 echo   1. Local uniquement    (http://127.0.0.1:8000)
-echo   2. Reseau local (LAN)  (http://IP-DE-VOTRE-ORDINATEUR:8000)
-set /p MODE=   Votre choix [1-2] (Entree = 1) : 
-if "%MODE%"=="2" (
-    echo Astuce : ajoutez l'IP de l'ordinateur dans ALLOWED_HOSTS (.env)
-    echo et autorisez le port 8000 dans le pare-feu Windows.
+echo   2. Reseau local (LAN)  (http://IP-DE-VOTRE-ORDINATEUR:8000) - recommande
+set /p MODE=   Votre choix [1-2] (Entree = 2) : 
+if "%MODE%"=="1" (
+    start "" http://127.0.0.1:8000
+    python manage.py runserver
+) else (
+    echo Autorisez le port 8000 dans le pare-feu Windows.
     echo.
     start "" http://127.0.0.1:8000
     python manage.py runserver 0.0.0.0:8000
-) else (
-    start "" http://127.0.0.1:8000
-    python manage.py runserver
 )

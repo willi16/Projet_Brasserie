@@ -1,0 +1,6 @@
+
+# Packaging portable (dossier de sortie du packager_portable)
+*_portable/
+
+# Certificats / ACME locaux
+letsencrypt/

@@ -69,7 +69,32 @@ Un script est fourni pour faire **tout automatiquement** : vérifier Python, cr�
 - **Windows** : double-cliquez sur `setup_local.bat` (ou dans l'invite de commandes : `setup_local.bat`).
 - **Linux / macOS** : dans un terminal, à la racine du projet : `bash setup_local.sh`
 
-Le script vous pose 2 questions (compte administrateur, serveur local ou réseau) puis lance l'application. **Si un fichier `.env` existe déjà, il est conservé intact** (le script ne l'écrase jamais).
+Le script vous pose 2 questions (compte administrateur, serveur local ou réseau — **le mode « Réseau local » est proposé par défaut**) puis lance l'application. **Si un fichier `.env` existe déjà, il est conservé intact** (le script ne l'écrase jamais). L'adresse IP de l'ordinateur sur le réseau est détectée automatiquement : il n'y a **rien à modifier** dans `.env` pour être accessible depuis les autres appareils du réseau.
+
+### Copie portable (clé USB / disque externe) et déploiement sur un autre poste
+
+L'application est pensé pour être **copiée sur un stockage externe** et **déployée sur n'importe quel autre ordinateur**, en local, **accessible à tous les appareils du même réseau** (Wi-Fi / LAN).
+
+1. **Créer la copie portable** (à faire une fois, sur le poste source) :
+   - **Windows** : double-cliquez sur `packager_portable.bat` (ou : `packager_portable.bat D:\ma-cle-usb\deiva`),
+   - **Linux / macOS** : `bash packager_portable.sh /media/USB/deiva`.
+   
+   La copie exclut tout ce qui est propre à cet ordinateur (`venv`, base de données locale, `.env`, caches, `.git`) — elle est **légère (~7 Mo)** et contient le CSS déjà compilé (aucun Node nécessaire).
+
+2. **Copier** ce dossier sur le stockage externe (clé USB, disque dur externe).
+
+3. **Déployer sur le poste cible** : copiez le dossier du stockage externe vers l'ordinateur voulu, puis :
+   - **Windows** : double-cliquez sur `setup_local.bat`,
+   - **Linux / macOS** : `bash setup_local.sh`.
+   
+   Choisissez le compte administrateur puis le mode **« Réseau local (LAN) »** (défaut). Lui aussi installera Python isolé, les dépendances et créera la base de données sur place.
+
+4. **Utilisation** : depuis **tout appareil du même réseau** (PC, tablette, téléphone), ouvrez dans le navigateur :
+   `http://IP-DE-CET-ORDINATEUR:8000` (l'IP s'affiche au lancement ; autorisez le port `8000` dans le pare-feu du système).
+
+5. **Redémarrer le serveur plus tard** (sans réinstallation) :
+   - **Windows** : `lancer.bat`,
+   - **Linux / macOS** : `bash lancer.sh`.
 
 > Les instructions détaillées étape par étape (si vous préférez tout faire à la main) sont données ci-dessous.
 

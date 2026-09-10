@@ -10,11 +10,24 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
+import socket
 from pathlib import Path
 from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _ip_lan_principale():
+    """Détecte l'adresse IP locale (réseau) de la machine, sans trafic externe."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return None
 
 
 # Quick-start development settings - unsuitable for production
@@ -32,6 +45,18 @@ ALLOWED_HOSTS = [
     for h in config('ALLOWED_HOSTS', default='localhost').split(',')
     if h.strip()
 ]
+
+# Toujours accepter la boucle locale (http://127.0.0.1)…
+for _host_loop in ('localhost', '127.0.0.1'):
+    if _host_loop not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_host_loop)
+
+# …ainsi que l'adresse IP du réseau local de la machine : ainsi tous les
+# appareils du WLAN/LAN peuvent accéder à l'application après le déploiement
+# sans avoir à éditer le fichier .env (pratique pour une copie portable).
+_ip_lan = _ip_lan_principale()
+if _ip_lan and _ip_lan not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(_ip_lan)
 
 
 # Application definition
@@ -203,9 +228,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 
 # === Security settings (production only) ===
@@ -225,9 +250,14 @@ if USE_HTTPS:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-# CSRF : bloquer les origines tierces via le header Origin
-CSRF_TRUSTED_ORIGINS = [
-    f'https://{host}'
-    for host in ALLOWED_HOSTS
-    if host not in {'localhost', '127.0.0.1', '0.0.0.0'}
-] + [f'http://{host}' for host in ALLOWED_HOSTS if host == 'localhost']
+# CSRF : bloquer les origines tierces via le header Origin.
+# http pour le LAN local, https si un proxy TLS est en place.
+CSRF_TRUSTED_ORIGINS = []
+for _host_csrf in ALLOWED_HOSTS:
+    if _host_csrf in {'localhost', '127.0.0.1', '0.0.0.0'} or _host_csrf == '*':
+        continue
+    CSRF_TRUSTED_ORIGINS.append(f'http://{_host_csrf}')
+    CSRF_TRUSTED_ORIGINS.append(f'http://{_host_csrf}:8000')
+    if USE_HTTPS:
+        CSRF_TRUSTED_ORIGINS.append(f'https://{_host_csrf}')
+        CSRF_TRUSTED_ORIGINS.append(f'https://{_host_csrf}:8000')

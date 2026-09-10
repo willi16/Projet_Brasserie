@@ -100,17 +100,16 @@ ok "Étape compte administrateur terminée."
 echo
 echo "Lancement du serveur :"
 echo "  1) Local uniquement    -> http://127.0.0.1:8000"
-echo "  2) Réseau local (LAN)  -> http://IP-DE-VOTRE-ORDINATEUR:8000"
-read -r -p "Votre choix [1-2] (Entrée = 1) : " mode
+echo "  2) Réseau local (LAN)  -> http://IP-DE-VOTRE-ORDINATEUR:8000 (recommandé)"
+read -r -p "Votre choix [1-2] (Entrée = 2) : " mode
 
 # --- 8/8 Démarrer --------------------------------------------------------
-if [ "${mode:-1}" = "2" ]; then
-    warn "Astuce : ajoutez l'IP de l'ordinateur dans ALLOWED_HOSTS (.env)"
-    warn "et autorisez le port 8000 dans le pare-feu du système."
+if [ "${mode:-2}" = "1" ]; then
+    ok "Application prête. Ouvrez http://127.0.0.1:8000 dans votre navigateur."
+    exec python manage.py runserver
+else
+    warn "Autorisez le port 8000 dans le pare-feu du système."
     echo
     info "Serveur accessible sur le réseau. Ouvrez http://IP-DE-VOTRE-ORDINATEUR:8000"
     exec python manage.py runserver 0.0.0.0:8000
-else
-    ok "Application prête. Ouvrez http://127.0.0.1:8000 dans votre navigateur."
-    exec python manage.py runserver
 fi
