@@ -47,7 +47,6 @@ def stocks_disponibles(produits):
 
 
 @login_required
-@transaction.atomic
 def creer_bon_vente(request):
     if request.method == 'POST':
         client_nom = _purge_texte(request.POST.get('client_nom') or '')
@@ -130,37 +129,38 @@ def creer_bon_vente(request):
                 return redirect('gestion_depot:creer_bon_vente')
 
         # Tout est OK → Créer le client
-        client_obj, _ = Client.objects.get_or_create(nom=client_nom)
+        with transaction.atomic():
+            client_obj, _ = Client.objects.get_or_create(nom=client_nom)
 
-        # Créer le bon de vente (statut 'en_cours', validé ensuite)
-        bon = BonVente.objects.create(
-            client=client_obj,
-            type_paiement=type_paiement,
-            vendeur=request.user,
-            statut='en_cours',
-        )
-
-        # Créer les lignes de vente
-        lignes = []
-        for i, p_id in enumerate(produit_ids):
-            prod = produits_dict.get(p_id)
-            if not prod:
-                continue
-            if prod.categorie in CATEGORIES_AVEC_CASIERS:
-                modele_submis = modeles[i] if i < len(modeles) else ''
-                modele = modele_submis if modele_submis in prod.modeles_possibles() else prod.modele_par_defaut()
-            else:
-                modele = None
-            lignes.append(
-                LigneVente(
-                    bon=bon,
-                    produit=prod,
-                    fraction=fractions_dec[i],
-                    quantite_casiers=quantites_dec[i],
-                    modele=modele,
-                )
+            # Créer le bon de vente (statut 'en_cours', validé ensuite)
+            bon = BonVente.objects.create(
+                client=client_obj,
+                type_paiement=type_paiement,
+                vendeur=request.user,
+                statut='en_cours',
             )
-        LigneVente.objects.bulk_create(lignes)
+
+            # Créer les lignes de vente
+            lignes = []
+            for i, p_id in enumerate(produit_ids):
+                prod = produits_dict.get(p_id)
+                if not prod:
+                    continue
+                if prod.categorie in CATEGORIES_AVEC_CASIERS:
+                    modele_submis = modeles[i] if i < len(modeles) else ''
+                    modele = modele_submis if modele_submis in prod.modeles_possibles() else prod.modele_par_defaut()
+                else:
+                    modele = None
+                lignes.append(
+                    LigneVente(
+                        bon=bon,
+                        produit=prod,
+                        fraction=fractions_dec[i],
+                        quantite_casiers=quantites_dec[i],
+                        modele=modele,
+                    )
+                )
+            LigneVente.objects.bulk_create(lignes)
 
         UserActionLog.log_action(
             request.user, 'création_vente', module='ventes',
@@ -221,13 +221,14 @@ def valider_bon_vente(request, id):
 
     if bon.statut != 'valide':
         # Vérifier à nouveau le stock (au cas où changé entre-temps)
-        for ligne in bon.lignes.select_related('produit'):
+        lignes_bon = list(bon.lignes.select_related('produit'))
+        for ligne in lignes_bon:
             if ligne.produit.stock_disponible() < (ligne.fraction * ligne.quantite_casiers):
                 messages.error(request, f"Stock insuffisant pour {ligne.produit.nom} au moment de la validation.")
                 return redirect('gestion_depot:liste_bons_vente')
 
         # Créer les mouvements de sortie
-        for ligne in bon.lignes.all():
+        for ligne in lignes_bon:
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='sortie',
@@ -268,7 +269,7 @@ def annuler_bon_vente(request, id):
             return redirect('gestion_depot:liste_bons_vente')
         motif = motif[:1000]
         # Créer des mouvements inverses (entrée)
-        for ligne in bon.lignes.all():
+        for ligne in bon.lignes.select_related('produit'):
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='entree',

@@ -96,6 +96,18 @@ L'application est pensé pour être **copiée sur un stockage externe** et **dé
    - **Windows** : `lancer.bat`,
    - **Linux / macOS** : `bash lancer.sh`.
 
+### Passer en mode production (plusieurs utilisateurs simultanés)
+
+> ⚠️ **`manage.py runserver` est le serveur de développement** : il est déconseillé lorsqu'on est plusieurs à utiliser l'application en même temps.
+
+- **Linux / macOS** : lancez `bash production.sh`. Il applique les migrations, regroupe les fichiers statiques (WhiteNoise les sert lui-même) puis démarre **Gunicorn** avec `workers = (cœurs × 2) + 1` (`--threads 2`), sur le port `8000`, accessible à tout le réseau. Testé : 100 requêtes simultanées → 100 réponses OK.
+- **Windows** : Gunicorn n'étant pas supporté, utilisez `lancer.bat` (runserver) pour un petit nombre d'utilisateurs, ou déployez avec **Docker + PostgreSQL** (voir la section dédiée) pour gagner en robustesse.
+
+**Pour le multi-utilisateur simultané :**
+- La base SQLite locale tourne maintenant en **mode WAL** (écritures simultanées sans blocage, délai d'attente 5 s, `foreign_keys` activée) — suffisant pour un dépôt de quelques postes.
+- Pour davantage de charge ou plus de robustesse, passez à **PostgreSQL** via Docker (section « Déploiement avec Docker ») : c'est la configuration recommandée en production.
+- Les listes (produits, ventes, livraisons, casiers, utilisateurs, journal) utilisent des requêtes agrégées côté serveur (DataTables server-side) et les pages de détail pré-chargent leurs lignes (`select_related`/`prefetch_related`) : pas de requête N+1.
+
 > Les instructions détaillées étape par étape (si vous préférez tout faire à la main) sont données ci-dessous.
 
 Les étapes sont **les mêmes sur tous les systèmes** ; seule la **commande à taper** change selon que vous êtes sous **Windows**, **Linux** ou **macOS**. Pour chaque étape, utilisez le bloc de votre système.

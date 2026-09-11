@@ -12,7 +12,6 @@ from gestion_depot.models.produit import CATEGORIES_AVEC_CASIERS, BOUTEILLES_PAR
 
 
 @group_required('Gérant', 'Admin')
-@transaction.atomic
 def creer_bon_livraison(request):
     if request.method == 'POST':
         fournisseur_id = request.POST.get('fournisseur')
@@ -88,39 +87,40 @@ def creer_bon_livraison(request):
 
             lignes_a_creer.append((prod, quantite, casier_contenu, prix_achat))
 
-        bon = BonLivraison.objects.create(
-            fournisseur=fournisseur_obj,
-            utilisateur=request.user,
-        )
-
-        for prod, quantite, casier_contenu, prix_achat in lignes_a_creer:
-            ligne = LigneLivraison.objects.create(
-                bon=bon,
-                produit=prod,
-                quantite_casiers=quantite,
-                casier_contenu=casier_contenu,
-                prix_achat_casier=prix_achat,
-            )
-            # Créer un mouvement d'entrée
-            Mouvement.objects.create(
-                produit=prod,
-                type_mouvement='entree',
-                quantite_casiers=quantite,
+        with transaction.atomic():
+            bon = BonLivraison.objects.create(
                 fournisseur=fournisseur_obj,
                 utilisateur=request.user,
             )
-            # Mettre à jour les prix du produit : achat = prix renseigné, vente = achat × (1 + %)
-            pourcentage = prod.pourcentage_prix_vente or Decimal('0')
-            prod.prix_achat_casier = prix_achat
-            prod.prix_vente_casier = (prix_achat * (Decimal('1') + pourcentage / Decimal('100'))).quantize(Decimal('0.01'))
-            prod.save(update_fields=['prix_achat_casier', 'prix_vente_casier'])
 
-        UserActionLog.log_action(
-            request.user, 'création_livraison', module='livraisons',
-            details=f"Enregistrement de la livraison {bon.reference} "
-                    f"(fournisseur : {fournisseur_obj.nom}, {len(lignes_a_creer)} ligne(s))",
-            request=request,
-        )
+            for prod, quantite, casier_contenu, prix_achat in lignes_a_creer:
+                ligne = LigneLivraison.objects.create(
+                    bon=bon,
+                    produit=prod,
+                    quantite_casiers=quantite,
+                    casier_contenu=casier_contenu,
+                    prix_achat_casier=prix_achat,
+                )
+                # Créer un mouvement d'entrée
+                Mouvement.objects.create(
+                    produit=prod,
+                    type_mouvement='entree',
+                    quantite_casiers=quantite,
+                    fournisseur=fournisseur_obj,
+                    utilisateur=request.user,
+                )
+                # Mettre à jour les prix du produit : achat = prix renseigné, vente = achat × (1 + %)
+                pourcentage = prod.pourcentage_prix_vente or Decimal('0')
+                prod.prix_achat_casier = prix_achat
+                prod.prix_vente_casier = (prix_achat * (Decimal('1') + pourcentage / Decimal('100'))).quantize(Decimal('0.01'))
+                prod.save(update_fields=['prix_achat_casier', 'prix_vente_casier'])
+
+            UserActionLog.log_action(
+                request.user, 'création_livraison', module='livraisons',
+                details=f"Enregistrement de la livraison {bon.reference} "
+                        f"(fournisseur : {fournisseur_obj.nom}, {len(lignes_a_creer)} ligne(s))",
+                request=request,
+            )
         messages.success(request, f"Livraison {bon.reference} enregistrée avec succès !")
         return redirect('gestion_depot:liste_livraisons')
 
@@ -153,5 +153,9 @@ def liste_livraisons(request):
 
 @group_required('Gérant', 'Admin')
 def detail_bon_livraison(request, id):
-    bon = get_object_or_404(BonLivraison, id=id)
+    bon = get_object_or_404(
+        BonLivraison.objects.select_related('fournisseur', 'utilisateur')
+        .prefetch_related('lignes__produit'),
+        id=id,
+    )
     return render(request, 'gestion_depot/detail_bon_livraison.html', {'bon': bon})

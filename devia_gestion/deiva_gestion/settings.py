@@ -13,6 +13,8 @@ import os
 import socket
 from pathlib import Path
 from decouple import config
+from django.db.backends.signals import connection_created
+from django.dispatch import receiver
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -153,6 +155,18 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
+# SQLite : mode WAL + délai d'attente pour supporter plusieurs personnes qui
+# écrivent en même temps (sinon erreur « database is locked »). Sans effet en
+# PostgreSQL.
+@receiver(connection_created)
+def _prepare_sqlite_connexion(sender, connection, **kwargs):
+    if connection.vendor == 'sqlite':
+        with connection.cursor() as cur:
+            cur.execute('PRAGMA journal_mode=WAL;')
+            cur.execute('PRAGMA busy_timeout=5000;')
+            cur.execute('PRAGMA synchronous=NORMAL;')
+            cur.execute('PRAGMA foreign_keys=ON;')
 
 
 # Password validation
