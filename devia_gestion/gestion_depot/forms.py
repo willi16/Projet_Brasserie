@@ -19,13 +19,15 @@ def _valider_extensions_image(fichier):
         raise ValidationError(
             "Format d'image non autorisé. Formats acceptés : JPG, PNG, WEBP, GIF."
         )
-    if len(fichier.content_type) > 0:
+    content_type = getattr(fichier, 'content_type', None)
+    if content_type:
         mime_autorise = ('image/jpeg', 'image/png', 'image/webp', 'image/gif')
-        if fichier.content_type not in mime_autorise:
+        if content_type not in mime_autorise:
             raise ValidationError(
                 "Type MIME de l'image non autorisé. Formats acceptés : JPG, PNG, WEBP, GIF."
             )
-    if fichier.size > 5 * 1024 * 1024:
+    taille = getattr(fichier, 'size', 0)
+    if taille > 5 * 1024 * 1024:
         raise ValidationError("L'image ne doit pas dépasser 5 Mo.")
 
 
@@ -41,8 +43,16 @@ def _purge_controle(value):
 def _valider_telephone(value):
     if not value:
         return value
-    value = re.sub(r'[^0-9+\s\-().]', '', value)
-    if not re.fullmatch(r'[0-9+\s\-().]{7,20}', value):
+    if re.search(r'[^0-9+\s\-()./,;]', value):
+        raise ValidationError(
+            f"« {value} » n'est pas un numéro de téléphone valide."
+        )
+    numeros = [n.strip() for n in re.split(r'[/,;]', value) if n.strip()]
+    valide = bool(numeros) and all(
+        re.fullmatch(r'\+?[0-9][0-9\s\-().]{5,19}', numero)
+        for numero in numeros
+    )
+    if not valide:
         raise ValidationError(
             f"« {value} » n'est pas un numéro de téléphone valide."
         )
@@ -177,9 +187,11 @@ class CreerCompteEmployeForm(UserCreationForm):
                 profil.save()
             # Optionnel : assigner un rôle via un groupe ou un champ
             if self.cleaned_data['role'] == 'caissier':
-                user.groups.add(Group.objects.get(name='Caissier'))
+                groupe, _ = Group.objects.get_or_create(name='Caissier')
+                user.groups.add(groupe)
             elif self.cleaned_data['role'] == 'gerant':
-                user.groups.add(Group.objects.get(name='Gérant'))
+                groupe, _ = Group.objects.get_or_create(name='Gérant')
+                user.groups.add(groupe)
         return user
 
 

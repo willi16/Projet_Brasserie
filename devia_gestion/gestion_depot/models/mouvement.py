@@ -11,7 +11,7 @@ class Mouvement(models.Model):
         ('entree', 'Entrée'),
         ('sortie', 'Sortie'),
     ]
-    produit = models.ForeignKey(Produit, on_delete=models.CASCADE)
+    produit = models.ForeignKey(Produit, on_delete=models.PROTECT)
     type_mouvement = models.CharField(max_length=10, choices=TYPE_CHOICES)
     quantite_casiers = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(0.01)])
     date = models.DateTimeField(auto_now_add=True)

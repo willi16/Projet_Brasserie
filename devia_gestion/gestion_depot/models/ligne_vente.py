@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 class LigneVente(models.Model):
     bon = models.ForeignKey('BonVente', related_name='lignes', on_delete=models.CASCADE)
-    produit = models.ForeignKey(Produit, on_delete=models.CASCADE)
+    produit = models.ForeignKey(Produit, on_delete=models.PROTECT)
     fraction = models.DecimalField(
         max_digits=3,
         decimal_places=2,

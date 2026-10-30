@@ -2,15 +2,21 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.urls import reverse
 from gestion_depot.forms import CreerCompteEmployeForm
 from gestion_depot.models import ParametresEntreprise
 from gestion_depot.models.userActionLog import UserActionLog
 from django.core.mail import send_mail
 from django.conf import settings
 
+
+def _peut_creer_compte(user):
+    return user.is_superuser or user.groups.filter(name='Admin').exists()
+
+
 @login_required
 def creer_compte_employe(request):
-    if not request.user.is_superuser:
+    if not _peut_creer_compte(request.user):
         messages.error(request, "Accès réservé à l'administrateur.")
         return redirect('gestion_depot:dashboard')
     
@@ -37,7 +43,7 @@ Identifiants :
 - Nom d'utilisateur : {user.username}
 - Rôle : {form.cleaned_data['role']}
 
-Veuillez vous connecter dès maintenant : http://devia
+Veuillez vous connecter dès maintenant : {request.build_absolute_uri(reverse('login'))}
 
 L'équipe {entreprise.nom}
 """,

@@ -3,7 +3,7 @@ from .produit import Produit
 
 class LigneLivraison(models.Model):
     bon = models.ForeignKey('BonLivraison', related_name='lignes', on_delete=models.CASCADE)
-    produit = models.ForeignKey(Produit, on_delete=models.CASCADE)
+    produit = models.ForeignKey(Produit, on_delete=models.PROTECT)
     quantite_casiers = models.DecimalField(max_digits=5, decimal_places=2, default=1.00)
     casier_contenu = models.IntegerField(default=24)
     prix_achat_casier = models.DecimalField(max_digits=10, decimal_places=2, default=0)

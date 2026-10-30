@@ -1,5 +1,5 @@
 # gestion_depot/views/datatable_views.py
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -148,14 +148,16 @@ def dt_bons_vente(request):
         if vendeur_id and not is_caissier:
             qs = qs.filter(vendeur_id=vendeur_id)
         if date_debut:
-            qs = qs.filter(date_vente__gte=date_debut)
+            try:
+                date_debut_obj = datetime.strptime(date_debut, '%Y-%m-%d').date()
+                qs = qs.filter(date_vente__date__gte=date_debut_obj)
+            except (ValueError, TypeError):
+                pass
         if date_fin:
             try:
-                date_fin_complet = timezone.datetime.strptime(date_fin, '%Y-%m-%d').replace(
-                    hour=23, minute=59, second=59
-                )
-                qs = qs.filter(date_vente__lte=date_fin_complet)
-            except ValueError:
+                date_fin_obj = datetime.strptime(date_fin, '%Y-%m-%d').date()
+                qs = qs.filter(date_vente__date__lte=date_fin_obj)
+            except (ValueError, TypeError):
                 pass
         return qs
 

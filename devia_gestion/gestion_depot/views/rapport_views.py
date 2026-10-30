@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.db.models import Sum, Count, F, FloatField, Case, When, Value
 from django.db.models.functions import Cast, Coalesce
 from django.utils import timezone
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from gestion_depot.models import BonVente, LigneVente, Produit, CasierEmporte
 from gestion_depot.decorators import group_required
 from collections import defaultdict
@@ -47,9 +47,9 @@ def _calculer_rapport(date_debut, date_fin, periode):
     # Filtrer les bons validés
     ventes_qs = BonVente.objects.filter(statut='valide')
     if date_debut_obj:
-        ventes_qs = ventes_qs.filter(date_vente__gte=date_debut_obj)
+        ventes_qs = ventes_qs.filter(date_vente__date__gte=date_debut_obj)
     if date_fin_obj:
-        ventes_qs = ventes_qs.filter(date_vente__lte=datetime.combine(date_fin_obj, time.max))
+        ventes_qs = ventes_qs.filter(date_vente__date__lte=date_fin_obj)
 
     bon_ids = list(ventes_qs.values_list('id', flat=True))
 
