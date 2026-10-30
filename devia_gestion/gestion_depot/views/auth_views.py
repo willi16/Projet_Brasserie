@@ -47,6 +47,11 @@ def manage_users(request):
         action = request.POST.get('action')
         user = get_object_or_404(User, id=user_id)
 
+        # Seul un superutilisateur peut modifier un autre superutilisateur
+        if user.is_superuser and not request.user.is_superuser:
+            messages.error(request, "Seul un superutilisateur peut modifier un compte superutilisateur.")
+            return redirect('gestion_depot:manage_users')
+
         # Empêcher la désactivation du compte de l'utilisateur courant
         if user == request.user and action == 'deactivate':
             messages.error(request, "Vous ne pouvez pas désactiver votre propre compte.")
@@ -110,6 +115,8 @@ def edit_user_roles(request, user_id):
         return JsonResponse({'error': 'Non autorisé'}, status=403)
 
     user = get_object_or_404(User, id=user_id)
+    if user.is_superuser and not request.user.is_superuser:
+        raise PermissionDenied("Seul un superutilisateur peut modifier un compte superutilisateur.")
     all_groups = Group.objects.all()
 
     if request.method == "POST":

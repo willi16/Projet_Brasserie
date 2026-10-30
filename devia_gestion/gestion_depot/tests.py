@@ -387,10 +387,15 @@ class BonLivraisonTests(BaseTest):
                 pourcentage_prix_vente=Decimal('25'), seuil_alerte=5,
             )
         self.http_client.login(username='gerant1', password='pass12345')
+        Produit.objects.filter(nom='Beaufort 50cl').update(
+            prix_achat_casier=Decimal('12500'), prix_vente_casier=Decimal('15625'))
         response = self.http_client.get(reverse('gestion_depot:creer_bon_livraison'))
         contenus = {p['nom']: p['modeles_json'] for p in response.context['produits_list']}
         self.assertEqual(json.loads(contenus['Beaufort 50cl']), ['GM12'])
         self.assertEqual(json.loads(contenus['Pils 50cl']), ['GM20'])
+        prix_par_nom = {p['nom']: p['prix_achat'] for p in response.context['produits_list']}
+        self.assertEqual(prix_par_nom['Beaufort 50cl'], '12500.00')
+        self.assertEqual(prix_par_nom['Pils 50cl'], '0.00')
 
     def test_livraison_casier_impose_selon_contenance(self):
         attentes = {'Castel 33cl': 24, 'Flag 65cl': 12, 'Sucrerie 55cl': 20, 'Eau Cristal': 12}

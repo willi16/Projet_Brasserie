@@ -31,6 +31,7 @@
                 <option
                   value="{{ p.id }}"
                   data-nom="{{ p.nom }}"
+                  data-prix="{{ p.prix_achat }}"
                   data-tracked="{{ p.tracked }}"
                   data-casier="{{ p.casier }}"
                   data-modeles="{{ p.modeles_json }}"
@@ -94,7 +95,16 @@
       });
       $(select).on('change', function () {
         rendreModele(row);
+        rappelerPrix(row);
       });
+    }
+
+    // Rapport du dernier prix d'achat par casier enregistré pour le produit
+    function rappelerPrix(row) {
+      const select = row.querySelector('.produit-select');
+      const prixInput = row.querySelector('input[name="prix_achat_casier"]');
+      const p = produitsData[select.value];
+      prixInput.value = (p && p.prixAchat > 0) ? p.prixAchat : '';
     }
 
     const produitsData = {};
@@ -102,6 +112,7 @@
       if (!opt.value) return;
       produitsData[opt.value] = {
         nom: opt.dataset.nom,
+        prixAchat: parseFloat(opt.dataset.prix) || 0,
         tracked: opt.dataset.tracked === '1',
         casier: parseInt(opt.dataset.casier, 10) || 0,
         modeles: opt.dataset.modeles ? JSON.parse(opt.dataset.modeles) : [],
@@ -152,6 +163,7 @@
       clonedSelect.value = '';
       newLigne.querySelectorAll('.select2-container').forEach(el => el.remove());
       clonedSelect.classList.remove('select2-hidden-accessible');
+      newLigne.querySelector('input[name="prix_achat_casier"]').value = '';
       newLigne.querySelector('input[name="quantite"]').value = '';
       newLigne.querySelector('.modele-select').innerHTML = '<option value="">—</option>';
       newLigne.querySelector('.bottles-info').textContent = '';

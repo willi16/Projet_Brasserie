@@ -47,7 +47,6 @@ def stocks_disponibles(produits):
 
 
 @login_required
-@transaction.atomic
 def creer_bon_vente(request):
     if request.method == 'POST':
         client_nom = _purge_texte(request.POST.get('client_nom') or '')
@@ -94,7 +93,9 @@ def creer_bon_vente(request):
             name__in=['Admin', 'Gérant']
         ).exists()
 
-        # Vérification du stock ET du seuil
+        # Vérifier les quantités et agréger la demande par produit : un même
+        # produit peut apparaître sur plusieurs lignes du bon.
+        demandes = {}
         for p_id, f, q in zip(produit_ids, fractions_dec, quantites_dec):
             prod = produits_dict.get(p_id)
             if not prod:
@@ -110,6 +111,11 @@ def creer_bon_vente(request):
                 )
                 return redirect('gestion_depot:creer_bon_vente')
 
+            demandes[p_id] = demandes.get(p_id, Decimal('0')) + quantite_totale
+
+        # Vérification du stock ET du seuil sur la quantité cumulée
+        for p_id, quantite_totale in demandes.items():
+            prod = produits_dict[p_id]
             stock = stocks.get(p_id, 0)
 
             # Stock insuffisant → bloquer pour tous
@@ -130,37 +136,38 @@ def creer_bon_vente(request):
                 return redirect('gestion_depot:creer_bon_vente')
 
         # Tout est OK → Créer le client
-        client_obj, _ = Client.objects.get_or_create(nom=client_nom)
+        with transaction.atomic():
+            client_obj, _ = Client.objects.get_or_create(nom=client_nom)
 
-        # Créer le bon de vente (statut 'en_cours', validé ensuite)
-        bon = BonVente.objects.create(
-            client=client_obj,
-            type_paiement=type_paiement,
-            vendeur=request.user,
-            statut='en_cours',
-        )
-
-        # Créer les lignes de vente
-        lignes = []
-        for i, p_id in enumerate(produit_ids):
-            prod = produits_dict.get(p_id)
-            if not prod:
-                continue
-            if prod.categorie in CATEGORIES_AVEC_CASIERS:
-                modele_submis = modeles[i] if i < len(modeles) else ''
-                modele = modele_submis if modele_submis in prod.modeles_possibles() else prod.modele_par_defaut()
-            else:
-                modele = None
-            lignes.append(
-                LigneVente(
-                    bon=bon,
-                    produit=prod,
-                    fraction=fractions_dec[i],
-                    quantite_casiers=quantites_dec[i],
-                    modele=modele,
-                )
+            # Créer le bon de vente (statut 'en_cours', validé ensuite)
+            bon = BonVente.objects.create(
+                client=client_obj,
+                type_paiement=type_paiement,
+                vendeur=request.user,
+                statut='en_cours',
             )
-        LigneVente.objects.bulk_create(lignes)
+
+            # Créer les lignes de vente
+            lignes = []
+            for i, p_id in enumerate(produit_ids):
+                prod = produits_dict.get(p_id)
+                if not prod:
+                    continue
+                if prod.categorie in CATEGORIES_AVEC_CASIERS:
+                    modele_submis = modeles[i] if i < len(modeles) else ''
+                    modele = modele_submis if modele_submis in prod.modeles_possibles() else prod.modele_par_defaut()
+                else:
+                    modele = None
+                lignes.append(
+                    LigneVente(
+                        bon=bon,
+                        produit=prod,
+                        fraction=fractions_dec[i],
+                        quantite_casiers=quantites_dec[i],
+                        modele=modele,
+                    )
+                )
+            LigneVente.objects.bulk_create(lignes)
 
         UserActionLog.log_action(
             request.user, 'création_vente', module='ventes',
@@ -219,15 +226,25 @@ def valider_bon_vente(request, id):
         messages.error(request, "Vous n'êtes pas autorisé à valider cette vente.")
         return redirect('gestion_depot:liste_bons_vente')
 
-    if bon.statut != 'valide':
-        # Vérifier à nouveau le stock (au cas où changé entre-temps)
-        for ligne in bon.lignes.select_related('produit'):
-            if ligne.produit.stock_disponible() < (ligne.fraction * ligne.quantite_casiers):
-                messages.error(request, f"Stock insuffisant pour {ligne.produit.nom} au moment de la validation.")
+    if bon.statut == 'en_cours':
+        # Vérifier à nouveau le stock (au cas où changé entre-temps), en
+        # cumulant les lignes portant sur le même produit.
+        lignes_bon = list(bon.lignes.select_related('produit'))
+        demandes = {}
+        produits = {}
+        for ligne in lignes_bon:
+            produits[ligne.produit_id] = ligne.produit
+            demandes[ligne.produit_id] = demandes.get(ligne.produit_id, Decimal('0')) + (
+                ligne.fraction * ligne.quantite_casiers
+            )
+        for produit_id, quantite_totale in demandes.items():
+            produit = produits[produit_id]
+            if produit.stock_disponible() < quantite_totale:
+                messages.error(request, f"Stock insuffisant pour {produit.nom} au moment de la validation.")
                 return redirect('gestion_depot:liste_bons_vente')
 
         # Créer les mouvements de sortie
-        for ligne in bon.lignes.all():
+        for ligne in lignes_bon:
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='sortie',
@@ -242,8 +259,10 @@ def valider_bon_vente(request, id):
             details=f"Validation du bon de vente {bon.reference}", request=request,
         )
         messages.success(request, f"Le bon de vente {bon.reference} a été validé.")
-    else:
+    elif bon.statut == 'valide':
         messages.warning(request, "Ce bon est déjà validé.")
+    else:
+        messages.error(request, "Ce bon a été annulé et ne peut plus être validé.")
 
     return redirect('gestion_depot:liste_bons_vente')
 
@@ -268,7 +287,7 @@ def annuler_bon_vente(request, id):
             return redirect('gestion_depot:liste_bons_vente')
         motif = motif[:1000]
         # Créer des mouvements inverses (entrée)
-        for ligne in bon.lignes.all():
+        for ligne in bon.lignes.select_related('produit'):
             Mouvement.objects.create(
                 produit=ligne.produit,
                 type_mouvement='entree',
@@ -311,12 +330,16 @@ def liste_bons_vente(request):
     if vendeur_id and not is_caissier:  # Un caissier ne peut pas filtrer par vendeur
         bons = bons.filter(vendeur_id=vendeur_id)
     if date_debut:
-        bons = bons.filter(date_vente__gte=date_debut)
+        try:
+            date_debut_obj = datetime.strptime(date_debut, '%Y-%m-%d').date()
+            bons = bons.filter(date_vente__date__gte=date_debut_obj)
+        except (ValueError, TypeError):
+            pass
     if date_fin:
         try:
-            date_fin_complet = datetime.strptime(date_fin, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
-            bons = bons.filter(date_vente__lte=date_fin_complet)
-        except ValueError:
+            date_fin_obj = datetime.strptime(date_fin, '%Y-%m-%d').date()
+            bons = bons.filter(date_vente__date__lte=date_fin_obj)
+        except (ValueError, TypeError):
             pass
 
     bons = bons.select_related('client', 'vendeur').annotate(
